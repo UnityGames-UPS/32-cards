@@ -16,7 +16,8 @@ public class UiManager : MonoBehaviour
     [SerializeField] private GameObject GameScreen_Object;
 
 
-    [Header("Andar Bahar Main Buttons")]
+
+    [Header("bottom bar Main Buttons")]
     [SerializeField] private Button HistoryMain_button;
     [SerializeField] private Button MenuMain_button;
     [SerializeField] private Button CasualGame_button;
@@ -24,8 +25,9 @@ public class UiManager : MonoBehaviour
     [SerializeField] private Button ExpertGame_button;
     [SerializeField] private Button HighRollerGame_button;
 
-    [Header("Andar Bahar")]
+    [Header("side panel")]
     [SerializeField] private Button MenuInGame_button;
+    [SerializeField] private RectTransform menuMainButton;
     [SerializeField] private Button History_button;
     [SerializeField] private Button Info_button;
     [SerializeField] private Button Sound_button;
@@ -149,6 +151,32 @@ public class UiManager : MonoBehaviour
     [SerializeField]
     private GameManager gameManager;
 
+
+    [Space(100)]
+    [Header("HomePage")]
+    [SerializeField] private RectTransform ToggleTextObj;
+
+    [Space(100)]
+    [Header("gamePage")]
+    [SerializeField] private Button coinSelector;      // Main button
+    [SerializeField] private List<Button> Coins;       // Other coins
+
+    // [SerializeField] private float spacing = 70f;      // Space between coins
+    // [SerializeField] private float duration = 0.3f;    // Animation duration
+
+    private bool isExpanded = false;
+
+    private Vector3 startPos;
+
+    public float spacing = 100f;
+    public float duration = 0.5f;
+    public float delayStep = 0.05f;
+
+    private Vector3[] originalPositions;
+    private RectTransform[] buttonRects;
+    private CanvasGroup[] buttonGroups;
+    private Vector2 menuMainPos;
+
     [SerializeField]
     private AudioManager audioController;
     bool isExit;
@@ -161,7 +189,53 @@ public class UiManager : MonoBehaviour
     private void Start()
     {
 
+        assignButtonListeners();
 
+
+
+
+        // homepage toggle text scroll
+        startPos = ToggleTextObj.anchoredPosition;
+
+        StartScroll();
+
+
+
+        // bhutton panel anim
+        menuMainPos = menuMainButton.anchoredPosition;
+        buttonRects = new RectTransform[] {
+            History_button.GetComponent<RectTransform>(),
+            Info_button.GetComponent<RectTransform>(),
+            Sound_button.GetComponent<RectTransform>(),
+            Music_button.GetComponent<RectTransform>(),
+            SoundMute_button.GetComponent<RectTransform>(),
+            Home_button.GetComponent<RectTransform>()
+        };
+
+        buttonGroups = new CanvasGroup[buttonRects.Length];
+        originalPositions = new Vector3[buttonRects.Length];
+
+        for (int i = 0; i < buttonRects.Length; i++)
+        {
+            originalPositions[i] = buttonRects[i].anchoredPosition;
+
+            // Add CanvasGroup if missing
+            var cg = buttonRects[i].GetComponent<CanvasGroup>();
+            if (cg == null)
+                cg = buttonRects[i].gameObject.AddComponent<CanvasGroup>();
+
+            cg.alpha = 0f; // start hidden
+            buttonGroups[i] = cg;
+        }
+
+    }
+
+
+
+    #region ButtonSetup
+
+    private void assignButtonListeners()
+    {
         if (Paytable_Button) Paytable_Button.onClick.RemoveAllListeners();
         if (Paytable_Button) Paytable_Button.onClick.AddListener(delegate { OpenPopup(PaytablePopup_Object); });
 
@@ -245,10 +319,10 @@ public class UiManager : MonoBehaviour
         if (HistoryMain_button) HistoryMain_button.onClick.AddListener(delegate { OpenPopup(HistoryPopup_Object); });
 
         if (MenuMain_button) MenuMain_button.onClick.RemoveAllListeners();
-        if (MenuMain_button) MenuMain_button.onClick.AddListener(delegate { ResetMenuPanel(false);ToggleMenuPanel(); });
+        if (MenuMain_button) MenuMain_button.onClick.AddListener(delegate { ResetMenuPanel(false); ToggleMenuPanel(); });
 
         if (MenuInGame_button) MenuInGame_button.onClick.RemoveAllListeners();
-        if (MenuInGame_button) MenuInGame_button.onClick.AddListener(delegate { ResetMenuPanel(true);ToggleMenuPanel(); });
+        if (MenuInGame_button) MenuInGame_button.onClick.AddListener(delegate { ResetMenuPanel(true); ToggleMenuPanel(); });
 
         if (CasualGame_button) CasualGame_button.onClick.RemoveAllListeners();
         if (CasualGame_button) CasualGame_button.onClick.AddListener(delegate { ResetMenuPanel(true); GameScreen_Object.SetActive(true); });
@@ -266,7 +340,7 @@ public class UiManager : MonoBehaviour
         if (Info_button) Info_button.onClick.AddListener(delegate { OpenPopup(InfoPopup_Object); MenuPanel_Object.SetActive(false); });
 
         if (History_button) History_button.onClick.RemoveAllListeners();
-        if (History_button) History_button.onClick.AddListener(delegate { OpenPopup(HistoryPopup_Object);MenuPanel_Object.SetActive(false); });
+        if (History_button) History_button.onClick.AddListener(delegate { OpenPopup(HistoryPopup_Object); MenuPanel_Object.SetActive(false); });
 
         if (Sound_button) Sound_button.onClick.RemoveAllListeners();
         if (Sound_button) Sound_button.onClick.AddListener(delegate { ToggleSound(); });
@@ -302,16 +376,9 @@ public class UiManager : MonoBehaviour
         if (HistoryClose_button) HistoryClose_button.onClick.AddListener(delegate { ClosePopup(HistoryPopup_Object); });
 
 
-
-
-
-
+        if (coinSelector) coinSelector.onClick.RemoveAllListeners();
+        if (coinSelector) coinSelector.onClick.AddListener(delegate { ToggleCoins(); });
     }
-
-
-
-
-
     private void UpdateFrequency(float value)
     {
         Mathf.Clamp(value, 0.2f, 2);
@@ -328,7 +395,7 @@ public class UiManager : MonoBehaviour
             MenuPanel_Object.transform.SetParent(GameScreen_Object.transform, true);
             int lastIndex = GameScreen_Object.transform.childCount - 1;
             MenuPanel_Object.transform.SetSiblingIndex(lastIndex - 1);
-
+            Spread();
         }
         else
         {
@@ -338,7 +405,38 @@ public class UiManager : MonoBehaviour
             MenuPanel_Object.transform.SetParent(HomeScreen_Object.transform, true);
             int lastIndex = HomeScreen_Object.transform.childCount - 1;
             MenuPanel_Object.transform.SetSiblingIndex(lastIndex - 1);
+            Retract();
+        }
+    }
+    public void Spread()
+    {
+        for (int i = 0; i < buttonRects.Length; i++)
+        {
+            float delay = i * delayStep;
 
+            // Spread downward from MenuMain_button
+            Vector2 targetPos = menuMainPos - new Vector2(0, spacing * (i + 1));
+
+            buttonRects[i].DOAnchorPos(targetPos, duration)
+                          .SetEase(Ease.OutBack)
+                          .SetDelay(delay);
+
+            buttonGroups[i].DOFade(1f, duration).SetDelay(delay);
+        }
+    }
+
+    public void Retract()
+    {
+        for (int i = 0; i < buttonRects.Length; i++)
+        {
+            float delay = i * delayStep;
+
+            // Retract back to MenuMain_button
+            buttonRects[i].DOAnchorPos(menuMainPos, duration)
+                          .SetEase(Ease.InBack)
+                          .SetDelay(delay);
+
+            buttonGroups[i].DOFade(0f, duration).SetDelay(delay);
         }
     }
 
@@ -497,6 +595,81 @@ public class UiManager : MonoBehaviour
         UpdateInfoUI();
     }
 
+    #endregion
 
 
+
+
+    #region  homePage
+
+    void StartScroll()
+    {
+        // Start at "fromX"
+        ToggleTextObj.anchoredPosition = new Vector2(1000f, startPos.y);
+
+        // Tween to "toX"
+        ToggleTextObj.DOAnchorPosX(-1000f, 10f)
+            .SetEase(Ease.Linear)
+            .OnComplete(() =>
+            {
+                ToggleTextObj.anchoredPosition = new Vector2(1000f, startPos.y);
+                StartScroll(); // repeat
+            });
+    }
+
+
+
+    #endregion
+
+    #region  gamePage
+
+
+    private void ToggleCoins()
+    {
+        if (isExpanded)
+            RetractCoins();
+        else
+            ExpandCoins();
+    }
+
+    private void ExpandCoins()
+    {
+        for (int i = 0; i < Coins.Count; i++)
+        {
+            var coin = Coins[i];
+            coin.gameObject.SetActive(true);
+            coin.transform.DOLocalMoveY(coinSelector.transform.localPosition.y + spacing * (i + 1), duration)
+                .SetEase(Ease.OutBack);
+            coin.GetComponent<CanvasGroup>().DOFade(1, duration);
+        }
+
+        isExpanded = true;
+    }
+
+    private void RetractCoins()
+    {
+        for (int i = 0; i < Coins.Count; i++)
+        {
+            var coin = Coins[i];
+            coin.transform.DOLocalMoveY(coinSelector.transform.localPosition.y, duration)
+                .SetEase(Ease.InBack)
+                .OnComplete(() => coin.gameObject.SetActive(false));
+            coin.GetComponent<CanvasGroup>().DOFade(0, duration);
+        }
+
+        isExpanded = false;
+    }
+
+    internal void OnCoinSelected(Button selectedCoin)
+    {
+        // Swap visuals (text, image) between main selector and selected coin
+        var tempImage = coinSelector.image.sprite;
+        coinSelector.image.sprite = selectedCoin.image.sprite;
+        selectedCoin.image.sprite = tempImage;
+
+        // Fold back coins
+        RetractCoins();
+    }
+
+    #endregion
 }
