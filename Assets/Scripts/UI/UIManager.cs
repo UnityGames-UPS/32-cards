@@ -5,6 +5,7 @@ using DG.Tweening;
 using UnityEngine.UI;
 using TMPro;
 using UnityEngine.Networking;
+using JetBrains.Annotations;
 
 public class UiManager : MonoBehaviour
 {
@@ -152,17 +153,62 @@ public class UiManager : MonoBehaviour
     private GameManager gameManager;
 
 
+
+
+
+
+
+
+
+
     [Space(100)]
     [Header("HomePage")]
+    [SerializeField] private Button CloseStartupPanelBtn;
+    [SerializeField] private Button ReadmoreStartupPanelBtn;
+    [SerializeField] private GameObject StartupPanel;
     [SerializeField] private RectTransform ToggleTextObj;
+    [Header("sidePanel")]
+    [SerializeField] private Button MenueButton;
+    [SerializeField] private Button GameRules;
+    [SerializeField] private Button History;
+    [SerializeField] private Button Sound;
+    [SerializeField] private Button Music;
+    [SerializeField] private GameObject sidepanel;
+
 
     [Space(100)]
     [Header("gamePage")]
     [SerializeField] private Button coinSelector;      // Main button
     [SerializeField] private List<Button> Coins;       // Other coins
 
+    [Header("sidePanel")]
+    [SerializeField] private Button MenueButtonGP;
+    [SerializeField] private Button GameRulesGP;
+    [SerializeField] private Button HistoryGP;
+    [SerializeField] private Button SoundGP;
+    [SerializeField] private Button MusicGP;
+    [SerializeField] private Button HomeGP;
+    [SerializeField] private GameObject sidepanelGP;
+
     // [SerializeField] private float spacing = 70f;      // Space between coins
     // [SerializeField] private float duration = 0.3f;    // Animation duration
+
+    [Space(100)]
+    [Header("loadingPage")]
+    [SerializeField] private GameObject loadingPage;
+
+
+
+
+    [Space(100)]
+    [Header("Animation Settings")]
+
+
+    private List<Button> menuButtons;
+    private List<Button> menuButtonsGP;
+    private bool isMenueExpanded = false;
+
+
 
     private bool isExpanded = false;
 
@@ -202,7 +248,7 @@ public class UiManager : MonoBehaviour
 
 
         // bhutton panel anim
-        menuMainPos = menuMainButton.anchoredPosition;
+        //  menuMainPos = menuMainButton.anchoredPosition;
         buttonRects = new RectTransform[] {
             History_button.GetComponent<RectTransform>(),
             Info_button.GetComponent<RectTransform>(),
@@ -227,6 +273,44 @@ public class UiManager : MonoBehaviour
             cg.alpha = 0f; // start hidden
             buttonGroups[i] = cg;
         }
+
+
+
+        //new
+        // Collect menu buttons into a list
+        menuButtons = new List<Button> { GameRules, History, Sound, Music };
+
+        // Hide them initially
+        foreach (var btn in menuButtons)
+        {
+            btn.gameObject.SetActive(false);
+            var cg = btn.GetComponent<CanvasGroup>();
+            if (cg == null) cg = btn.gameObject.AddComponent<CanvasGroup>();
+            cg.alpha = 0;
+        }
+
+        // Hook menu toggle
+        MenueButton.onClick.RemoveAllListeners();
+        MenueButton.onClick.AddListener(ToggleMenu);
+
+
+
+
+
+
+        menuButtonsGP = new List<Button> { GameRulesGP, HistoryGP, SoundGP, MusicGP, HomeGP };
+
+        // Hide them initially
+        foreach (var btn in menuButtonsGP)
+        {
+            btn.gameObject.SetActive(false);
+            var cg = btn.GetComponent<CanvasGroup>();
+            if (cg == null) cg = btn.gameObject.AddComponent<CanvasGroup>();
+            cg.alpha = 0;
+        }
+
+        MenueButtonGP.onClick.RemoveAllListeners();
+        MenueButtonGP.onClick.AddListener(ToggleMenuGP);
 
     }
 
@@ -318,11 +402,11 @@ public class UiManager : MonoBehaviour
         if (HistoryMain_button) HistoryMain_button.onClick.RemoveAllListeners();
         if (HistoryMain_button) HistoryMain_button.onClick.AddListener(delegate { OpenPopup(HistoryPopup_Object); });
 
-        if (MenuMain_button) MenuMain_button.onClick.RemoveAllListeners();
-        if (MenuMain_button) MenuMain_button.onClick.AddListener(delegate { ResetMenuPanel(false); ToggleMenuPanel(); });
+        // if (MenuMain_button) MenuMain_button.onClick.RemoveAllListeners();
+        // if (MenuMain_button) MenuMain_button.onClick.AddListener(delegate { ResetMenuPanel(false); ToggleMenuPanel(); });
 
-        if (MenuInGame_button) MenuInGame_button.onClick.RemoveAllListeners();
-        if (MenuInGame_button) MenuInGame_button.onClick.AddListener(delegate { ResetMenuPanel(true); ToggleMenuPanel(); });
+        // if (MenuInGame_button) MenuInGame_button.onClick.RemoveAllListeners();
+        // if (MenuInGame_button) MenuInGame_button.onClick.AddListener(delegate { ResetMenuPanel(true); ToggleMenuPanel(); });
 
         if (CasualGame_button) CasualGame_button.onClick.RemoveAllListeners();
         if (CasualGame_button) CasualGame_button.onClick.AddListener(delegate { ResetMenuPanel(true); GameScreen_Object.SetActive(true); });
@@ -336,26 +420,50 @@ public class UiManager : MonoBehaviour
         if (HighRollerGame_button) HighRollerGame_button.onClick.RemoveAllListeners();
         if (HighRollerGame_button) HighRollerGame_button.onClick.AddListener(delegate { ResetMenuPanel(true); GameScreen_Object.SetActive(true); });
 
-        if (Info_button) Info_button.onClick.RemoveAllListeners();
-        if (Info_button) Info_button.onClick.AddListener(delegate { OpenPopup(InfoPopup_Object); MenuPanel_Object.SetActive(false); });
+        if (GameRules) GameRules.onClick.RemoveAllListeners();
+        if (GameRules) GameRules.onClick.AddListener(delegate { OpenPopup(InfoPopup_Object); MenuPanel_Object.SetActive(false); });
 
-        if (History_button) History_button.onClick.RemoveAllListeners();
-        if (History_button) History_button.onClick.AddListener(delegate { OpenPopup(HistoryPopup_Object); MenuPanel_Object.SetActive(false); });
+        if (History) History.onClick.RemoveAllListeners();
+        if (History) History.onClick.AddListener(delegate { OpenPopup(HistoryPopup_Object); MenuPanel_Object.SetActive(false); });
 
-        if (Sound_button) Sound_button.onClick.RemoveAllListeners();
-        if (Sound_button) Sound_button.onClick.AddListener(delegate { ToggleSound(); });
+        if (Sound) Sound.onClick.RemoveAllListeners();
+        if (Sound) Sound.onClick.AddListener(delegate { ToggleSound(); });
 
         if (SoundMute_button) SoundMute_button.onClick.RemoveAllListeners();
         if (SoundMute_button) SoundMute_button.onClick.AddListener(delegate { ToggleSound(); });
 
-        if (Music_button) Music_button.onClick.RemoveAllListeners();
-        if (Music_button) Music_button.onClick.AddListener(delegate { ToggleMusic(); });
+        if (Music) Music.onClick.RemoveAllListeners();
+        if (Music) Music.onClick.AddListener(delegate { ToggleMusic(); });
 
         if (MusicMute_button) MusicMute_button.onClick.RemoveAllListeners();
         if (MusicMute_button) MusicMute_button.onClick.AddListener(delegate { ToggleMusic(); });
 
-        if (Home_button) Home_button.onClick.RemoveAllListeners();
-        if (Home_button) Home_button.onClick.AddListener(delegate { OpenPopup(GameQuitPopup); });
+        //Gamepage
+
+        if (GameRulesGP) GameRulesGP.onClick.RemoveAllListeners();
+        if (GameRulesGP) GameRulesGP.onClick.AddListener(delegate { OpenPopup(InfoPopup_Object); MenuPanel_Object.SetActive(false); });
+
+        if (HistoryGP) HistoryGP.onClick.RemoveAllListeners();
+        if (HistoryGP) HistoryGP.onClick.AddListener(delegate { OpenPopup(HistoryPopup_Object); MenuPanel_Object.SetActive(false); });
+
+        if (SoundGP) SoundGP.onClick.RemoveAllListeners();
+        if (SoundGP) SoundGP.onClick.AddListener(delegate { ToggleSound(); });
+
+        if (SoundMute_button) SoundMute_button.onClick.RemoveAllListeners();
+        if (SoundMute_button) SoundMute_button.onClick.AddListener(delegate { ToggleSound(); });
+
+        if (MusicGP) MusicGP.onClick.RemoveAllListeners();
+        if (MusicGP) MusicGP.onClick.AddListener(delegate { ToggleMusic(); });
+
+        if (MusicMute_button) MusicMute_button.onClick.RemoveAllListeners();
+        if (MusicMute_button) MusicMute_button.onClick.AddListener(delegate { ToggleMusic(); });
+
+        if (HomeGP) HomeGP.onClick.RemoveAllListeners();
+        if (HomeGP) HomeGP.onClick.AddListener(delegate { OpenPopup(GameQuitPopup); });
+
+
+
+        // end
 
         if (YesHome_button) YesHome_button.onClick.RemoveAllListeners();
         if (YesHome_button) YesHome_button.onClick.AddListener(delegate { ClosePopup(GameQuitPopup); HomeScreen_Object.SetActive(true); GameScreen_Object.SetActive(false); ResetMenuPanel(false); });
@@ -378,6 +486,29 @@ public class UiManager : MonoBehaviour
 
         if (coinSelector) coinSelector.onClick.RemoveAllListeners();
         if (coinSelector) coinSelector.onClick.AddListener(delegate { ToggleCoins(); });
+
+
+
+
+        if (CloseStartupPanelBtn) CloseStartupPanelBtn.onClick.RemoveAllListeners();
+        if (CloseStartupPanelBtn) CloseStartupPanelBtn.onClick.AddListener(delegate
+        {
+
+            ClosePopup(StartupPanel);
+
+
+
+        });
+
+        if (ReadmoreStartupPanelBtn) ReadmoreStartupPanelBtn.onClick.RemoveAllListeners();
+        if (ReadmoreStartupPanelBtn) ReadmoreStartupPanelBtn.onClick.AddListener(delegate
+        {
+
+            // ClosePopup(StartupPanel);
+            StartupPanel.SetActive(false);
+            OpenPopup(InfoPopup_Object);
+
+        });
     }
     private void UpdateFrequency(float value)
     {
@@ -395,7 +526,8 @@ public class UiManager : MonoBehaviour
             MenuPanel_Object.transform.SetParent(GameScreen_Object.transform, true);
             int lastIndex = GameScreen_Object.transform.childCount - 1;
             MenuPanel_Object.transform.SetSiblingIndex(lastIndex - 1);
-            Spread();
+            // Spread();
+            ExpandMenu();
         }
         else
         {
@@ -405,41 +537,67 @@ public class UiManager : MonoBehaviour
             MenuPanel_Object.transform.SetParent(HomeScreen_Object.transform, true);
             int lastIndex = HomeScreen_Object.transform.childCount - 1;
             MenuPanel_Object.transform.SetSiblingIndex(lastIndex - 1);
-            Retract();
+            //  Retract();
         }
     }
-    public void Spread()
+    private void ToggleMenu()
     {
-        for (int i = 0; i < buttonRects.Length; i++)
+        if (isMenueExpanded)
+            RetractMenu();
+        else
+            ExpandMenu();
+    }
+
+    private void ExpandMenu()
+    {
+        sidepanel.SetActive(true); // show panel immediately
+
+        for (int i = 0; i < menuButtons.Count; i++)
         {
+            var btn = menuButtons[i];
+            btn.gameObject.SetActive(true);
+
+            btn.transform.localPosition = MenueButton.transform.localPosition;
+
             float delay = i * delayStep;
 
-            // Spread downward from MenuMain_button
-            Vector2 targetPos = menuMainPos - new Vector2(0, spacing * (i + 1));
+            btn.transform.DOLocalMoveY(
+                MenueButton.transform.localPosition.y - spacing * 3 * (i + 1),
+                duration
+            ).SetEase(Ease.OutBack).SetDelay(delay);
 
-            buttonRects[i].DOAnchorPos(targetPos, duration)
-                          .SetEase(Ease.OutBack)
-                          .SetDelay(delay);
-
-            buttonGroups[i].DOFade(1f, duration).SetDelay(delay);
+            btn.GetComponent<CanvasGroup>().DOFade(1, duration).SetDelay(delay);
         }
+
+        isMenueExpanded = true;
     }
 
-    public void Retract()
+    private void RetractMenu()
     {
-        for (int i = 0; i < buttonRects.Length; i++)
+        for (int i = 0; i < menuButtons.Count; i++)
         {
+            var btn = menuButtons[i];
             float delay = i * delayStep;
 
-            // Retract back to MenuMain_button
-            buttonRects[i].DOAnchorPos(menuMainPos, duration)
-                          .SetEase(Ease.InBack)
-                          .SetDelay(delay);
+            // If it's the last button → turn off sidepanel after animation
+            bool isLast = (i == menuButtons.Count - 1);
 
-            buttonGroups[i].DOFade(0f, duration).SetDelay(delay);
+            btn.transform.DOLocalMoveY(
+                MenueButton.transform.localPosition.y,
+                duration
+            ).SetEase(Ease.InBack).SetDelay(delay)
+             .OnComplete(() =>
+             {
+                 btn.gameObject.SetActive(false);
+                 if (isLast)
+                     sidepanel.SetActive(false); // hide panel after last finishes
+             });
+
+            btn.GetComponent<CanvasGroup>().DOFade(0, duration).SetDelay(delay);
         }
-    }
 
+        isMenueExpanded = false;
+    }
     private void ToggleMenuPanel()
     {
         if (IsMenuPanelOpen)
@@ -504,19 +662,46 @@ public class UiManager : MonoBehaviour
 
 
 
-
     internal void OpenPopup(GameObject Popup)
     {
         if (audioController) audioController.PlayButtonAudio();
-        if (Popup) Popup.SetActive(true);
         if (MainPopup_Object) MainPopup_Object.SetActive(true);
+
+        if (Popup)
+        {
+            Popup.SetActive(true);
+            var rect = Popup.transform;
+
+            // Start from small
+            rect.localScale = Vector3.zero;
+
+            // Scale up with bounce
+            rect.DOScale(Vector3.one, 0.4f)
+                .SetEase(Ease.OutBack);
+        }
     }
 
     internal void ClosePopup(GameObject Popup)
     {
         if (audioController) audioController.PlayButtonAudio();
-        if (Popup) Popup.SetActive(false);
-        if (MainPopup_Object) MainPopup_Object.SetActive(false);
+
+        if (Popup)
+        {
+            var rect = Popup.transform;
+
+            // Scale down smoothly
+            rect.DOScale(Vector3.zero, 0.3f)
+                .SetEase(Ease.InBack)
+                .OnComplete(() =>
+                {
+                    Popup.SetActive(false);
+                    if (MainPopup_Object) MainPopup_Object.SetActive(false);
+                });
+        }
+        else
+        {
+            if (MainPopup_Object) MainPopup_Object.SetActive(false);
+        }
     }
 
     private void ToggleMusic()
@@ -670,6 +855,94 @@ public class UiManager : MonoBehaviour
         // Fold back coins
         RetractCoins();
     }
+
+
+
+
+
+
+
+
+
+    private void ToggleMenuGP()
+    {
+        if (isMenueExpanded)
+            RetractMenuGP();
+        else
+            ExpandMenuGP();
+    }
+
+    private void ExpandMenuGP()
+    {
+        sidepanelGP.SetActive(true); // show panel immediately
+
+        for (int i = 0; i < menuButtonsGP.Count; i++)
+        {
+            var btn = menuButtonsGP[i];
+            btn.gameObject.SetActive(true);
+
+            btn.transform.localPosition = MenueButtonGP.transform.localPosition;
+
+            float delay = i * delayStep;
+
+            btn.transform.DOLocalMoveY(
+                MenueButtonGP.transform.localPosition.y - spacing * 1.5f * (i + 1),
+                duration
+            ).SetEase(Ease.OutBack).SetDelay(delay);
+
+            btn.GetComponent<CanvasGroup>().DOFade(1, duration).SetDelay(delay);
+        }
+
+        isMenueExpanded = true;
+    }
+
+    private void RetractMenuGP()
+    {
+        for (int i = 0; i < menuButtonsGP.Count; i++)
+        {
+            var btn = menuButtonsGP[i];
+            float delay = i * delayStep;
+
+            // If it's the last button → turn off sidepanel after animation
+            bool isLast = (i == menuButtonsGP.Count - 1);
+
+            btn.transform.DOLocalMoveY(
+                MenueButtonGP.transform.localPosition.y,
+                duration
+            ).SetEase(Ease.InBack).SetDelay(delay)
+             .OnComplete(() =>
+             {
+                 btn.gameObject.SetActive(false);
+                 if (isLast)
+                     sidepanelGP.SetActive(false); // hide panel after last finishes
+             });
+
+            btn.GetComponent<CanvasGroup>().DOFade(0, duration).SetDelay(delay);
+        }
+
+        isMenueExpanded = false;
+    }
+    #endregion
+
+
+    #region  LOading page
+
+    IEnumerator LoadingPageRoutine(GameObject panelToOpen, GameObject panelToClose)
+    {
+        loadingPage.SetActive(true);
+        panelToClose.SetActive(false);
+        yield return new WaitForSeconds(5f);
+        loadingPage.SetActive(false);
+        panelToOpen.SetActive(true);
+    }
+
+
+
+
+
+
+
+
 
     #endregion
 }

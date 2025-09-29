@@ -43,7 +43,7 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 1
+  spriteMode: 2
   spriteExtrude: 1
   spriteMeshType: 1
   alignment: 0
@@ -134,7 +134,112 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
-    sprites: []
+    sprites:
+    - serializedVersion: 2
+      name: 32_Cards_Frame_20_0
+      rect:
+        serializedVersion: 2
+        x: 22
+        y: 27
+        width: 839
+        height: 1035
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: bdda19cf8073d44b48fd71c55fee6ec6
+      internalID: 1123611542
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 32_Cards_Frame_20_1
+      rect:
+        serializedVersion: 2
+        x: 943
+        y: 566
+        width: 756
+        height: 402
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f7a3ffe2a96ca4d55824d3c1e0918387
+      internalID: -763013858
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 32_Cards_Frame_20_2
+      rect:
+        serializedVersion: 2
+        x: 1780
+        y: 517
+        width: 654
+        height: 512
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 28d45b84b1bca49359c537de92021d02
+      internalID: 613697681
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 32_Cards_Frame_20_3
+      rect:
+        serializedVersion: 2
+        x: 944
+        y: 97
+        width: 748
+        height: 266
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9184eb621aa134710b51011be201f64a
+      internalID: -581840774
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 32_Cards_Frame_20_4
+      rect:
+        serializedVersion: 2
+        x: 1759
+        y: 113
+        width: 743
+        height: 249
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5686076f66a3d45e6b4f5fd3839a424a
+      internalID: -748104975
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
     outline: []
     physicsShape: []
     bones: []
@@ -145,7 +250,12 @@ TextureImporter:
     edges: []
     weights: []
     secondaryTextures: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      32_Cards_Frame_20_0: 1123611542
+      32_Cards_Frame_20_1: -763013858
+      32_Cards_Frame_20_2: 613697681
+      32_Cards_Frame_20_3: -581840774
+      32_Cards_Frame_20_4: -748104975
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
