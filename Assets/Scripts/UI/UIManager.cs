@@ -557,12 +557,12 @@ public class UiManager : MonoBehaviour
             var btn = menuButtons[i];
             btn.gameObject.SetActive(true);
 
-            btn.transform.localPosition = MenueButton.transform.localPosition;
+            btn.transform.localPosition = new Vector2(btn.transform.localPosition.x, MenueButton.transform.localPosition.y);
 
             float delay = i * delayStep;
 
             btn.transform.DOLocalMoveY(
-                MenueButton.transform.localPosition.y - spacing * 3 * (i + 1),
+                MenueButton.transform.localPosition.y - 150 - spacing * 2 * (i + 1),
                 duration
             ).SetEase(Ease.OutBack).SetDelay(delay);
 
@@ -634,14 +634,14 @@ public class UiManager : MonoBehaviour
 
     internal void CheckAndClosePopups()
     {
-        if (ReconnectPopup_Object.activeInHierarchy)
-        {
-            ClosePopup(ReconnectPopup_Object);
-        }
-        if (DisconnectPopup_Object.activeInHierarchy)
-        {
-            ClosePopup(DisconnectPopup_Object);
-        }
+        // if (ReconnectPopup_Object.activeInHierarchy)
+        // {
+        //     ClosePopup(ReconnectPopup_Object);
+        // }
+        // if (DisconnectPopup_Object.activeInHierarchy)
+        // {
+        //     ClosePopup(DisconnectPopup_Object);
+        // }
     }
 
 
@@ -823,7 +823,7 @@ public class UiManager : MonoBehaviour
         {
             var coin = Coins[i];
             coin.gameObject.SetActive(true);
-            coin.transform.DOLocalMoveY(coinSelector.transform.localPosition.y + spacing * (i + 1), duration)
+            coin.transform.DOLocalMoveY(coinSelector.transform.localPosition.y + 20 + spacing * (i + 1), duration)
                 .SetEase(Ease.OutBack);
             coin.GetComponent<CanvasGroup>().DOFade(1, duration);
         }

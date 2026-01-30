@@ -56,5 +56,5 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "32-cards.sln"
+    "dotnet.defaultSolution": "32-cards.slnx"
 }

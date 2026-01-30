@@ -31,7 +31,7 @@ public class SocketIOManager : MonoBehaviour
     //WebSocket currentSocket = null;
     internal bool isResultdone = false;
     // protected string nameSpace="game"; //BackendChanges
-    protected string nameSpace = "playground"; //BackendChanges
+    protected string nameSpace = "playground-multiplayer"; //BackendChanges
     private Socket gameSocket; //BackendChanges
 
     private SocketManager manager;
@@ -39,11 +39,12 @@ public class SocketIOManager : MonoBehaviour
 
     protected string SocketURI = null;
     // protected string TestSocketURI = "https://game-crm-rtp-backend.onrender.com/";
-    protected string TestSocketURI = "http://localhost:5000/";
+    protected string TestSocketURI = "https://devrealtime.dingdinghouse.com/";
+    // protected string TestSocketURI = "http://localhost:5000/";
     [SerializeField] internal JSFunctCalls JSManager;
     [SerializeField]
     private string testToken;
-    protected string gameID = "SL-WB";
+    protected string gameID = "ML-32C";
     //protected string gameID = "";
 
     internal bool isLoaded = false;
