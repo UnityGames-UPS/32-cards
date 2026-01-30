@@ -110,7 +110,7 @@ public class GameManager : MonoBehaviour
         if (TotalBet_text)
             TotalBet_text.text = socketManager.initialData.bets[BetCounter].ToString("F2");
 
-        currentTotalBet = socketManager.initialData.bets[BetCounter];
+      currentTotalBet = socketManager.initialData.bets[BetCounter];
     }
 
     private void ChangeMultiplier(bool IncDec)
