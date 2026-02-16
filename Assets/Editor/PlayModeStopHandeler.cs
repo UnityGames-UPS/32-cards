@@ -38,7 +38,7 @@ public static class PlayModeStopHandler
         }
         else
         {
-            Debug.LogWarning("GameObject not found in the scene.");
+            // Debug.LogWarning("GameObject not found in the scene.");
         }
     }
 }

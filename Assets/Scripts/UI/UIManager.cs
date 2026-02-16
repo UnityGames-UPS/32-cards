@@ -237,7 +237,7 @@ public class UiManager : MonoBehaviour
 
   public float spacing = 100f;
   public float duration = 0.5f;
-  public float delayStep = 0.05f;
+  [SerializeField] private float sidePanelDelayStep = 0.05f;
 
   private Vector3[] originalPositions;
   private RectTransform[] buttonRects;
@@ -313,12 +313,7 @@ public class UiManager : MonoBehaviour
     // Hook menu toggle
     MenueButton.onClick.RemoveAllListeners();
     MenueButton.onClick.AddListener(ToggleMenu);
-
-
-
-
-
-
+    
     menuButtonsGP = new List<Button> { GameRulesGP, HistoryGP, SoundGP, MusicGP, HomeGP };
 
     // Hide them initially
@@ -592,7 +587,7 @@ public class UiManager : MonoBehaviour
 
       btn.transform.localPosition = new Vector2(btn.transform.localPosition.x, MenueButton.transform.localPosition.y);
 
-      float delay = i * delayStep;
+      float delay = i * sidePanelDelayStep;
 
       btn.transform.DOLocalMoveY(
           MenueButton.transform.localPosition.y - 150 - spacing * 2 * (i + 1),
@@ -610,7 +605,7 @@ public class UiManager : MonoBehaviour
     for (int i = 0; i < menuButtons.Count; i++)
     {
       var btn = menuButtons[i];
-      float delay = i * delayStep;
+      float delay = i * sidePanelDelayStep;
 
       // If it's the last button → turn off sidepanel after animation
       bool isLast = (i == menuButtons.Count - 1);
@@ -962,7 +957,6 @@ public class UiManager : MonoBehaviour
         totalBet += chipValue;
       }
     }
-    Debug.Log("Total bet on selected card: " + totalBet.ToString("f2"));
     int cardIndex = selectedBetPositions.IndexOf(selectedCard);
     var totalBetText = totalBetGO[cardIndex].GetComponentInChildren<TMP_Text>();
     var totalBetTransform = totalBetGO[cardIndex].transform;
@@ -1069,7 +1063,7 @@ public class UiManager : MonoBehaviour
 
       btn.transform.localPosition = MenueButtonGP.transform.localPosition;
 
-      float delay = i * delayStep;
+      float delay = i * sidePanelDelayStep;
 
       btn.transform.DOLocalMoveY(
           MenueButtonGP.transform.localPosition.y - spacing * 1.5f * (i + 1),
@@ -1087,7 +1081,7 @@ public class UiManager : MonoBehaviour
     for (int i = 0; i < menuButtonsGP.Count; i++)
     {
       var btn = menuButtonsGP[i];
-      float delay = i * delayStep;
+      float delay = i * sidePanelDelayStep;
 
       // If it's the last button → turn off sidepanel after animation
       bool isLast = (i == menuButtonsGP.Count - 1);
@@ -1121,14 +1115,5 @@ public class UiManager : MonoBehaviour
     loadingPage.SetActive(false);
     panelToOpen.SetActive(true);
   }
-
-
-
-
-
-
-
-
-
   #endregion
 }
