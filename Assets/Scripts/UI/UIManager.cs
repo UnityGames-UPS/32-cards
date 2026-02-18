@@ -199,8 +199,14 @@ public class UiManager : MonoBehaviour
   [SerializeField] private Button HistoryGP;
   [SerializeField] private Button SoundGP;
   [SerializeField] private Button MusicGP;
+  [SerializeField] private Button ExpandShrinkGP;
   [SerializeField] private Button HomeGP;
   [SerializeField] private GameObject sidepanelGP;
+  [SerializeField] private Button sidepanelGPCloseButton;
+  [SerializeField] private Transform gpMenuButtonOpenParent;
+
+  [Header("chipPanel")]
+  [SerializeField] private Button coinsCloseButton;
 
   // [SerializeField] private float spacing = 70f;      // Space between coins
   // [SerializeField] private float duration = 0.3f;    // Animation duration
@@ -219,6 +225,13 @@ public class UiManager : MonoBehaviour
   private List<Button> menuButtons;
   private List<Button> menuButtonsGP;
   private bool isMenueExpanded = false;
+  private readonly List<RectTransform> menuButtonsGPRects = new List<RectTransform>();
+  private readonly List<Vector3> menuButtonsGPPositions = new List<Vector3>();
+  private readonly List<Vector2> menuButtonsGPSizes = new List<Vector2>();
+  [SerializeField] private float gpButtonsCollapsedY = 440f;
+  private Transform gpMenuButtonOriginalParent;
+  private int gpMenuButtonOriginalSiblingIndex;
+  private Tween gpMenuToggleTween;
 
   private struct BetUndoEntry
   {
@@ -237,6 +250,8 @@ public class UiManager : MonoBehaviour
 
   public float spacing = 100f;
   public float duration = 0.5f;
+  public float firstChipOffset = 20f;
+  public float chipSpacing = 100f;
   [SerializeField] private float sidePanelDelayStep = 0.05f;
 
   private Vector3[] originalPositions;
@@ -314,19 +329,32 @@ public class UiManager : MonoBehaviour
     MenueButton.onClick.RemoveAllListeners();
     MenueButton.onClick.AddListener(ToggleMenu);
     
-    menuButtonsGP = new List<Button> { GameRulesGP, HistoryGP, SoundGP, MusicGP, HomeGP };
+    menuButtonsGP = new List<Button> { GameRulesGP, HistoryGP, SoundGP, MusicGP, ExpandShrinkGP, HomeGP };
 
-    // Hide them initially
+    menuButtonsGPRects.Clear();
+    menuButtonsGPPositions.Clear();
+    menuButtonsGPSizes.Clear();
     foreach (var btn in menuButtonsGP)
     {
-      btn.gameObject.SetActive(false);
-      var cg = btn.GetComponent<CanvasGroup>();
-      if (cg == null) cg = btn.gameObject.AddComponent<CanvasGroup>();
-      cg.alpha = 0;
+      if (btn == null) continue;
+      var rect = btn.GetComponent<RectTransform>();
+      if (rect == null) continue;
+      menuButtonsGPRects.Add(rect);
+      menuButtonsGPPositions.Add(rect.localPosition);
+      menuButtonsGPSizes.Add(rect.sizeDelta);
+      if (btn.targetGraphic != null) btn.targetGraphic.raycastTarget = false;
     }
+
+    SetGPButtonsCollapsedImmediate();
 
     MenueButtonGP.onClick.RemoveAllListeners();
     MenueButtonGP.onClick.AddListener(ToggleMenuGP);
+    gpMenuButtonOriginalParent = MenueButtonGP != null ? MenueButtonGP.transform.parent : null;
+    gpMenuButtonOriginalSiblingIndex = MenueButtonGP != null ? MenueButtonGP.transform.GetSiblingIndex() : 0;
+
+    if (sidepanelGPCloseButton) sidepanelGPCloseButton.onClick.RemoveAllListeners();
+    if (sidepanelGPCloseButton) sidepanelGPCloseButton.onClick.AddListener(RetractMenuGP);
+    if (sidepanelGPCloseButton) sidepanelGPCloseButton.interactable = false;
 
   }
 
@@ -514,6 +542,10 @@ public class UiManager : MonoBehaviour
 
     if (coinSelector) coinSelector.onClick.RemoveAllListeners();
     if (coinSelector) coinSelector.onClick.AddListener(delegate { ToggleCoins(); });
+
+    if (coinsCloseButton) coinsCloseButton.onClick.RemoveAllListeners();
+    if (coinsCloseButton) coinsCloseButton.onClick.AddListener(RetractCoins);
+    if (coinsCloseButton) coinsCloseButton.interactable = false;
 
 
 
@@ -847,13 +879,13 @@ public class UiManager : MonoBehaviour
 
   private void ExpandCoins()
   {
+    if (coinsCloseButton) coinsCloseButton.interactable = true;
     for (int i = 0; i < Coins.Count; i++)
     {
       var coin = Coins[i];
       coin.gameObject.SetActive(true);
-      coin.transform.DOLocalMoveY(coinSelector.transform.localPosition.y + 20 + spacing * (i + 1), duration)
-          .SetEase(Ease.OutBack);
-      coin.GetComponent<CanvasGroup>().DOFade(1, duration);
+      coin.transform.DOLocalMoveY(coinSelector.transform.localPosition.y + firstChipOffset + chipSpacing * i, duration)
+          .SetEase(Ease.Linear);
     }
 
     isExpanded = true;
@@ -861,13 +893,13 @@ public class UiManager : MonoBehaviour
 
   private void RetractCoins()
   {
+    if (coinsCloseButton) coinsCloseButton.interactable = false;
     for (int i = 0; i < Coins.Count; i++)
     {
       var coin = Coins[i];
       coin.transform.DOLocalMoveY(coinSelector.transform.localPosition.y, duration)
-          .SetEase(Ease.InBack)
+          .SetEase(Ease.Linear)
           .OnComplete(() => coin.gameObject.SetActive(false));
-      coin.GetComponent<CanvasGroup>().DOFade(0, duration);
     }
 
     isExpanded = false;
@@ -894,7 +926,7 @@ public class UiManager : MonoBehaviour
     var chipCG = chipGO.GetComponent<CanvasGroup>();
 
     chipCG.alpha = 0f;
-    chipRT.localScale = Vector3.one;
+    chipRT.localScale = Vector3.one * 0.8f;
     chipRT.localRotation = Quaternion.identity;
 
     //set visuals from selected coin
@@ -963,7 +995,7 @@ public class UiManager : MonoBehaviour
 
     if (totalBet > 0)
     {
-      totalBetText.text = totalBet.ToString("f2");
+      totalBetText.text = totalBet.ToString("N2");
       if (!totalBetTransform.gameObject.activeInHierarchy)
       {
         totalBetTransform.DOKill();
@@ -1052,53 +1084,90 @@ public class UiManager : MonoBehaviour
       ExpandMenuGP();
   }
 
+  private void SetGPButtonsCollapsedImmediate()
+  {
+    for (int i = 0; i < menuButtonsGPRects.Count; i++)
+    {
+      var rect = menuButtonsGPRects[i];
+      if (rect == null) continue;
+      rect.localPosition = new Vector3(rect.localPosition.x, gpButtonsCollapsedY, rect.localPosition.z);
+      rect.sizeDelta = new Vector2(menuButtonsGPSizes[i].x, 0f);
+    }
+  }
+
+  private void AnimateGPButtonsOpen()
+  {
+    for (int i = 0; i < menuButtonsGPRects.Count; i++)
+    {
+      var rect = menuButtonsGPRects[i];
+      if (rect == null) continue;
+      rect.DOKill();
+      rect.DOLocalMoveY(menuButtonsGPPositions[i].y, duration).SetEase(Ease.Linear);
+      rect.DOSizeDelta(menuButtonsGPSizes[i], duration).SetEase(Ease.Linear);
+    }
+    if (menuButtonsGP != null)
+    {
+      foreach (var btn in menuButtonsGP)
+      {
+        if (btn == null) continue;
+        if (btn.targetGraphic != null) btn.targetGraphic.raycastTarget = true;
+      }
+    }
+  }
+
+  private void AnimateGPButtonsClose()
+  {
+    for (int i = 0; i < menuButtonsGPRects.Count; i++)
+    {
+      var rect = menuButtonsGPRects[i];
+      if (rect == null) continue;
+      rect.DOKill();
+      rect.DOLocalMoveY(gpButtonsCollapsedY, duration).SetEase(Ease.Linear);
+      rect.DOSizeDelta(new Vector2(menuButtonsGPSizes[i].x, 0f), duration).SetEase(Ease.Linear);
+    }
+    if (menuButtonsGP != null)
+    {
+      foreach (var btn in menuButtonsGP)
+      {
+        if (btn == null) continue;
+        if (btn.targetGraphic != null) btn.targetGraphic.raycastTarget = false;
+      }
+    }
+  }
+
   private void ExpandMenuGP()
   {
     sidepanelGP.SetActive(true); // show panel immediately
-
-    for (int i = 0; i < menuButtonsGP.Count; i++)
+    if (sidepanelGPCloseButton) sidepanelGPCloseButton.interactable = false;
+    AnimateGPButtonsOpen();
+    if (MenueButtonGP != null && gpMenuButtonOpenParent != null)
     {
-      var btn = menuButtonsGP[i];
-      btn.gameObject.SetActive(true);
-
-      btn.transform.localPosition = MenueButtonGP.transform.localPosition;
-
-      float delay = i * sidePanelDelayStep;
-
-      btn.transform.DOLocalMoveY(
-          MenueButtonGP.transform.localPosition.y - spacing * 1.5f * (i + 1),
-          duration
-      ).SetEase(Ease.OutBack).SetDelay(delay);
-
-      btn.GetComponent<CanvasGroup>().DOFade(1, duration).SetDelay(delay);
+      MenueButtonGP.transform.SetParent(gpMenuButtonOpenParent, true);
     }
+
+    gpMenuToggleTween?.Kill();
+    gpMenuToggleTween = DOVirtual.DelayedCall(duration, () =>
+    {
+      if (sidepanelGPCloseButton) sidepanelGPCloseButton.interactable = true;
+    });
 
     isMenueExpanded = true;
   }
 
   private void RetractMenuGP()
   {
-    for (int i = 0; i < menuButtonsGP.Count; i++)
+    if (sidepanelGPCloseButton) sidepanelGPCloseButton.interactable = false;
+    AnimateGPButtonsClose();
+    if (MenueButtonGP != null && gpMenuButtonOriginalParent != null)
     {
-      var btn = menuButtonsGP[i];
-      float delay = i * sidePanelDelayStep;
-
-      // If it's the last button → turn off sidepanel after animation
-      bool isLast = (i == menuButtonsGP.Count - 1);
-
-      btn.transform.DOLocalMoveY(
-          MenueButtonGP.transform.localPosition.y,
-          duration
-      ).SetEase(Ease.InBack).SetDelay(delay)
-       .OnComplete(() =>
-       {
-         btn.gameObject.SetActive(false);
-         if (isLast)
-           sidepanelGP.SetActive(false); // hide panel after last finishes
-       });
-
-      btn.GetComponent<CanvasGroup>().DOFade(0, duration).SetDelay(delay);
+      MenueButtonGP.transform.SetParent(gpMenuButtonOriginalParent, true);
+      MenueButtonGP.transform.SetSiblingIndex(gpMenuButtonOriginalSiblingIndex);
     }
+    gpMenuToggleTween?.Kill();
+    gpMenuToggleTween = DOVirtual.DelayedCall(duration, () =>
+    {
+      sidepanelGP.SetActive(false);
+    });
 
     isMenueExpanded = false;
   }

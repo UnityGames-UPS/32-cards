@@ -1,7 +1,19 @@
 fileFormatVersion: 2
-guid: 366c829d2c0244fdebc4a40445fce7b0
+guid: 18947a662d2a34d4380bb2c22bea7667
 TextureImporter:
-  internalIDToNameTable: []
+  internalIDToNameTable:
+  - first:
+      213: 8573364754509363253
+    second: card_placment_0
+  - first:
+      213: 8595354021079662906
+    second: card_placment_1
+  - first:
+      213: 7749661726821556944
+    second: card_placment_2
+  - first:
+      213: -3650806628175231766
+    second: card_placment_3
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -43,7 +55,7 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 2
+  spriteMode: 1
   spriteExtrude: 1
   spriteMeshType: 1
   alignment: 0
@@ -94,33 +106,7 @@ TextureImporter:
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
   - serializedVersion: 4
-    buildTarget: iOS
-    maxTextureSize: 2048
-    resizeAlgorithm: 0
-    textureFormat: -1
-    textureCompression: 1
-    compressionQuality: 50
-    crunchedCompression: 0
-    allowsAlphaSplitting: 0
-    overridden: 0
-    ignorePlatformSupport: 0
-    androidETC2FallbackOverride: 0
-    forceMaximumCompressionQuality_BC6H_BC7: 0
-  - serializedVersion: 4
     buildTarget: WebGL
-    maxTextureSize: 2048
-    resizeAlgorithm: 0
-    textureFormat: -1
-    textureCompression: 1
-    compressionQuality: 50
-    crunchedCompression: 0
-    allowsAlphaSplitting: 0
-    overridden: 0
-    ignorePlatformSupport: 0
-    androidETC2FallbackOverride: 0
-    forceMaximumCompressionQuality_BC6H_BC7: 0
-  - serializedVersion: 4
-    buildTarget: Android
     maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
@@ -136,89 +122,89 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: AB_UI_Btn_Expand_0
+      name: card_placment_0
       rect:
         serializedVersion: 2
-        x: 56
-        y: 56
-        width: 144
-        height: 144
+        x: 20
+        y: 19
+        width: 101
+        height: 58
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: 0
+      tessellationDetail: -1
       bones: []
-      spriteID: c77df406b1e4b4e7e8338eb3bbcf6abc
-      internalID: 198990874
+      spriteID: 538726212d5baf670800000000000000
+      internalID: 8573364754509363253
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: AB_UI_Btn_Expand_1
+      name: card_placment_1
       rect:
         serializedVersion: 2
-        x: 312
-        y: 56
-        width: 144
-        height: 144
+        x: 114
+        y: 19
+        width: 84
+        height: 58
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: 0
+      tessellationDetail: -1
       bones: []
-      spriteID: 8278dfefb1af14c718a7c4eca452d5a4
-      internalID: 571532852
+      spriteID: a31cd2921f4d84770800000000000000
+      internalID: 8595354021079662906
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: AB_UI_Btn_Expand_2
+      name: card_placment_2
       rect:
         serializedVersion: 2
-        x: 568
-        y: 56
-        width: 144
-        height: 144
+        x: 206
+        y: 19
+        width: 84
+        height: 58
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: 0
+      tessellationDetail: -1
       bones: []
-      spriteID: f612262850d7a4f52ac9bdecd5018244
-      internalID: 389959553
+      spriteID: 0d2a3a4f7445c8b60800000000000000
+      internalID: 7749661726821556944
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: AB_UI_Btn_Expand_3
+      name: card_placment_3
       rect:
         serializedVersion: 2
-        x: 824
-        y: 56
-        width: 144
-        height: 144
+        x: 282
+        y: 19
+        width: 102
+        height: 58
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: 0
+      tessellationDetail: -1
       bones: []
-      spriteID: ef5bfcf5b3d1c4bc780b0ddc482d7b15
-      internalID: 397352866
+      spriteID: ae449f7e6bab55dc0800000000000000
+      internalID: -3650806628175231766
       vertices: []
       indices: 
       edges: []
@@ -237,10 +223,10 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      AB_UI_Btn_Expand_0: 198990874
-      AB_UI_Btn_Expand_1: 571532852
-      AB_UI_Btn_Expand_2: 389959553
-      AB_UI_Btn_Expand_3: 397352866
+      card_placment_0: 8573364754509363253
+      card_placment_1: 8595354021079662906
+      card_placment_2: 7749661726821556944
+      card_placment_3: -3650806628175231766
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -1,7 +1,10 @@
 fileFormatVersion: 2
-guid: 366c829d2c0244fdebc4a40445fce7b0
+guid: e6bdec82adb464e75ab452a613d73e96
 TextureImporter:
-  internalIDToNameTable: []
+  internalIDToNameTable:
+  - first:
+      213: 8404313828699308441
+    second: "Screenshot 2026-02-18 at 9.30.09\u202FAM_0"
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -94,33 +97,7 @@ TextureImporter:
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
   - serializedVersion: 4
-    buildTarget: iOS
-    maxTextureSize: 2048
-    resizeAlgorithm: 0
-    textureFormat: -1
-    textureCompression: 1
-    compressionQuality: 50
-    crunchedCompression: 0
-    allowsAlphaSplitting: 0
-    overridden: 0
-    ignorePlatformSupport: 0
-    androidETC2FallbackOverride: 0
-    forceMaximumCompressionQuality_BC6H_BC7: 0
-  - serializedVersion: 4
     buildTarget: WebGL
-    maxTextureSize: 2048
-    resizeAlgorithm: 0
-    textureFormat: -1
-    textureCompression: 1
-    compressionQuality: 50
-    crunchedCompression: 0
-    allowsAlphaSplitting: 0
-    overridden: 0
-    ignorePlatformSupport: 0
-    androidETC2FallbackOverride: 0
-    forceMaximumCompressionQuality_BC6H_BC7: 0
-  - serializedVersion: 4
-    buildTarget: Android
     maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
@@ -136,89 +113,23 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: AB_UI_Btn_Expand_0
+      name: "Screenshot 2026-02-18 at 9.30.09\u202FAM_0"
       rect:
         serializedVersion: 2
-        x: 56
-        y: 56
-        width: 144
-        height: 144
+        x: 0
+        y: 0
+        width: 610
+        height: 1080
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: 0
+      tessellationDetail: -1
       bones: []
-      spriteID: c77df406b1e4b4e7e8338eb3bbcf6abc
-      internalID: 198990874
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: AB_UI_Btn_Expand_1
-      rect:
-        serializedVersion: 2
-        x: 312
-        y: 56
-        width: 144
-        height: 144
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 8278dfefb1af14c718a7c4eca452d5a4
-      internalID: 571532852
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: AB_UI_Btn_Expand_2
-      rect:
-        serializedVersion: 2
-        x: 568
-        y: 56
-        width: 144
-        height: 144
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: f612262850d7a4f52ac9bdecd5018244
-      internalID: 389959553
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: AB_UI_Btn_Expand_3
-      rect:
-        serializedVersion: 2
-        x: 824
-        y: 56
-        width: 144
-        height: 144
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: ef5bfcf5b3d1c4bc780b0ddc482d7b15
-      internalID: 397352866
+      spriteID: 991868436ee12a470800000000000000
+      internalID: 8404313828699308441
       vertices: []
       indices: 
       edges: []
@@ -227,7 +138,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 5e97eb03825dee720800000000000000
+    spriteID: 
     internalID: 0
     vertices: []
     indices: 
@@ -237,10 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      AB_UI_Btn_Expand_0: 198990874
-      AB_UI_Btn_Expand_1: 571532852
-      AB_UI_Btn_Expand_2: 389959553
-      AB_UI_Btn_Expand_3: 397352866
+      "Screenshot 2026-02-18 at 9.30.09\u202FAM_0": 8404313828699308441
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
