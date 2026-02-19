@@ -178,20 +178,7 @@ public class UiManager : MonoBehaviour
 
   [Space(100)]
   [Header("gamePage")]
-  [SerializeField] private Button coinSelector;      // Main button
-  [SerializeField] private List<Button> Coins;       // Other coins
-  [SerializeField] private List<Button> selectedBetPositions; // Bet positions 
-  [SerializeField] private List<Transform> totalBetGO;
-  [SerializeField] private GameObject coinPrefab;
-  [SerializeField] private float chipSpawnYOffset = 80f;
-  [SerializeField] private float chipSpawnDuration = 0.25f;
-  [SerializeField] private RectTransform chipDestroyTarget;
-  [SerializeField] private float chipUndoDuration = 0.5f;
-
-  [SerializeField] private RectTransform BettingButtonsBG;
-  [SerializeField] private Button UndoButton;
-  [SerializeField] private Button CancelButton;
-  [SerializeField] private Button DoubleBetButton;
+  [SerializeField] private BetPanelManager betPanelManager;
 
   [Header("sidePanel")]
   [SerializeField] private Button MenueButtonGP;
@@ -204,12 +191,6 @@ public class UiManager : MonoBehaviour
   [SerializeField] private GameObject sidepanelGP;
   [SerializeField] private Button sidepanelGPCloseButton;
   [SerializeField] private Transform gpMenuButtonOpenParent;
-
-  [Header("chipPanel")]
-  [SerializeField] private Button coinsCloseButton;
-
-  // [SerializeField] private float spacing = 70f;      // Space between coins
-  // [SerializeField] private float duration = 0.3f;    // Animation duration
 
   [Space(100)]
   [Header("loadingPage")]
@@ -233,25 +214,10 @@ public class UiManager : MonoBehaviour
   private int gpMenuButtonOriginalSiblingIndex;
   private Tween gpMenuToggleTween;
 
-  private struct BetUndoEntry
-  {
-    public float Value;
-    public int CardIndex;
-    public RectTransform Chip;
-  }
-
-  private readonly Stack<BetUndoEntry> betUndoStack = new Stack<BetUndoEntry>();
-
-
-
-  private bool isExpanded = false;
-
   private Vector3 startPos;
 
   public float spacing = 100f;
   public float duration = 0.5f;
-  public float firstChipOffset = 20f;
-  public float chipSpacing = 100f;
   [SerializeField] private float sidePanelDelayStep = 0.05f;
 
   private Vector3[] originalPositions;
@@ -264,7 +230,6 @@ public class UiManager : MonoBehaviour
   bool isExit;
   bool isMusic;
   bool isSound;
-  bool ButtonsExpanded = false;
 
 
 
@@ -364,15 +329,6 @@ public class UiManager : MonoBehaviour
 
   private void assignButtonListeners()
   {
-    if (selectedBetPositions.Count > 0)
-    {
-      foreach (var btn in selectedBetPositions)
-      {
-        btn.onClick.RemoveAllListeners();
-        btn.onClick.AddListener(delegate { OnSelectBetCard(btn); });
-      }
-    }
-
     if (Paytable_Button) Paytable_Button.onClick.RemoveAllListeners();
     if (Paytable_Button) Paytable_Button.onClick.AddListener(delegate { OpenPopup(PaytablePopup_Object); });
 
@@ -514,9 +470,6 @@ public class UiManager : MonoBehaviour
     if (HomeGP) HomeGP.onClick.RemoveAllListeners();
     if (HomeGP) HomeGP.onClick.AddListener(delegate { OpenPopup(GameQuitPopup); });
 
-    if (UndoButton) UndoButton.onClick.RemoveAllListeners();
-    if (UndoButton) UndoButton.onClick.AddListener(UndoLastBet);
-
 
 
     // end
@@ -538,14 +491,6 @@ public class UiManager : MonoBehaviour
 
     if (HistoryClose_button) HistoryClose_button.onClick.RemoveAllListeners();
     if (HistoryClose_button) HistoryClose_button.onClick.AddListener(delegate { ClosePopup(HistoryPopup_Object); });
-
-
-    if (coinSelector) coinSelector.onClick.RemoveAllListeners();
-    if (coinSelector) coinSelector.onClick.AddListener(delegate { ToggleCoins(); });
-
-    if (coinsCloseButton) coinsCloseButton.onClick.RemoveAllListeners();
-    if (coinsCloseButton) coinsCloseButton.onClick.AddListener(RetractCoins);
-    if (coinsCloseButton) coinsCloseButton.interactable = false;
 
 
 
@@ -867,214 +812,6 @@ public class UiManager : MonoBehaviour
   #endregion
 
   #region  gamePage
-
-
-  private void ToggleCoins()
-  {
-    if (isExpanded)
-      RetractCoins();
-    else
-      ExpandCoins();
-  }
-
-  private void ExpandCoins()
-  {
-    if (coinsCloseButton) coinsCloseButton.interactable = true;
-    for (int i = 0; i < Coins.Count; i++)
-    {
-      var coin = Coins[i];
-      coin.gameObject.SetActive(true);
-      coin.transform.DOLocalMoveY(coinSelector.transform.localPosition.y + firstChipOffset + chipSpacing * i, duration)
-          .SetEase(Ease.Linear);
-    }
-
-    isExpanded = true;
-  }
-
-  private void RetractCoins()
-  {
-    if (coinsCloseButton) coinsCloseButton.interactable = false;
-    for (int i = 0; i < Coins.Count; i++)
-    {
-      var coin = Coins[i];
-      coin.transform.DOLocalMoveY(coinSelector.transform.localPosition.y, duration)
-          .SetEase(Ease.Linear)
-          .OnComplete(() => coin.gameObject.SetActive(false));
-    }
-
-    isExpanded = false;
-  }
-
-  internal void OnCoinSelected(Button selectedCoin)
-  {
-    // Swap visuals (text, image) between main selector and selected coin
-    var tempImage = coinSelector.image.sprite;
-    coinSelector.image.sprite = selectedCoin.image.sprite;
-    selectedCoin.image.sprite = tempImage;
-
-    // Fold back coins
-    RetractCoins();
-  }
-
-  void OnSelectBetCard(Button selectedCard)
-  {
-    //TODO: add checks here eg for balance, etc
-
-    RetractCoins();
-    var chipGO = Instantiate(coinPrefab, selectedCard.transform);
-    var chipRT = chipGO.GetComponent<RectTransform>();
-    var chipCG = chipGO.GetComponent<CanvasGroup>();
-
-    chipCG.alpha = 0f;
-    chipRT.localScale = Vector3.one * 0.8f;
-    chipRT.localRotation = Quaternion.identity;
-
-    //set visuals from selected coin
-    chipGO.GetComponent<Image>().sprite = coinSelector.image.sprite;
-    string chipValueText = coinSelector.transform.GetChild(0).GetComponent<TMP_Text>().text;
-    chipGO.transform.GetChild(0).GetComponent<TMP_Text>().text = chipValueText;
-
-    Vector2 finalPos = GetRandomAnchoredPosition(chipRT, selectedCard.GetComponent<RectTransform>());
-    chipRT.anchoredPosition = finalPos + new Vector2(0f, chipSpawnYOffset);
-
-    Sequence seq = DOTween.Sequence();
-    seq.Join(chipRT.DOAnchorPos(finalPos, chipSpawnDuration).SetEase(Ease.OutBack));
-    seq.Join(chipCG.DOFade(1f, chipSpawnDuration / 2).SetEase(Ease.Linear));
-
-    int cardIndex = selectedBetPositions.IndexOf(selectedCard);
-    float.TryParse(chipValueText, out float chipValue);
-    betUndoStack.Push(new BetUndoEntry
-    {
-      Value = chipValue,
-      CardIndex = cardIndex,
-      Chip = chipRT
-    });
-
-    SetSelectedBetCardAmount(selectedCard);
-    if(!ButtonsExpanded) StartCoroutine(ExpandButtons());
-  }
-
-  private Vector2 GetRandomAnchoredPosition(RectTransform chipRT, RectTransform spawnArea)
-  {
-    Rect r = spawnArea.rect;
-
-    // If chip has size, keep it inside bounds
-    Vector2 chipSize = chipRT.rect.size;
-    float halfW = chipSize.x * 0.5f;
-    float halfH = chipSize.y * 0.5f;
-
-    float minX = r.xMin + 5f + halfW;
-    float maxX = r.xMax - 5f - halfW;
-    float minY = r.yMin + 5f + halfH;
-    float maxY = r.yMax - 5f - halfH;
-
-    // Safety if area is too small
-    if (minX > maxX) { minX = maxX = 0f; }
-    if (minY > maxY) { minY = maxY = 0f; }
-
-    return new Vector2(Random.Range(minX, maxX), Random.Range(minY, maxY));
-  }
-
-  void SetSelectedBetCardAmount(Button selectedCard)
-  {
-    float totalBet = 0;
-    foreach (Transform child in selectedCard.transform)
-    {
-      if (child.childCount == 0)
-        continue;
-
-      var chipText = child.GetChild(0).GetComponent<TMP_Text>();
-      if (chipText != null && float.TryParse(chipText.text, out float chipValue))
-      {
-        totalBet += chipValue;
-      }
-    }
-    int cardIndex = selectedBetPositions.IndexOf(selectedCard);
-    var totalBetText = totalBetGO[cardIndex].GetComponentInChildren<TMP_Text>();
-    var totalBetTransform = totalBetGO[cardIndex].transform;
-
-    if (totalBet > 0)
-    {
-      totalBetText.text = totalBet.ToString("N2");
-      if (!totalBetTransform.gameObject.activeInHierarchy)
-      {
-        totalBetTransform.DOKill();
-        totalBetTransform.gameObject.SetActive(true);
-        totalBetTransform.localScale = Vector3.zero;
-        totalBetTransform.DOScale(1f, 0.5f).SetEase(Ease.OutBack, 2f);
-      }
-      else
-      {
-        totalBetTransform.DOKill();
-        totalBetTransform.localScale = Vector3.one;
-        totalBetTransform.DOScale(1.1f, 0.25f).OnComplete(() =>
-        {
-          totalBetTransform.DOScale(1f, 0.25f);
-        });
-      }
-    }
-    else
-    {
-      totalBetTransform.gameObject.SetActive(false);
-      totalBetText.text = "0.00";
-    }
-  }
-
-  private void UndoLastBet()
-  {
-    if (betUndoStack.Count == 0)
-      return;
-
-    BetUndoEntry entry = betUndoStack.Pop();
-    if (entry.Chip == null)
-      return;
-
-    var chipRT = entry.Chip;
-    var chipGO = chipRT.gameObject;
-    Button card = (entry.CardIndex >= 0 && entry.CardIndex < selectedBetPositions.Count)
-      ? selectedBetPositions[entry.CardIndex]
-      : chipRT.GetComponentInParent<Button>();
-
-    chipRT.DOKill();
-
-    if (chipDestroyTarget != null)
-    {
-      chipRT.DOMove(chipDestroyTarget.position, chipUndoDuration).SetEase(Ease.InBack)
-        .OnComplete(() =>
-        {
-          Destroy(chipGO);
-          if (card != null)
-            SetSelectedBetCardAmount(card);
-        });
-    }
-    else
-    {
-      Destroy(chipGO);
-      if (card != null)
-        SetSelectedBetCardAmount(card);
-    }
-  }
-
-  IEnumerator ExpandButtons()
-  {
-    ButtonsExpanded = true;
-    if (BettingButtonsBG.rect.width != 0f)
-      yield return BettingButtonsBG.DOSizeDelta(new Vector2(0f, BettingButtonsBG.rect.height), duration).SetEase(Ease.OutBack).WaitForCompletion();
-
-    //TD: move the repeat buttton back to 0 here
-
-    if (BettingButtonsBG.rect.width != 396f)
-      BettingButtonsBG.DOSizeDelta(new Vector2(396f, BettingButtonsBG.rect.height), duration).SetEase(Ease.OutBack);
-
-    if (!UndoButton.gameObject.activeInHierarchy) UndoButton.gameObject.SetActive(true);
-    if (UndoButton.transform.localPosition.x != -320f) UndoButton.transform.DOLocalMoveX(-320f, duration).SetEase(Ease.OutBack);
-
-    if (!CancelButton.gameObject.activeInHierarchy) CancelButton.gameObject.SetActive(true);
-    if (CancelButton.transform.localPosition.x != -229f) CancelButton.transform.DOLocalMoveX(-229f, duration).SetEase(Ease.OutBack);
-
-    if (!DoubleBetButton.gameObject.activeInHierarchy) DoubleBetButton.gameObject.SetActive(true);
-    if (DoubleBetButton.transform.localPosition.x != -117f) DoubleBetButton.transform.DOLocalMoveX(-117f, duration).SetEase(Ease.OutBack);
-  }
 
   private void ToggleMenuGP()
   {

@@ -1,7 +1,10 @@
 fileFormatVersion: 2
-guid: 2d5eb7d1c77ca423ca9ebb7d135ffa0d
+guid: 3427d884c5ac34a1291a8cbd7208f972
 TextureImporter:
-  internalIDToNameTable: []
+  internalIDToNameTable:
+  - first:
+      213: 8241523831635085574
+    second: "Screenshot 2026-02-19 at 3.44.02\u202FPM_0"
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -94,33 +97,7 @@ TextureImporter:
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
   - serializedVersion: 4
-    buildTarget: iOS
-    maxTextureSize: 2048
-    resizeAlgorithm: 0
-    textureFormat: -1
-    textureCompression: 1
-    compressionQuality: 50
-    crunchedCompression: 0
-    allowsAlphaSplitting: 0
-    overridden: 0
-    ignorePlatformSupport: 0
-    androidETC2FallbackOverride: 0
-    forceMaximumCompressionQuality_BC6H_BC7: 0
-  - serializedVersion: 4
     buildTarget: WebGL
-    maxTextureSize: 2048
-    resizeAlgorithm: 0
-    textureFormat: -1
-    textureCompression: 1
-    compressionQuality: 50
-    crunchedCompression: 0
-    allowsAlphaSplitting: 0
-    overridden: 0
-    ignorePlatformSupport: 0
-    androidETC2FallbackOverride: 0
-    forceMaximumCompressionQuality_BC6H_BC7: 0
-  - serializedVersion: 4
-    buildTarget: Android
     maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
@@ -136,23 +113,23 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: 32_Cards_Frame_11_0
+      name: "Screenshot 2026-02-19 at 3.44.02\u202FPM_0"
       rect:
         serializedVersion: 2
-        x: 31
-        y: 27
-        width: 373
-        height: 92
+        x: 0
+        y: 0
+        width: 607
+        height: 1080
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: 0
+      tessellationDetail: -1
       bones: []
-      spriteID: 52f4e4ec27d8c4a6e89936cf7f88aa95
-      internalID: 266412498
+      spriteID: 60986886246cf5270800000000000000
+      internalID: 8241523831635085574
       vertices: []
       indices: 
       edges: []
@@ -161,7 +138,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 5e97eb03825dee720800000000000000
+    spriteID: 
     internalID: 0
     vertices: []
     indices: 
@@ -171,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      32_Cards_Frame_11_0: 266412498
+      "Screenshot 2026-02-19 at 3.44.02\u202FPM_0": 8241523831635085574
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
