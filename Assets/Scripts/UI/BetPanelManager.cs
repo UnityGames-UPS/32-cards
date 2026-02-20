@@ -281,7 +281,7 @@ public class BetPanelManager : MonoBehaviour
       betOptionsBGImage.gameObject.SetActive(true);
     }
 
-    betOptionsPopupRoot.DOScale(Vector3.one, 0.25f).SetEase(Ease.OutBack).OnComplete(() =>
+    betOptionsPopupRoot.DOScale(Vector3.one, 0.3f).OnComplete(() =>
     {
       betOptionsBGImage.enabled = true;
     });
@@ -298,7 +298,7 @@ public class BetPanelManager : MonoBehaviour
     }
 
     betOptionsPopupRoot.DOKill();
-    betOptionsPopupRoot.DOScale(Vector3.zero, 0.2f).SetEase(Ease.InBack).OnComplete(() =>
+    betOptionsPopupRoot.DOScale(Vector3.zero, 0.3f).OnComplete(() =>
     {
       if (betOptionsBGImage != null)
       {

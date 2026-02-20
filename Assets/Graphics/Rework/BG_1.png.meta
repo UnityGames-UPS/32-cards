@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 5805dadc5026548ea9ed71087bae2ff9
+guid: fca51eb97375f4d29932d418c0fafafe
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -4072972788426603106
-    second: golden_line_0
+      213: 5260750666308694636
+    second: BG_1_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -75,7 +75,7 @@ TextureImporter:
     maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 2
+    textureCompression: 1
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: golden_line_0
+      name: BG_1_0
       rect:
         serializedVersion: 2
-        x: 2
-        y: 5
-        width: 1083
-        height: 9
+        x: 0
+        y: 0
+        width: 360
+        height: 640
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: e95000614d4e977c0800000000000000
-      internalID: -4072972788426603106
+      spriteID: c62ba3dbbd0f10940800000000000000
+      internalID: 5260750666308694636
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      golden_line_0: -4072972788426603106
+      BG_1_0: 5260750666308694636
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

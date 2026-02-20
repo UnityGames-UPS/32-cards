@@ -93,23 +93,15 @@ public class AudioController : MonoBehaviour
     internal void PlayBonusAudio(string type)
     {
         audioPlayer_wl.loop = false;
-        int index = 0;
         switch (type)
         {
             case "win":
-                index = 0;
                 break;
             case "lose":
-                index = 1;
                 break;
             case "cycleSpin":
-                index = 2;
                 break;
         }
-        //StopBonusAaudio();
-        // audioPlayer_Bonus.clip = Bonusclips[index];
-        // audioPlayer_Bonus.Play();
-
     }
 
     internal void PlayButtonAudio()

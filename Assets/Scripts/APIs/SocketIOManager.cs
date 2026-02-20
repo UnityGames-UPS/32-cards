@@ -190,7 +190,6 @@ public class SocketIOManager : MonoBehaviour
         gameSocket.On<bool>("socketState", OnSocketState);
         gameSocket.On<string>("internalError", OnSocketError);
         gameSocket.On<string>("alert", OnSocketAlert);
-        gameSocket.On<string>("AnotherDevice", OnSocketOtherDevice);
         gameSocket.On<string>("pong", OnPongReceived);
         manager.Open();
     }
@@ -261,12 +260,6 @@ public class SocketIOManager : MonoBehaviour
     private void OnSocketAlert(string data)
     {
         //        Debug.Log("Received alert with data: " + data);
-    }
-
-    private void OnSocketOtherDevice(string data)
-    {
-        Debug.Log("Received Device Error with data: " + data);
-        uiManager.ADfunction();
     }
 
     private void SendPing() //Back2 Start
@@ -449,7 +442,6 @@ public class SocketIOManager : MonoBehaviour
                         this.manager.Close();
                     }
 
-                    Application.ExternalCall("window.parent.postMessage", "onExit", "*");
 #if UNITY_WEBGL && !UNITY_EDITOR
             Application.ExternalEval(@"
               if(window.ReactNativeWebView){
@@ -473,7 +465,6 @@ public class SocketIOManager : MonoBehaviour
         isLoaded = true;
         gameManager.setInitialUI();
         RaycastBlocker.SetActive(false);
-        Application.ExternalCall("window.parent.postMessage", "OnEnter", "*");
 #if UNITY_WEBGL && !UNITY_EDITOR //BackendChanges
             Application.ExternalEval(@"
             if(window.ReactNativeWebView){
