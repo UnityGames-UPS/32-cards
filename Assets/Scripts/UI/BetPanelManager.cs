@@ -14,6 +14,7 @@ public class BetPanelManager : MonoBehaviour
     public Button button;
     public Image chipImage;
     public TMP_Text chipValueText;
+    public string chipColorId;
   }
 
   [Serializable]
@@ -40,6 +41,7 @@ public class BetPanelManager : MonoBehaviour
   [SerializeField] private float chipOptionsFirstOffsetY = 142f;
   [SerializeField] private float chipOptionsSpacingY = 122f;
   [SerializeField] private float chipOptionsAnimDuration = 0.2f;
+  [SerializeField] private List<ChipColorSprite> chipSpawnColorSprites;
 
   [Header("Bet Spots")]
   [SerializeField] private List<BetSpotView> betSpots;
@@ -73,6 +75,8 @@ public class BetPanelManager : MonoBehaviour
   private bool areChipOptionsExpanded;
   private bool areBetActionsExpanded;
 
+  private string mainChipColorId;
+
   private void Awake()
   {
     InitializeBetOptionsPopupState();
@@ -101,6 +105,9 @@ public class BetPanelManager : MonoBehaviour
     if (chipOptions == null)
       chipOptions = new List<ChipButtonView>();
 
+    if (chipSpawnColorSprites == null)
+      chipSpawnColorSprites = new List<ChipColorSprite>();
+
     chipsPerSpot.Clear();
     for (int i = 0; i < betSpots.Count; i++)
     {
@@ -118,6 +125,8 @@ public class BetPanelManager : MonoBehaviour
 
     if (mainChip != null && mainChip.button != null)
     {
+      mainChipColorId = mainChip.chipColorId;
+
       float baseY = mainChip.button.transform.localPosition.y;
       for (int i = 0; i < chipOptions.Count; i++)
       {
@@ -326,6 +335,10 @@ public class BetPanelManager : MonoBehaviour
       mainChip.chipValueText.text = selectedValue;
     }
 
+    string selectedColorId = selectedOption.chipColorId;
+    selectedOption.chipColorId = mainChipColorId;
+    mainChipColorId = selectedColorId;
+
     RetractChipOptions();
   }
 
@@ -345,11 +358,13 @@ public class BetPanelManager : MonoBehaviour
       return;
 
     spawnedChip.ChipCanvasGroup.alpha = 0f;
-    spawnedChip.ChipRect.localScale = Vector3.one * 0.8f;
+    spawnedChip.ChipRect.localScale = Vector3.one;
     spawnedChip.ChipRect.localRotation = Quaternion.identity;
 
     string chipValueText = mainChip.chipValueText != null ? mainChip.chipValueText.text : "0";
-    Sprite chipSprite = mainChip.chipImage != null ? mainChip.chipImage.sprite : null;
+    Sprite chipSprite = GetSpawnChipSprite(mainChipColorId);
+    if (chipSprite == null && mainChip.chipImage != null)
+      chipSprite = mainChip.chipImage.sprite;
     spawnedChip.SetChipVisuals(chipSprite, chipValueText);
 
     Vector2 finalPos = GetRandomAnchoredPosition(spawnedChip.ChipRect, spot.chipSpawnArea);
@@ -519,5 +534,27 @@ public class BetPanelManager : MonoBehaviour
   private bool IsValidSpotIndex(int spotIndex)
   {
     return spotIndex >= 0 && spotIndex < betSpots.Count;
+  }
+
+  [Serializable]
+  private class ChipColorSprite
+  {
+    public string colorId;
+    public Sprite sprite;
+  }
+
+  private Sprite GetSpawnChipSprite(string colorId)
+  {
+    if (string.IsNullOrEmpty(colorId))
+      return null;
+
+    for (int i = 0; i < chipSpawnColorSprites.Count; i++)
+    {
+      var entry = chipSpawnColorSprites[i];
+      if (entry != null && entry.sprite != null && entry.colorId == colorId)
+        return entry.sprite;
+    }
+
+    return null;
   }
 }

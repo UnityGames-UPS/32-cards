@@ -11,8 +11,6 @@ public class ImageAnimation : MonoBehaviour
 		PAUSED
 	}
 
-	public static ImageAnimation Instance;
-
 	public List<Sprite> textureArray;
 
 	public Image rendererDelegate;
@@ -49,10 +47,6 @@ public class ImageAnimation : MonoBehaviour
 
 	private void Awake()
 	{
-		if (Instance == null)
-		{
-			Instance = this;
-		}
 		if (StartOnAwake)
 		{
 			StartAnimation();
@@ -113,24 +107,24 @@ public class ImageAnimation : MonoBehaviour
 		{
 			case 8:
 				dealControl.SetLayeringForRightHand(true);
-				dealControl.moveCard(8);
+				dealControl.MoveCard(8);
 				break;
 			case 30:
 				dealControl.SetLayeringForRightHand(false);
 				break;
 			case 67:
 				dealControl.SetLayeringForRightHand(true);
-				dealControl.moveCard(9);
+				dealControl.MoveCard(9);
 				break;
 			case 89:
 				dealControl.SetLayeringForRightHand(false);
 				break;
 			case 126:
 				dealControl.SetLayeringForRightHand(true);
-				dealControl.moveCard(10);
+				dealControl.MoveCard(10);
 				break;
 			case 192:
-				dealControl.moveCard(11);
+				dealControl.MoveCard(11);
 				break;
 			case 14:
 				dealControl.SetLayeringForLeftHand(true);
