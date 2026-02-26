@@ -17,14 +17,13 @@ public class UiManager : MonoBehaviour
   [SerializeField] private Button InfoLeft_button;
   [SerializeField] private Button InfoRight_button;
   [SerializeField] private List<GameObject> InfoPages_Objects;
-  [SerializeField] private List<GameObject> InfoActive_Objects;
+  [SerializeField] private TMP_Text InfoPageNumberText;
   private int currentInfoPage = 0;
   private bool IsMenuPanelOpen = false;
 
   [Header("Popus UI")]
   [SerializeField] private GameObject MainPopup_Object;
   [SerializeField] private GameObject PaytablePopup_Object;
-  [SerializeField] private GameObject GameQuitPopup;
   [SerializeField] private GameObject HistoryPopup_Object;
   [SerializeField] private GameObject InfoPopup_Object;
   [SerializeField] private GameObject StartupPanel;
@@ -183,9 +182,6 @@ public class UiManager : MonoBehaviour
 
     if (MusicGP) MusicGP.onClick.RemoveAllListeners();
     if (MusicGP) MusicGP.onClick.AddListener(delegate { ToggleMusic(); });
-
-    if (HomeGP) HomeGP.onClick.RemoveAllListeners();
-    if (HomeGP) HomeGP.onClick.AddListener(delegate { OpenPopup(GameQuitPopup); });
 
     if (InfoLeft_button) InfoLeft_button.onClick.RemoveAllListeners();
     if (InfoLeft_button) InfoLeft_button.onClick.AddListener(delegate { GoToPreviousInfoPage(); });
@@ -346,13 +342,15 @@ public class UiManager : MonoBehaviour
     if (Popup)
     {
       Popup.SetActive(true);
+      if (Popup == InfoPopup_Object)
+        UpdateInfoUI();
       var rect = Popup.transform;
 
       // Start from small
       rect.localScale = Vector3.zero;
 
       // Scale up with bounce
-      rect.DOScale(Vector3.one, 0.4f)
+      rect.DOScale(Vector3.one, 0.5f)
           .SetEase(Ease.OutBack);
     }
   }
@@ -366,7 +364,7 @@ public class UiManager : MonoBehaviour
       var rect = Popup.transform;
 
       // Scale down smoothly
-      rect.DOScale(Vector3.zero, 0.3f)
+      rect.DOScale(Vector3.zero, 0.6f)
           .SetEase(Ease.InBack)
           .OnComplete(() =>
           {
@@ -423,31 +421,40 @@ public class UiManager : MonoBehaviour
 
   private void UpdateInfoUI()
   {
+    if (InfoPages_Objects == null || InfoPages_Objects.Count == 0)
+    {
+      if (InfoPageNumberText != null) InfoPageNumberText.text = "0/0";
+      if (InfoLeft_button) InfoLeft_button.interactable = false;
+      if (InfoRight_button) InfoRight_button.interactable = false;
+      return;
+    }
+
+    currentInfoPage = Mathf.Clamp(currentInfoPage, 0, InfoPages_Objects.Count - 1);
     for (int i = 0; i < InfoPages_Objects.Count; i++)
       InfoPages_Objects[i].SetActive(i == currentInfoPage);
 
-    for (int i = 0; i < InfoActive_Objects.Count; i++)
-      InfoActive_Objects[i].SetActive(i == currentInfoPage);
-
+    if (InfoPageNumberText != null)
+      InfoPageNumberText.text = $"{currentInfoPage + 1}/{InfoPages_Objects.Count}";
+    
+    if (InfoLeft_button) InfoLeft_button.interactable = currentInfoPage > 0;
+    if (InfoRight_button) InfoRight_button.interactable = currentInfoPage < InfoPages_Objects.Count - 1;
   }
 
   private void GoToPreviousInfoPage()
   {
+    if (InfoPages_Objects == null || InfoPages_Objects.Count == 0) return;
+    if (currentInfoPage <= 0) return;
     if (audioController) audioController.PlayButtonAudio();
     currentInfoPage--;
-    if (currentInfoPage < 0)
-      currentInfoPage = InfoPages_Objects.Count - 1;
-
     UpdateInfoUI();
   }
 
   private void GoToNextInfoPage()
   {
+    if (InfoPages_Objects == null || InfoPages_Objects.Count == 0) return;
+    if (currentInfoPage >= InfoPages_Objects.Count - 1) return;
     if (audioController) audioController.PlayButtonAudio();
     currentInfoPage++;
-    if (currentInfoPage >= InfoPages_Objects.Count)
-      currentInfoPage = 0;
-
     UpdateInfoUI();
   }
 
