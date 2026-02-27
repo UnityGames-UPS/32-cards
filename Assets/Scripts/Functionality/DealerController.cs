@@ -5,6 +5,13 @@ using System;
 
 public class DealerController : MonoBehaviour
 {
+  [Serializable]
+  private class DealSegment
+  {
+    public int StartFrame;
+    public int EndFrame;
+  }
+
   [Header("ImageAnimations")]
   [SerializeField]
   private ImageAnimation DealerImageAnim_IA;
@@ -35,6 +42,10 @@ public class DealerController : MonoBehaviour
   [SerializeField]
   private List<Sprite> BothHandsReset_Sprites;
 
+  [Header("Deal Segments")]
+  [SerializeField]
+  private List<DealSegment> DealSegments = new List<DealSegment>();
+
   [Header("GameObjects")]
   [SerializeField]
   private GameObject BothHands_Object;
@@ -64,6 +75,8 @@ public class DealerController : MonoBehaviour
   private int bothHandsDefaultSiblingIndex;
   private int leftHandDefaultSiblingIndex;
   private int rightHandDefaultSiblingIndex;
+  private Coroutine dealSequenceRoutine;
+  private bool isDealSegmentPlaying;
 
   private void Awake()
   {
@@ -108,7 +121,6 @@ public class DealerController : MonoBehaviour
     LeftHand_Object.SetActive(false);
     RightHand_Object.SetActive(false);
 
-    DealerImageAnim_IA.cardDeal = false;
     DealerImageAnim_IA.cardReset = false;
     DealerImageAnim_IA.cardShuffle = true;
 
@@ -138,7 +150,6 @@ public class DealerController : MonoBehaviour
     LeftHand_Object.SetActive(false);
     RightHand_Object.SetActive(false);
 
-    DealerImageAnim_IA.cardDeal = false;
     DealerImageAnim_IA.cardReset = true;
     DealerImageAnim_IA.cardShuffle = false;
 
@@ -151,7 +162,7 @@ public class DealerController : MonoBehaviour
     BothHandAnim_IA.StartAnimation();
   }
 
-  private void DealCards()
+  private void PrepareDealAnimationState()
   {
     DealerImageAnim_IA.textureArray.Clear();
     DealerImageAnim_IA.textureArray.TrimExcess();
@@ -163,7 +174,6 @@ public class DealerController : MonoBehaviour
     LeftHand_Object.SetActive(true);
     RightHand_Object.SetActive(true);
 
-    DealerImageAnim_IA.cardDeal = true;
     DealerImageAnim_IA.cardReset = false;
     DealerImageAnim_IA.cardShuffle = false;
 
@@ -173,9 +183,124 @@ public class DealerController : MonoBehaviour
     DealerImageAnim_IA.StopAnimation();
     LeftHandAnim_IA.StopAnimation();
     RightHandAnim_IA.StopAnimation();
-    DealerImageAnim_IA.StartAnimation();
-    LeftHandAnim_IA.StartAnimation();
-    RightHandAnim_IA.StartAnimation();
+  }
+
+  private bool TryGetDealSegment(int spotIndex, out DealSegment segment)
+  {
+    segment = null;
+    if (DealSegments == null || DealSegments.Count <= spotIndex)
+    {
+      return false;
+    }
+    segment = DealSegments[spotIndex];
+    return segment != null;
+  }
+
+  private void PlayDealSegment(int spotIndex, Action onComplete)
+  {
+    if (!TryGetDealSegment(spotIndex, out DealSegment segment))
+    {
+      isDealSegmentPlaying = false;
+      onComplete?.Invoke();
+      return;
+    }
+
+    PrepareDealAnimationState();
+    if (DealerImageAnim_IA.textureArray == null || DealerImageAnim_IA.textureArray.Count == 0)
+    {
+      isDealSegmentPlaying = false;
+      onComplete?.Invoke();
+      return;
+    }
+    isDealSegmentPlaying = true;
+    SetLayeringForLeftHand(true);
+    SetLayeringForRightHand(true);
+
+    LeftHandAnim_IA.PlaySegment(segment.StartFrame, segment.EndFrame, (frame) =>
+    {
+      // switch (frame)
+      // {
+      //   case 14:
+      //     SetLayeringForLeftHand(true);
+      //     break;
+      //   case 53:
+      //     SetLayeringForLeftHand(false);
+      //     break;
+      //   case 72:
+      //     SetLayeringForLeftHand(true);
+      //     break;
+      //   case 116:
+      //     SetLayeringForLeftHand(false);
+      //     break;
+      //   case 235:
+      //     SetLayeringForLeftHand(false);
+      //     break;
+      // }
+    }, null);
+    RightHandAnim_IA.PlaySegment(segment.StartFrame, segment.EndFrame, (frame) =>
+    {
+      // switch (frame)
+      // {
+      //   case 8:
+      //     SetLayeringForRightHand(true);
+      //     break;
+      //   case 30:
+      //     SetLayeringForRightHand(false);
+      //     break;
+      //   case 67:
+      //     SetLayeringForRightHand(true);
+      //     break;
+      //   case 89:
+      //     SetLayeringForRightHand(false);
+      //     break;
+      //   case 126:
+      //     SetLayeringForRightHand(true);
+      //     break;
+      //   case 185:
+      //     SetLayeringForRightHand(true);
+      //     break;
+      //   case 235:
+      //     SetLayeringForRightHand(false);
+      //     break;
+      // }
+    }, null);
+
+    DealerImageAnim_IA.PlaySegment(segment.StartFrame, segment.EndFrame, (frame) =>
+    {
+      switch (frame)
+      {
+        case 27:
+          SpawnCard(8);
+          break;
+        case 89:
+          SpawnCard(9);
+          break;
+        case 149:
+          SpawnCard(10);
+          break;
+        case 209:
+          SpawnCard(11);
+          break;
+      }
+    }, () =>
+    {
+      LeftHandAnim_IA.StopAnimation();
+      RightHandAnim_IA.StopAnimation();
+      SetLayeringForRightHand(false);
+      SetLayeringForLeftHand(false);
+      SwitchToRest();
+      isDealSegmentPlaying = false;
+      onComplete?.Invoke();
+    });
+  }
+
+  private IEnumerator PlayAllDealSegments()
+  {
+    for (int i = 0; i < 4; i++)
+    {
+      PlayDealSegment(i, null);
+      yield return new WaitUntil(() => !isDealSegmentPlaying);
+    }
   }
 
   internal void BoxOpenAnimation()
@@ -241,7 +366,7 @@ public class DealerController : MonoBehaviour
     RightHand_Object.SetActive(false);
   }
 
-  internal void MoveCard(int type)
+  void SpawnCard(int type)
   {
     cardManager.SpawnCard(type);
   }
@@ -258,7 +383,43 @@ public class DealerController : MonoBehaviour
     }
     else if (Input.GetKeyDown(KeyCode.C))
     {
-      DealCards();
+      if (dealSequenceRoutine != null)
+      {
+        StopCoroutine(dealSequenceRoutine);
+      }
+      dealSequenceRoutine = StartCoroutine(PlayAllDealSegments());
+    }
+    else if (Input.GetKeyDown(KeyCode.Alpha1))
+    {
+      if (dealSequenceRoutine != null)
+      {
+        StopCoroutine(dealSequenceRoutine);
+      }
+      PlayDealSegment(0, null);
+    }
+    else if (Input.GetKeyDown(KeyCode.Alpha2))
+    {
+      if (dealSequenceRoutine != null)
+      {
+        StopCoroutine(dealSequenceRoutine);
+      }
+      PlayDealSegment(1, null);
+    }
+    else if (Input.GetKeyDown(KeyCode.Alpha3))
+    {
+      if (dealSequenceRoutine != null)
+      {
+        StopCoroutine(dealSequenceRoutine);
+      }
+      PlayDealSegment(2, null);
+    }
+    else if (Input.GetKeyDown(KeyCode.Alpha4))
+    {
+      if (dealSequenceRoutine != null)
+      {
+        StopCoroutine(dealSequenceRoutine);
+      }
+      PlayDealSegment(3, null);
     }
   }
 

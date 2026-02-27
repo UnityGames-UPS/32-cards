@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using System;
 
 public class ImageAnimation : MonoBehaviour
 {
@@ -43,7 +44,11 @@ public class ImageAnimation : MonoBehaviour
 
 	internal bool cardReset = false;
 
-	internal bool cardDeal = false;
+	private bool segmentMode = false;
+	private int segmentStartFrame;
+	private int segmentEndFrame;
+	private Action<int> segmentOnFrame;
+	private Action segmentOnComplete;
 
 	private void Awake()
 	{
@@ -72,6 +77,14 @@ public class ImageAnimation : MonoBehaviour
 	{
 		SetTextureOfIndex();
 		indexOfTexture++;
+		if (segmentMode && indexOfTexture > segmentEndFrame)
+		{
+			CancelInvoke("AnimationProcess");
+			currentAnimationState = ImageState.NONE;
+			segmentMode = false;
+			segmentOnComplete?.Invoke();
+			return;
+		}
 		if (indexOfTexture == textureArray.Count)
 		{
 			indexOfTexture = 0;
@@ -96,54 +109,9 @@ public class ImageAnimation : MonoBehaviour
 		{
 			ResetController();
 		}
-		if (dealControl != null && cardDeal)
+		if (segmentMode)
 		{
-			CardDealController();
-		}
-	}
-	void CardDealController()
-	{
-		switch (indexOfTexture)
-		{
-			case 8:
-				dealControl.SetLayeringForRightHand(true);
-				dealControl.MoveCard(8);
-				break;
-			case 30:
-				dealControl.SetLayeringForRightHand(false);
-				break;
-			case 67:
-				dealControl.SetLayeringForRightHand(true);
-				dealControl.MoveCard(9);
-				break;
-			case 89:
-				dealControl.SetLayeringForRightHand(false);
-				break;
-			case 126:
-				dealControl.SetLayeringForRightHand(true);
-				dealControl.MoveCard(10);
-				break;
-			case 192:
-				dealControl.MoveCard(11);
-				break;
-			case 14:
-				dealControl.SetLayeringForLeftHand(true);
-				break;
-			case 53:
-				dealControl.SetLayeringForLeftHand(false);
-				break;
-			case 72:
-				dealControl.SetLayeringForLeftHand(true);
-				break;
-			case 116:
-				dealControl.SetLayeringForLeftHand(false);
-				break;
-			case 235:
-				cardDeal = false;
-				dealControl.SwitchToRest();
-				dealControl.SetLayeringForLeftHand(false);
-				dealControl.SetLayeringForRightHand(false);
-				break;
+			segmentOnFrame?.Invoke(indexOfTexture);
 		}
 	}
 
@@ -199,6 +167,26 @@ public class ImageAnimation : MonoBehaviour
 		}
 	}
 
+	public void PlaySegment(int startFrame, int endFrame, Action<int> onFrame, Action onComplete)
+	{
+		if (textureArray == null || textureArray.Count == 0)
+		{
+			return;
+		}
+		CancelInvoke("AnimationProcess");
+		segmentMode = true;
+		segmentStartFrame = Mathf.Clamp(startFrame, 0, textureArray.Count - 1);
+		segmentEndFrame = Mathf.Clamp(endFrame, segmentStartFrame, textureArray.Count - 1);
+		segmentOnFrame = onFrame;
+		segmentOnComplete = onComplete;
+		indexOfTexture = segmentStartFrame;
+		SetTextureOfIndex();
+		segmentOnFrame?.Invoke(indexOfTexture);
+		delayBetweenAnimation = idealFrameRate * (float)textureArray.Count / AnimationSpeed;
+		currentAnimationState = ImageState.PLAYING;
+		Invoke("AnimationProcess", delayBetweenAnimation);
+	}
+
 	public void PauseAnimation()
 	{
 		if (currentAnimationState == ImageState.PLAYING)
@@ -224,6 +212,7 @@ public class ImageAnimation : MonoBehaviour
 			rendererDelegate.sprite = textureArray[0];
 			CancelInvoke("AnimationProcess");
 			currentAnimationState = ImageState.NONE;
+			segmentMode = false;
 		}
 	}
 
