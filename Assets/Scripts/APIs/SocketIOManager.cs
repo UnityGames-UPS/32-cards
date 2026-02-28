@@ -72,13 +72,12 @@ public class SocketIOManager : MonoBehaviour
         //Debug.unityLogger.logEnabled = false;
         isLoaded = false;
         SetInit = false;
-
     }
 
     private void Start()
     {
         //OpenWebsocket();
-        OpenSocket();
+        // OpenSocket();
     }
     void CloseGame()
     {

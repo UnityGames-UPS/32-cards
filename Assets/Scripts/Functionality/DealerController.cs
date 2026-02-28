@@ -269,7 +269,7 @@ public class DealerController : MonoBehaviour
     {
       switch (frame)
       {
-        case 27:
+        case 29:
           SpawnCard(8);
           break;
         case 89:
