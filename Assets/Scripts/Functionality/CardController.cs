@@ -9,6 +9,7 @@ public class CardController : MonoBehaviour
   [SerializeField] private float CardFlipDurationSeconds = 0.5f;
   [SerializeField] private float WaitForFlipSeconds = 0.5f;
   [SerializeField, Range(0f, 1f)] private float RevealAtFlipPercent = 0.5f;
+  [SerializeField, Range(0f, 1f)] private float TopDownRevealAtFlipPercent = 0.5f;
   [SerializeField, Range(-1f, 1f)] private float FlipDirection = 1f;
   [SerializeField] private List<Sprite> RandomCardSprites;
   [SerializeField] private Transform SpawnPoint_Transform;
@@ -20,9 +21,16 @@ public class CardController : MonoBehaviour
   [SerializeField] private GameObject Card9_Object;
   [SerializeField] private GameObject Card10_Object;
   [SerializeField] private GameObject Card11_Object;
+  [Header("Top Down Cards")]
+  [SerializeField] private GameObject TopDownCardPrefab;
+  [SerializeField] private Transform TopDownCard1_Transform;
+  [SerializeField] private Transform TopDownCard2_Transform;
+  [SerializeField] private Transform TopDownCard3_Transform;
+  [SerializeField] private Transform TopDownCard4_Transform;
 
   internal void SpawnCard(int type)
   {
+    SpawnTopDownCard(type);
     GameObject prefab = null;
     Transform parent = null;
     switch (type)
@@ -59,6 +67,28 @@ public class CardController : MonoBehaviour
     StartCoroutine(FlipAndReveal(cardref));
   }
 
+  internal void SpawnTopDownCard(int spotIndex)
+  {
+    if (TopDownCardPrefab == null) return;
+
+    Transform parent = null;
+    switch (spotIndex)
+    {
+      case 8: parent = TopDownCard1_Transform; break;
+      case 9: parent = TopDownCard2_Transform; break;
+      case 10: parent = TopDownCard3_Transform; break;
+      case 11: parent = TopDownCard4_Transform; break;
+    }
+    if (parent == null) return;
+
+    GameObject cardref = GameObject.Instantiate(TopDownCardPrefab, parent, false);
+    cardref.transform.localPosition = Vector3.zero;
+    cardref.transform.localRotation = Quaternion.identity;
+    cardref.transform.localScale = Vector3.one;
+    cardref.transform.localEulerAngles = new Vector3(0f, 0f, 180f);
+    StartCoroutine(FlipTopDownCard(cardref));
+  }
+
   private IEnumerator FlipAndReveal(GameObject cardref)
   {
     if (cardref == null) yield break;
@@ -66,12 +96,12 @@ public class CardController : MonoBehaviour
     Image cardImage = cardref.GetComponent<Image>();
     if (cardImage == null) cardImage = cardref.GetComponentInChildren<Image>();
 
-        UITrapezoidTopNarrow trapezoid = cardref.GetComponent<UITrapezoidTopNarrow>();
-        if (trapezoid == null) trapezoid = cardref.GetComponentInChildren<UITrapezoidTopNarrow>();
-        float startTopInset = trapezoid != null ? trapezoid.TopInset : 0f;
-        float startBottomInset = trapezoid != null ? trapezoid.BottomInset : 0f;
-        float endTopInset = startBottomInset;
-        float endBottomInset = startTopInset;
+    UITrapezoidTopNarrow trapezoid = cardref.GetComponent<UITrapezoidTopNarrow>();
+    if (trapezoid == null) trapezoid = cardref.GetComponentInChildren<UITrapezoidTopNarrow>();
+    float startTopInset = trapezoid != null ? trapezoid.TopInset : 0f;
+    float startBottomInset = trapezoid != null ? trapezoid.BottomInset : 0f;
+    float endTopInset = startBottomInset;
+    float endBottomInset = startTopInset;
 
     float wait = Mathf.Max(0f, WaitForFlipSeconds);
     if (wait > 0f) yield return new WaitForSeconds(wait);
@@ -86,31 +116,65 @@ public class CardController : MonoBehaviour
       float t = Mathf.Clamp01(elapsed / duration);
       float direction = FlipDirection >= 0f ? 1f : -1f;
       float angle = Mathf.Lerp(0f, 180f * direction, t);
-            cardref.transform.localEulerAngles = new Vector3(angle, 180f, 180f);
-            if (trapezoid != null)
-            {
-                trapezoid.TopInset = Mathf.Lerp(startTopInset, endTopInset, t);
-                trapezoid.BottomInset = Mathf.Lerp(startBottomInset, endBottomInset, t);
-                Graphic graphic = trapezoid.GetComponent<Graphic>();
-                if (graphic != null) graphic.SetVerticesDirty();
-            }
-            if (!revealed && t >= revealPercent) { SetRandomCardSprite(cardImage, trapezoid); revealed = true; }
-            yield return null;
-        }
-        if (!revealed) SetRandomCardSprite(cardImage, trapezoid);
+      cardref.transform.localEulerAngles = new Vector3(angle, 180f, 180f);
+      if (trapezoid != null)
+      {
+        trapezoid.TopInset = Mathf.Lerp(startTopInset, endTopInset, t);
+        trapezoid.BottomInset = Mathf.Lerp(startBottomInset, endBottomInset, t);
+        Graphic graphic = trapezoid.GetComponent<Graphic>();
+        if (graphic != null) graphic.SetVerticesDirty();
+      }
+      if (!revealed && t >= revealPercent) { SetRandomCardSprite(cardImage, trapezoid); revealed = true; }
+      yield return null;
     }
+    if (!revealed) SetRandomCardSprite(cardImage, trapezoid);
+  }
 
-    private void SetRandomCardSprite(Image cardImage, UITrapezoidTopNarrow trapezoid)
+  private void SetRandomCardSprite(Image cardImage, UITrapezoidTopNarrow trapezoid)
+  {
+    if (cardImage == null)
     {
-        if (cardImage == null)
-        {
-            return;
-        }
-        if (RandomCardSprites == null || RandomCardSprites.Count == 0)
-        {
-            return;
-        }
-        int index = UnityEngine.Random.Range(0, RandomCardSprites.Count);
-        cardImage.sprite = RandomCardSprites[index];
+      return;
     }
+    if (RandomCardSprites == null || RandomCardSprites.Count == 0)
+    {
+      return;
+    }
+    int index = Random.Range(0, RandomCardSprites.Count);
+    cardImage.sprite = RandomCardSprites[index];
+  }
+
+  private IEnumerator FlipTopDownCard(GameObject cardref)
+  {
+    if (cardref == null) yield break;
+
+    Image cardImage = cardref.GetComponent<Image>();
+    if (cardImage == null) cardImage = cardref.GetComponentInChildren<Image>();
+
+    float wait = Mathf.Max(0f, WaitForFlipSeconds);
+    if (wait > 0f) yield return new WaitForSeconds(wait);
+
+    bool revealed = false;
+    float duration = Mathf.Max(0.01f, CardFlipDurationSeconds);
+    float elapsed = 0f;
+    float revealPercent = Mathf.Clamp01(TopDownRevealAtFlipPercent);
+    while (elapsed < duration)
+    {
+      elapsed += Time.deltaTime;
+      float t = Mathf.Clamp01(elapsed / duration);
+      float angle = Mathf.Lerp(0f, 180f, t);
+      if (angle < 90f)
+      {
+        cardref.transform.localEulerAngles = new Vector3(angle, 0f, 180f);
+      }
+      else
+      {
+        cardref.transform.localEulerAngles = new Vector3(180f - angle, 0f, 0f);
+      }
+      if (!revealed && t >= revealPercent) { SetRandomCardSprite(cardImage, null); revealed = true; }
+      yield return null;
+    }
+    if (!revealed) SetRandomCardSprite(cardImage, null);
+    cardref.transform.localEulerAngles = Vector3.zero;
+  }
 }

@@ -11,16 +11,14 @@ public class UiManager : MonoBehaviour
 {
   [SerializeField] private AudioManager audioController;
   [SerializeField] private SocketIOManager socketManager;
-
   [SerializeField] private Button HistoryClose_button;
   [SerializeField] private Button InfoClose_button;
   [SerializeField] private Button InfoLeft_button;
   [SerializeField] private Button InfoRight_button;
   [SerializeField] private List<GameObject> InfoPages_Objects;
   [SerializeField] private TMP_Text InfoPageNumberText;
-  private int currentInfoPage = 0;
-  private bool IsMenuPanelOpen = false;
 
+  [Space(10)]
   [Header("Popus UI")]
   [SerializeField] private GameObject MainPopup_Object;
   [SerializeField] private GameObject PaytablePopup_Object;
@@ -28,12 +26,13 @@ public class UiManager : MonoBehaviour
   [SerializeField] private GameObject InfoPopup_Object;
   [SerializeField] private GameObject StartupPanel;
 
-  [Space(50)]
+  [Space(10)]
   [Header("HomePage")]
   [SerializeField] private Button History;
   [SerializeField] private Button CloseStartupPanelBtn;
   [SerializeField] private Button ReadmoreStartupPanelBtn;
-  [SerializeField] private RectTransform ToggleTextObj;
+  [SerializeField] private RectTransform ScrollingTextRect;
+  [SerializeField] private Button[] LevelButtons;
   [Header("SidePanel")]
   [SerializeField] private Button MenuButton;
   [SerializeField] private Button GameRules;
@@ -45,7 +44,7 @@ public class UiManager : MonoBehaviour
   [SerializeField] private Button sidepanelCloseButton;
   [SerializeField] private Transform lobbyMenuButtonOpenParent;
 
-  [Space(50)]
+  [Space(10)]
   [Header("GamePage")]
   [Header("SidePanel")]
   [SerializeField] private Button MenuButtonGP;
@@ -59,16 +58,17 @@ public class UiManager : MonoBehaviour
   [SerializeField] private Button sidepanelGPCloseButton;
   [SerializeField] private Transform gpMenuButtonOpenParent;
 
-  [Space(50)]
+  [Space(10)]
   [Header("LoadingPage")]
   [SerializeField] private GameObject loadingPage;
 
-  [Space(50)]
+  [Space(10)]
   [Header("Animation Settings")]
   [SerializeField] private float MenuButtonsDuration = 0.5f;
   [SerializeField] private float lobbyButtonsCollapsedY = 440f;
   [SerializeField] private float gpButtonsCollapsedY = 440f;
 
+  private int currentInfoPage = 0;
   private List<Button> menuButtons;
   private List<Button> menuButtonsGP;
   private bool isLobbyMenuExpanded = false;
@@ -90,14 +90,15 @@ public class UiManager : MonoBehaviour
   bool isMusic;
   bool isSound;
   
-  private void Start()
+  private void Awake()
   {
     AssignButtonListeners();
-    // homepage toggle text scroll
-    scrollTextStartPosi = ToggleTextObj.anchoredPosition;
+
+    // Homepage toggle text scroll
+    scrollTextStartPosi = ScrollingTextRect.anchoredPosition;
     StartScroll();
 
-    // Collect lobby menu buttons into a list
+    // HomePage Menu Toggle Setup
     menuButtons = new List<Button> { GameRules, Sound, Music, ExpandShrink, Home };
 
     menuButtonsRects.Clear();
@@ -116,7 +117,6 @@ public class UiManager : MonoBehaviour
 
     SetLobbyButtonsCollapsedImmediate();
 
-    // Hook menu toggle
     MenuButton.onClick.RemoveAllListeners();
     MenuButton.onClick.AddListener(ToggleMenu);
     lobbyMenuButtonOriginalParent = MenuButton != null ? MenuButton.transform.parent : null;
@@ -126,6 +126,7 @@ public class UiManager : MonoBehaviour
     if (sidepanelCloseButton) sidepanelCloseButton.onClick.AddListener(RetractMenu);
     if (sidepanelCloseButton) sidepanelCloseButton.interactable = false;
     
+    // GamePage Menu Toggle Setup
     menuButtonsGP = new List<Button> { GameRulesGP, HistoryGP, SoundGP, MusicGP, ExpandShrinkGP, HomeGP };
 
     menuButtonsGPRects.Clear();
@@ -152,6 +153,20 @@ public class UiManager : MonoBehaviour
     if (sidepanelGPCloseButton) sidepanelGPCloseButton.onClick.RemoveAllListeners();
     if (sidepanelGPCloseButton) sidepanelGPCloseButton.onClick.AddListener(RetractMenuGP);
     if (sidepanelGPCloseButton) sidepanelGPCloseButton.interactable = false;
+
+    //HomePage Level Buttons Setup
+    if (LevelButtons != null)
+    {
+      for (int i = 0; i < LevelButtons.Length; i++)
+      {
+        int levelIndex = i;
+        if (LevelButtons[i] != null)
+        {
+          LevelButtons[i].onClick.RemoveAllListeners();
+          LevelButtons[i].onClick.AddListener(delegate { EnterLevel(levelIndex); });
+        }
+      }
+    }
   }
 
   private void AssignButtonListeners()
@@ -200,6 +215,31 @@ public class UiManager : MonoBehaviour
 
     if (ReadmoreStartupPanelBtn) ReadmoreStartupPanelBtn.onClick.RemoveAllListeners();
     if (ReadmoreStartupPanelBtn) ReadmoreStartupPanelBtn.onClick.AddListener(delegate { StartupPanel.SetActive(false); OpenPopup(InfoPopup_Object); });
+  }
+
+  void EnterLevel(int level)
+  {
+    string levelName = "";
+    switch (level)
+    {
+      case 0: levelName = "casual"; break;
+      case 1: levelName = "novice"; break;  
+      case 2: levelName = "expert"; break;
+      case 3: levelName = "high_roller"; break;
+    }
+
+    if(string.IsNullOrEmpty(levelName)) Debug.LogError("Invalid level index: " + level);
+    else
+    {
+      if (audioController) audioController.PlayButtonAudio();
+      ToggleLoadingPage(true);
+      if (socketManager) socketManager.EmitJoinRoom(levelName);
+    }
+  }
+
+  internal void OnEnterLevelWithData()
+  {
+    ToggleLoadingPage(false);
   }
 
   private void ToggleMenu()
@@ -461,14 +501,14 @@ public class UiManager : MonoBehaviour
   void StartScroll()
   {
     // Start at "fromX"
-    ToggleTextObj.anchoredPosition = new Vector2(1000f, scrollTextStartPosi.y);
+    ScrollingTextRect.anchoredPosition = new Vector2(1000f, scrollTextStartPosi.y);
 
     // Tween to "toX"
-    ToggleTextObj.DOAnchorPosX(-1000f, 10f)
+    ScrollingTextRect.DOAnchorPosX(-1000f, 10f)
         .SetEase(Ease.Linear)
         .OnComplete(() =>
         {
-          ToggleTextObj.anchoredPosition = new Vector2(1000f, scrollTextStartPosi.y);
+          ScrollingTextRect.anchoredPosition = new Vector2(1000f, scrollTextStartPosi.y);
           StartScroll(); // repeat
         });
   }
@@ -567,5 +607,10 @@ public class UiManager : MonoBehaviour
     });
 
     isGPMenuExpanded = false;
+  }
+
+  void ToggleLoadingPage(bool show)
+  {
+    if (loadingPage) loadingPage.SetActive(show);
   }
 }

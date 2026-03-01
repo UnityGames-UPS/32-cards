@@ -23,6 +23,8 @@ public class DealerController : MonoBehaviour
   private ImageAnimation RightHandAnim_IA;
   [SerializeField]
   private ImageAnimation BothHandAnim_IA;
+  [SerializeField]
+  private ImageAnimation TopDownHandsAnim_IA;
 
   [Header("Sprites")]
   [SerializeField]
@@ -41,6 +43,10 @@ public class DealerController : MonoBehaviour
   private List<Sprite> BothhandsShuffle_Sprites;
   [SerializeField]
   private List<Sprite> BothHandsReset_Sprites;
+  [SerializeField]
+  private List<Sprite> TopDownHandsReset_Sprites;
+  [SerializeField]
+  private List<Sprite> TopDownHandsDeal_Sprites;
 
   [Header("Deal Segments")]
   [SerializeField]
@@ -57,6 +63,8 @@ public class DealerController : MonoBehaviour
   private GameObject DealerMoving_Object;
   [SerializeField]
   private GameObject DealerRest_Object;
+  [SerializeField]
+  private GameObject TopDownHandsParent_Object;
 
   [Header("Transforms")]
   [SerializeField]
@@ -143,8 +151,13 @@ public class DealerController : MonoBehaviour
     BothHandAnim_IA.textureArray.TrimExcess();
     BothHandAnim_IA.textureArray.AddRange(BothHandsReset_Sprites);
 
+    TopDownHandsAnim_IA.textureArray.Clear();
+    TopDownHandsAnim_IA.textureArray.TrimExcess();
+    TopDownHandsAnim_IA.textureArray.AddRange(TopDownHandsReset_Sprites);
+
     DealerImageAnim_IA.AnimationSpeed = 15;
     BothHandAnim_IA.AnimationSpeed = 15;
+    TopDownHandsAnim_IA.AnimationSpeed = 15;
 
     BothHands_Object.SetActive(true);
     LeftHand_Object.SetActive(false);
@@ -155,11 +168,15 @@ public class DealerController : MonoBehaviour
 
     DealerMoving_Object.SetActive(true);
     DealerRest_Object.SetActive(false);
+    TopDownHandsParent_Object.SetActive(true);
+    TopDownHandsAnim_IA.gameObject.SetActive(true);
 
     DealerImageAnim_IA.StopAnimation();
     BothHandAnim_IA.StopAnimation();
+    TopDownHandsAnim_IA.StopAnimation();
     DealerImageAnim_IA.StartAnimation();
     BothHandAnim_IA.StartAnimation();
+    TopDownHandsAnim_IA.StartAnimation();
   }
 
   private void PrepareDealAnimationState()
@@ -168,7 +185,12 @@ public class DealerController : MonoBehaviour
     DealerImageAnim_IA.textureArray.TrimExcess();
     DealerImageAnim_IA.textureArray.AddRange(DealerDeal_Sprites);
 
+    TopDownHandsAnim_IA.textureArray.Clear();
+    TopDownHandsAnim_IA.textureArray.TrimExcess();
+    TopDownHandsAnim_IA.textureArray.AddRange(TopDownHandsDeal_Sprites);
+
     DealerImageAnim_IA.AnimationSpeed = 215;
+    TopDownHandsAnim_IA.AnimationSpeed = 215;
 
     BothHands_Object.SetActive(false);
     LeftHand_Object.SetActive(true);
@@ -183,6 +205,7 @@ public class DealerController : MonoBehaviour
     DealerImageAnim_IA.StopAnimation();
     LeftHandAnim_IA.StopAnimation();
     RightHandAnim_IA.StopAnimation();
+    TopDownHandsAnim_IA.StopAnimation();
   }
 
   private bool TryGetDealSegment(int spotIndex, out DealSegment segment)
@@ -216,53 +239,19 @@ public class DealerController : MonoBehaviour
     SetLayeringForLeftHand(true);
     SetLayeringForRightHand(true);
 
+    if (TopDownHandsParent_Object != null)
+    {
+      TopDownHandsParent_Object.SetActive(true);
+      TopDownHandsAnim_IA.PlaySegment(segment.StartFrame, segment.EndFrame, (frame) =>
+      {
+      }, null);
+    }
+
     LeftHandAnim_IA.PlaySegment(segment.StartFrame, segment.EndFrame, (frame) =>
     {
-      // switch (frame)
-      // {
-      //   case 14:
-      //     SetLayeringForLeftHand(true);
-      //     break;
-      //   case 53:
-      //     SetLayeringForLeftHand(false);
-      //     break;
-      //   case 72:
-      //     SetLayeringForLeftHand(true);
-      //     break;
-      //   case 116:
-      //     SetLayeringForLeftHand(false);
-      //     break;
-      //   case 235:
-      //     SetLayeringForLeftHand(false);
-      //     break;
-      // }
     }, null);
     RightHandAnim_IA.PlaySegment(segment.StartFrame, segment.EndFrame, (frame) =>
     {
-      // switch (frame)
-      // {
-      //   case 8:
-      //     SetLayeringForRightHand(true);
-      //     break;
-      //   case 30:
-      //     SetLayeringForRightHand(false);
-      //     break;
-      //   case 67:
-      //     SetLayeringForRightHand(true);
-      //     break;
-      //   case 89:
-      //     SetLayeringForRightHand(false);
-      //     break;
-      //   case 126:
-      //     SetLayeringForRightHand(true);
-      //     break;
-      //   case 185:
-      //     SetLayeringForRightHand(true);
-      //     break;
-      //   case 235:
-      //     SetLayeringForRightHand(false);
-      //     break;
-      // }
     }, null);
 
     DealerImageAnim_IA.PlaySegment(segment.StartFrame, segment.EndFrame, (frame) =>
@@ -272,13 +261,13 @@ public class DealerController : MonoBehaviour
         case 29:
           SpawnCard(8);
           break;
-        case 89:
+        case 91:
           SpawnCard(9);
           break;
-        case 149:
+        case 150:
           SpawnCard(10);
           break;
-        case 209:
+        case 212:
           SpawnCard(11);
           break;
       }
@@ -364,6 +353,10 @@ public class DealerController : MonoBehaviour
     BothHands_Object.SetActive(false);
     LeftHand_Object.SetActive(false);
     RightHand_Object.SetActive(false);
+    if (TopDownHandsParent_Object != null)
+    {
+      TopDownHandsParent_Object.SetActive(false);
+    }
   }
 
   void SpawnCard(int type)
