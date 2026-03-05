@@ -1,0 +1,16 @@
+{
+  "success": true,
+  "payload": {
+    "message": "Reconnected to lobby",
+    "playerCount": 1,
+    "roomId": "room-11e8f05d-6dd9-46a8-809d-6d72ceb1c566",
+    "oldRoomId": "room-1b05235e-655e-4d0a-a9c0-8e16677f6752",
+    "lobby": {
+      "casual": 0,
+      "novice": 0,
+      "expert": 0,
+      "high_roller": 0
+    },
+    "balance": 4786.5
+  }
+}

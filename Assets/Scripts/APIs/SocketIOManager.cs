@@ -1,18 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Events;
 using System;
-using UnityEngine.SceneManagement;
-using UnityEngine.Networking;
-using DG.Tweening;
-using System.Linq;
 using Newtonsoft.Json;
 using Best.SocketIO;
 using Best.SocketIO.Events;
-using Newtonsoft.Json.Linq;
-using System.Runtime.Serialization;
-using Best.HTTP.Shared;
 
 public class SocketIOManager : MonoBehaviour
 {
@@ -25,7 +17,7 @@ public class SocketIOManager : MonoBehaviour
   protected string TestSocketURI = "https://devrealtime.dingdinghouse.com/";
   [SerializeField] internal JSFunctCalls JSManager;
   [SerializeField] private string testToken;
-  [SerializeField] private InitRoot initData;
+  [SerializeField] internal InitRoot initData;
 
   private bool isConnected = false;
   private bool hasEverConnected = false;
@@ -262,6 +254,11 @@ public class SocketIOManager : MonoBehaviour
     }
   }
 
+  internal void EmitLeaveRoom()
+  {
+    EmitRequest("HOME", new { }, HandleLevelLeaveAck);
+  }
+
   internal void EmitJoinRoom(string roomName)
   {
     if (string.IsNullOrEmpty(roomName))
@@ -271,15 +268,15 @@ public class SocketIOManager : MonoBehaviour
     }
 
     var payload = new { level = roomName };
-    string json = JsonConvert.SerializeObject(payload);
     EmitRequest("JOIN_LEVEL", payload, HandleJoinLevelAck);
   }
+
   private void EmitRequest<T>(string requestType, T payload, Action<string> ackCallback)
   {
     try
     {
       string json = JsonConvert.SerializeObject(new { type = requestType, payload = payload });
-      Debug.Log($"[EMIT] {requestType} {json}");
+      Debug.Log($"[EMIT] {json}");
       gameSocket.ExpectAcknowledgement(ackCallback).Emit("request", json);
     }
     catch (Exception e)
@@ -318,6 +315,15 @@ public class SocketIOManager : MonoBehaviour
       if (initData != null)
       {
         SendPing();
+        uiManager.SetBalanceText(initData.player.balance);
+        uiManager.OnInit(initData);
+#if UNITY_WEBGL && !UNITY_EDITOR
+        JSManager.SendCustomMessage("OnEnter");
+#endif
+        if (uiManager != null && uiManager.ShouldShowStartupGuide())
+        {
+          uiManager.OpenStartupGuidePopup();
+        }
         RaycastBlocker.SetActive(false);
       }
       else
@@ -330,7 +336,6 @@ public class SocketIOManager : MonoBehaviour
       Debug.LogError("Error parsing init data: " + ex.Message);
       return;
     }
-
   }
 
   private void HandleLobbyCount(string jsonObject)
@@ -386,7 +391,7 @@ public class SocketIOManager : MonoBehaviour
       JoinLevelResponse response = JsonConvert.DeserializeObject<JoinLevelResponse>(jsonObject);
       if (response != null && response.success)
       {
-        uiManager.OnEnterLevelWithData();
+        uiManager.OnEnterLevelWithData(response.payload);
       }
       else
       {
@@ -398,8 +403,30 @@ public class SocketIOManager : MonoBehaviour
       Debug.LogError("Error parsing join level response: " + ex.Message);
     }
   }
-}
 
+  void HandleLevelLeaveAck(string json)
+  {
+    Debug.Log("LEAVE RESP: " + json);
+    try
+    {
+      LeaveLevelResponse response = JsonConvert.DeserializeObject<LeaveLevelResponse>(json);
+      if (response != null && response.success)
+      {
+        uiManager.SetLobbyPlayerCounts(response.payload.lobby);
+        uiManager.SetBalanceText(response.payload.balance);
+        uiManager.OnLeaveLevel();
+      }
+      else
+      {
+        Debug.LogError("Failed to leave level");
+      }
+    }
+    catch (Exception ex)
+    {
+      Debug.LogError("Error parsing leave level response: " + ex.Message);
+    }
+  }
+}
 
 //AUTH
 [Serializable]
@@ -409,18 +436,73 @@ public class AuthTokenData
   public string socketURL;
 }
 
+//COMMON
+
+[Serializable]
+public class LeaderBoard
+{
+  public List<Richest> richest;
+  public List<Winners> winners;
+}
+
+[Serializable]
+public class Richest
+{
+  public string username;
+  public double balance;
+  public int rank;
+}
+
+[Serializable]
+public class Winners
+{
+  public string username;
+  public int totalWins;
+  public int rank;
+}
+
 //JOIN LEVEL ACK
 [Serializable]
 public class JoinLevelResponse
 {
   public bool success;
-  public JoinLevelPayload payload;
+  public JoinLevelResponsePayload payload;
 }
 
 [Serializable]
-public class JoinLevelPayload
+public class JoinLevelResponsePayload
 {
-  public string roomId; //Incomplete - add other fields as needed
+  public string roomId; 
+  public string oldRoomId;
+  public int playerCount;
+  public string level;
+  public LeaderBoard leaderboards;
+  public RoundState roundState;
+}
+
+[Serializable]
+public class RoundState
+{
+  public string roundId; // Incompelete
+}
+
+//LEAVE LEVEL ACK
+[Serializable]
+public class LeaveLevelResponse
+{
+  public bool success;
+  public LeaveLevelResponsePayload payload;
+}
+
+[Serializable]
+public class LeaveLevelResponsePayload
+{
+  public string message;
+  public int playerCount;
+  public string roomId;
+  public string oldRoomId;
+  public Lobby lobby;
+  public double balance; 
 }
 
 //INIT
@@ -435,10 +517,10 @@ public class InitRoot
 [Serializable]
 public class Bets
 {
-  public List<int> casual;
-  public List<int> novice;
-  public List<int> expert;
-  public List<int> high_roller;
+  public List<double> casual;
+  public List<double> novice;
+  public List<double> expert;
+  public List<double> high_roller;
 }
 
 [Serializable]
@@ -494,10 +576,10 @@ public class MainBets
 [Serializable]
 public class MaxBetLimit
 {
-  public int casual;
-  public int novice;
-  public int expert;
-  public int high_roller;
+  public double casual;
+  public double novice;
+  public double expert;
+  public double high_roller;
 }
 
 [Serializable]

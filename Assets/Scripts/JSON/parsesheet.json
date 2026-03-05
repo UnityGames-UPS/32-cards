@@ -1,0 +1,124 @@
+{
+  "id": "ML-32C",
+  "roundInterval": 15000,
+  "cardInterval": 2000,
+  "bonusInterval": 2000,
+  "cashoutInterval": 5000,
+  "bettingTimerSyncInterval": 1000,
+  "roomLimit": 200,
+  "cardLimit": 5,
+  "statsLimit": 100,
+  "historyLimit": 8,
+  "levels": [
+    "casual",
+    "novice",
+    "expert",
+    "high_roller"
+  ],
+  "levelLimit": {
+    "casual": 20,
+    "novice": 20,
+    "expert": 20,
+    "high_roller": 20
+  },
+  "bets": {
+    "casual": [
+      0.5,
+      1,
+      2,
+      3,
+      5,
+      10
+    ],
+    "novice": [
+      1,
+      2,
+      3,
+      5,
+      10,
+      15
+    ],
+    "expert": [
+      2,
+      3,
+      5,
+      10,
+      15,
+      20
+    ],
+    "high_roller": [
+      5,
+      10,
+      15,
+      20,
+      30,
+      50
+    ]
+  },
+  "wagers": {
+    "main_bets": {
+      "player_8": {
+        "payout": [
+          1,
+          11
+        ],
+        "max_bet_limit": {
+          "casual": 0.5,
+          "novice": 1,
+          "expert": 4,
+          "high_roller": 8
+        }
+      },
+      "player_9": {
+        "payout": [
+          1,
+          4.5
+        ],
+        "max_bet_limit": {
+          "casual": 1,
+          "novice": 3,
+          "expert": 9,
+          "high_roller": 19
+        }
+      },
+      "player_10": {
+        "payout": [
+          1,
+          2.2
+        ],
+        "max_bet_limit": {
+          "casual": 4,
+          "novice": 8,
+          "expert": 20,
+          "high_roller": 40
+        }
+      },
+      "player_11": {
+        "payout": [
+          1,
+          1
+        ],
+        "max_bet_limit": {
+          "casual": 8,
+          "novice": 17,
+          "expert": 43,
+          "high_roller": 86
+        }
+      }
+    }
+  },
+  "bonus": {
+    "multipliers": {
+      "player_8": 14,
+      "player_9": 5.7,
+      "player_10": 2.7,
+      "player_11": 1.3
+    },
+    "chances": {
+      "player_8": 0.25,
+      "player_9": 0.25,
+      "player_10": 0.25,
+      "player_11": 0.25
+    }
+  }
+}

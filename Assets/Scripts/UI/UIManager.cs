@@ -6,6 +6,7 @@ using UnityEngine.UI;
 using TMPro;
 using UnityEngine.Networking;
 using JetBrains.Annotations;
+using System;
 
 public class UiManager : MonoBehaviour
 {
@@ -28,11 +29,20 @@ public class UiManager : MonoBehaviour
 
   [Space(10)]
   [Header("HomePage")]
+  [SerializeField] private GameObject homePage;
   [SerializeField] private Button History;
   [SerializeField] private Button CloseStartupPanelBtn;
+  [SerializeField] private Button StartupDoNotShowAgainBtn;
+  [SerializeField] private GameObject StartupDoNotShowAgainCheckmark;
   [SerializeField] private Button ReadmoreStartupPanelBtn;
   [SerializeField] private RectTransform ScrollingTextRect;
   [SerializeField] private Button[] LevelButtons;
+  [SerializeField] private TMP_Text[] LevelButtonsMinBetText;
+  [SerializeField] private TMP_Text[] LevelButtonsMaxBetText;
+  [SerializeField] private TMP_Text[] LevelButtonsPeopleText;
+  [SerializeField] private TMP_Text TotalPlayersText;
+  [SerializeField] private TMP_Text HPusernameText;
+  [SerializeField] private TMP_Text HPbalanceText;
   [Header("SidePanel")]
   [SerializeField] private Button MenuButton;
   [SerializeField] private Button GameRules;
@@ -46,6 +56,11 @@ public class UiManager : MonoBehaviour
 
   [Space(10)]
   [Header("GamePage")]
+  [SerializeField] private GameObject gamePage;
+  [SerializeField] private TMP_Text GPUsernameText;
+  [SerializeField] private TMP_Text GPminBetText;
+  [SerializeField] private TMP_Text GProundIDText;
+  [SerializeField] private TMP_Text GPbalanceText;
   [Header("SidePanel")]
   [SerializeField] private Button MenuButtonGP;
   [SerializeField] private Button GameRulesGP;
@@ -68,6 +83,7 @@ public class UiManager : MonoBehaviour
   [SerializeField] private float lobbyButtonsCollapsedY = 440f;
   [SerializeField] private float gpButtonsCollapsedY = 440f;
 
+  private double currentBalance;
   private int currentInfoPage = 0;
   private List<Button> menuButtons;
   private List<Button> menuButtonsGP;
@@ -86,10 +102,11 @@ public class UiManager : MonoBehaviour
   private int gpMenuButtonOriginalSiblingIndex;
   private Tween gpMenuToggleTween;
   private Vector3 scrollTextStartPosi;
+  private const string DoNotShowAgainPrefKey = "doNotShowAgain";
   bool isExit;
   bool isMusic;
   bool isSound;
-  
+
   private void Awake()
   {
     AssignButtonListeners();
@@ -125,7 +142,7 @@ public class UiManager : MonoBehaviour
     if (sidepanelCloseButton) sidepanelCloseButton.onClick.RemoveAllListeners();
     if (sidepanelCloseButton) sidepanelCloseButton.onClick.AddListener(RetractMenu);
     if (sidepanelCloseButton) sidepanelCloseButton.interactable = false;
-    
+
     // GamePage Menu Toggle Setup
     menuButtonsGP = new List<Button> { GameRulesGP, HistoryGP, SoundGP, MusicGP, ExpandShrinkGP, HomeGP };
 
@@ -163,10 +180,12 @@ public class UiManager : MonoBehaviour
         if (LevelButtons[i] != null)
         {
           LevelButtons[i].onClick.RemoveAllListeners();
-          LevelButtons[i].onClick.AddListener(delegate { EnterLevel(levelIndex); });
+          LevelButtons[i].onClick.AddListener(delegate { StartCoroutine(EnterLevel(levelIndex)); });
         }
       }
     }
+
+    RefreshStartupDoNotShowAgainVisual();
   }
 
   private void AssignButtonListeners()
@@ -198,6 +217,9 @@ public class UiManager : MonoBehaviour
     if (MusicGP) MusicGP.onClick.RemoveAllListeners();
     if (MusicGP) MusicGP.onClick.AddListener(delegate { ToggleMusic(); });
 
+    if (HomeGP) HomeGP.onClick.RemoveAllListeners();
+    if (HomeGP) HomeGP.onClick.AddListener(delegate { StartCoroutine(GoHomeButton()); });
+
     if (InfoLeft_button) InfoLeft_button.onClick.RemoveAllListeners();
     if (InfoLeft_button) InfoLeft_button.onClick.AddListener(delegate { GoToPreviousInfoPage(); });
 
@@ -213,33 +235,154 @@ public class UiManager : MonoBehaviour
     if (CloseStartupPanelBtn) CloseStartupPanelBtn.onClick.RemoveAllListeners();
     if (CloseStartupPanelBtn) CloseStartupPanelBtn.onClick.AddListener(delegate { ClosePopup(StartupPanel); });
 
+    if (StartupDoNotShowAgainBtn) StartupDoNotShowAgainBtn.onClick.RemoveAllListeners();
+    if (StartupDoNotShowAgainBtn) StartupDoNotShowAgainBtn.onClick.AddListener(delegate { ToggleStartupDoNotShowAgain(); });
+
     if (ReadmoreStartupPanelBtn) ReadmoreStartupPanelBtn.onClick.RemoveAllListeners();
     if (ReadmoreStartupPanelBtn) ReadmoreStartupPanelBtn.onClick.AddListener(delegate { StartupPanel.SetActive(false); OpenPopup(InfoPopup_Object); });
   }
 
-  void EnterLevel(int level)
+  internal bool ShouldShowStartupGuide()
   {
+    return !GetDoNotShowAgain();
+  }
+
+  internal void OpenStartupGuidePopup()
+  {
+    RefreshStartupDoNotShowAgainVisual();
+    OpenPopup(StartupPanel);
+  }
+
+  private void ToggleStartupDoNotShowAgain()
+  {
+    bool nextValue = !GetDoNotShowAgain();
+    SetDoNotShowAgain(nextValue);
+    RefreshStartupDoNotShowAgainVisual();
+    if (audioController) audioController.PlayButtonAudio();
+  }
+
+  private bool GetDoNotShowAgain()
+  {
+    return PlayerPrefs.GetInt(DoNotShowAgainPrefKey, 0) == 1;
+  }
+
+  private void SetDoNotShowAgain(bool value)
+  {
+    PlayerPrefs.SetInt(DoNotShowAgainPrefKey, value ? 1 : 0);
+    PlayerPrefs.Save();
+  }
+
+  private void RefreshStartupDoNotShowAgainVisual()
+  {
+    if (StartupDoNotShowAgainCheckmark)
+      StartupDoNotShowAgainCheckmark.SetActive(GetDoNotShowAgain());
+  }
+
+  IEnumerator EnterLevel(int level)
+  {
+    if (audioController) audioController.PlayButtonAudio();
     string levelName = "";
     switch (level)
     {
       case 0: levelName = "casual"; break;
-      case 1: levelName = "novice"; break;  
+      case 1: levelName = "novice"; break;
       case 2: levelName = "expert"; break;
       case 3: levelName = "high_roller"; break;
     }
 
-    if(string.IsNullOrEmpty(levelName)) Debug.LogError("Invalid level index: " + level);
+    if (string.IsNullOrEmpty(levelName)) Debug.LogError("Invalid level index: " + level);
     else
     {
-      if (audioController) audioController.PlayButtonAudio();
-      ToggleLoadingPage(true);
+      loadingPage.SetActive(true);
+
+      yield return new WaitForSecondsRealtime(0.5f);
+
       if (socketManager) socketManager.EmitJoinRoom(levelName);
     }
   }
 
-  internal void OnEnterLevelWithData()
+  private string FormatAmount(double value)
   {
-    ToggleLoadingPage(false);
+    return System.Math.Abs(value % 1d) < 0.000001d ? value.ToString("0") : value.ToString("N2");
+  }
+
+  internal void SetBalanceText(double balance)
+  {
+    if (Math.Abs(balance - currentBalance) < 0.01) return;
+
+    DOTween.To(() => currentBalance, x => currentBalance = x, balance, 0.5f)
+        .OnUpdate(() =>
+        {
+          string formattedBalance = FormatAmount(currentBalance);
+          HPbalanceText.text = formattedBalance;
+          GPbalanceText.text = formattedBalance;
+        });
+  }
+
+  internal void OnInit(InitRoot initData)
+  {
+    HPusernameText.text = initData.player.username;
+    GPUsernameText.text = initData.player.username;
+
+    SetLobbyPlayerCounts(initData.gameData.lobby);
+
+    LevelButtonsMinBetText[0].text = FormatAmount(initData.gameData.bets.casual[0]);
+    LevelButtonsMinBetText[1].text = FormatAmount(initData.gameData.bets.novice[0]);
+    LevelButtonsMinBetText[2].text = FormatAmount(initData.gameData.bets.expert[0]);
+    LevelButtonsMinBetText[3].text = FormatAmount(initData.gameData.bets.high_roller[0]);
+
+    LevelButtonsMaxBetText[0].text = FormatAmount(initData.gameData.wagers.main_bets.player_11.max_bet_limit.casual);
+    LevelButtonsMaxBetText[1].text = FormatAmount(initData.gameData.wagers.main_bets.player_11.max_bet_limit.novice);
+    LevelButtonsMaxBetText[2].text = FormatAmount(initData.gameData.wagers.main_bets.player_11.max_bet_limit.expert);
+    LevelButtonsMaxBetText[3].text = FormatAmount(initData.gameData.wagers.main_bets.player_11.max_bet_limit.high_roller);
+  }
+
+  internal void SetLobbyPlayerCounts(Lobby lobby)
+  {
+    int total = lobby.casual + lobby.novice + lobby.expert + lobby.high_roller;
+    TotalPlayersText.text = total.ToString();
+
+    LevelButtonsPeopleText[0].text = lobby.casual.ToString();
+    LevelButtonsPeopleText[1].text = lobby.novice.ToString();
+    LevelButtonsPeopleText[2].text = lobby.expert.ToString();
+    LevelButtonsPeopleText[3].text = lobby.high_roller.ToString();
+  }
+
+  internal void OnEnterLevelWithData(JoinLevelResponsePayload data)
+  {
+    GProundIDText.text = data.roomId[5..Mathf.Min(5 + 12, data.roomId.Length)];
+
+    switch (data.level)
+    {
+      case "casual": GPminBetText.text = FormatAmount(socketManager.initData.gameData.bets.casual[0]); break;
+      case "novice": GPminBetText.text = FormatAmount(socketManager.initData.gameData.bets.novice[0]); break;
+      case "expert": GPminBetText.text = FormatAmount(socketManager.initData.gameData.bets.expert[0]); break;
+      case "high_roller": GPminBetText.text = FormatAmount(socketManager.initData.gameData.bets.high_roller[0]); break;
+    }
+
+    homePage.SetActive(false);
+    gamePage.SetActive(true);
+    loadingPage.SetActive(false);
+  }
+
+  internal void OnLeaveLevel()
+  {
+    homePage.SetActive(true);
+    gamePage.SetActive(false);
+    loadingPage.SetActive(false);
+  }
+
+  IEnumerator GoHomeButton()
+  {
+
+    if (audioController) audioController.PlayBetButtonAudio();
+    RetractMenuGP();
+    loadingPage.SetActive(true);
+    gamePage.SetActive(false);
+
+    yield return new WaitForSecondsRealtime(0.5f);
+
+    socketManager.EmitLeaveRoom();
   }
 
   private void ToggleMenu()
@@ -475,7 +618,7 @@ public class UiManager : MonoBehaviour
 
     if (InfoPageNumberText != null)
       InfoPageNumberText.text = $"{currentInfoPage + 1}/{InfoPages_Objects.Count}";
-    
+
     if (InfoLeft_button) InfoLeft_button.interactable = currentInfoPage > 0;
     if (InfoRight_button) InfoRight_button.interactable = currentInfoPage < InfoPages_Objects.Count - 1;
   }
@@ -607,10 +750,5 @@ public class UiManager : MonoBehaviour
     });
 
     isGPMenuExpanded = false;
-  }
-
-  void ToggleLoadingPage(bool show)
-  {
-    if (loadingPage) loadingPage.SetActive(show);
   }
 }
