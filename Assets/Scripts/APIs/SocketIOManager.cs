@@ -417,6 +417,16 @@ public class SocketIOManager : MonoBehaviour
   private void HandleRoundEnd(string jsonObject)
   {
     Debug.Log("ROUND_END: " + jsonObject);
+    try
+    {
+      RoundEndEvent response = JsonConvert.DeserializeObject<RoundEndEvent>(jsonObject);
+      if (response != null)
+        uiManager.OnRoundResult(response.winner);
+    }
+    catch (Exception ex)
+    {
+      Debug.LogError("Error parsing round end data: " + ex.Message);
+    }
   }
 
   private void HandleCashout(string jsonObject)
@@ -585,6 +595,13 @@ public class RoundStartEvent
   public long bettingEndTime;
   public long serverTime;
   public int playerCount;
+}
+
+[Serializable]
+public class RoundEndEvent
+{
+  public string roundId;
+  public int winner; //Incomepelete we receive more data here. Maybe usefull
 }
 
 //JOIN LEVEL ACK

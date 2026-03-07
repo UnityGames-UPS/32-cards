@@ -14,6 +14,7 @@ public class UiManager : MonoBehaviour
   [SerializeField] private SocketIOManager socketManager;
   [SerializeField] private BetPanelManager betPanelManager;
   [SerializeField] private LeaderboardController leaderboardController;
+  [SerializeField] private GameStatsUIController gameStatsUIController;
   [SerializeField] private Button HistoryClose_button;
   [SerializeField] private Button InfoClose_button;
   [SerializeField] private Button InfoLeft_button;
@@ -448,6 +449,8 @@ public class UiManager : MonoBehaviour
 
     UpdateGamePageMinMaxTexts();
     UpdateBetChipTextsForCurrentLevel();
+    if (gameStatsUIController != null)
+      gameStatsUIController.InitializeFromJoinStats(data.stats);
 
     homePage.SetActive(false);
     gamePage.SetActive(true);
@@ -458,6 +461,12 @@ public class UiManager : MonoBehaviour
       leaderboardController.Initialize();
       leaderboardController.UpdateLeaderboard(data.leaderboards);
     }
+  }
+
+  internal void OnRoundResult(int sideValue)
+  {
+    if (gameStatsUIController != null)
+      gameStatsUIController.OnNewRoundResult(sideValue);
   }
 
   private void UpdateGamePageMinMaxTexts()
@@ -511,31 +520,9 @@ public class UiManager : MonoBehaviour
     if (socketManager == null || socketManager.initData == null || socketManager.initData.gameData == null || socketManager.initData.gameData.bets == null)
       return;
 
-    BetPanelManager panelManager = GetBetPanelManager();
-    if (panelManager == null)
-      return;
-
     List<double> levelBets = GetBetsForLevel(currentLevel, socketManager.initData.gameData.bets);
-    panelManager.RestoreCachedChipSprites();
-    panelManager.SetChipValues(levelBets);
-  }
-
-  private BetPanelManager GetBetPanelManager()
-  {
-    if (betPanelManager != null)
-      return betPanelManager;
-
-    BetPanelManager[] panelManagers = Resources.FindObjectsOfTypeAll<BetPanelManager>();
-    for (int i = 0; i < panelManagers.Length; i++)
-    {
-      if (panelManagers[i] != null && panelManagers[i].gameObject.scene.IsValid())
-      {
-        betPanelManager = panelManagers[i];
-        break;
-      }
-    }
-
-    return betPanelManager;
+    betPanelManager.RestoreCachedChipSprites();
+    betPanelManager.SetChipValues(levelBets);
   }
 
   private List<double> GetBetsForLevel(string levelName, Bets bets)
