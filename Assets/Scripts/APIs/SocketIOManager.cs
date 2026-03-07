@@ -376,11 +376,35 @@ public class SocketIOManager : MonoBehaviour
   private void HandleCashout(string jsonObject)
   {
     Debug.Log("CASHOUT: " + jsonObject);
+    try
+    {
+      CashoutEvent response = JsonConvert.DeserializeObject<CashoutEvent>(jsonObject);
+      if (response != null && response.leaderboards != null)
+      {
+        uiManager.OnLeaderboardUpdated(response.leaderboards);
+      }
+    }
+    catch (Exception ex)
+    {
+      Debug.LogError("Error parsing cashout data: " + ex.Message);
+    }
   }
 
   private void HandleLeaderboardUpdate(string jsonObject)
   {
     Debug.Log("LEADERBOARD_UPDATE: " + jsonObject);
+    try
+    {
+      LeaderboardUpdateEvent response = JsonConvert.DeserializeObject<LeaderboardUpdateEvent>(jsonObject);
+      if (response != null && response.leaderboards != null)
+      {
+        uiManager.OnLeaderboardUpdated(response.leaderboards);
+      }
+    }
+    catch (Exception ex)
+    {
+      Debug.LogError("Error parsing leaderboard update: " + ex.Message);
+    }
   }
 
   private void HandleJoinLevelAck(string jsonObject)
@@ -439,25 +463,18 @@ public class AuthTokenData
 //COMMON
 
 [Serializable]
-public class LeaderBoard
+public class Leaderboards
 {
-  public List<Richest> richest;
-  public List<Winners> winners;
+  public List<LeaderboardEntry> richest;
+  public List<LeaderboardEntry> winners;
 }
 
 [Serializable]
-public class Richest
+public class LeaderboardEntry
 {
   public string username;
   public double balance;
-  public int rank;
-}
-
-[Serializable]
-public class Winners
-{
-  public string username;
-  public int totalWins;
+  public double totalWins;
   public int rank;
 }
 
@@ -476,7 +493,7 @@ public class JoinLevelResponsePayload
   public string oldRoomId;
   public int playerCount;
   public string level;
-  public LeaderBoard leaderboards;
+  public Leaderboards leaderboards;
   public RoundState roundState;
 }
 
@@ -549,10 +566,25 @@ public class GameData
 }
 
 [Serializable]
-public class Leaderboards
+public class LeaderboardUpdateEvent
 {
-  public List<object> richest;
-  public List<object> winners;
+  public Leaderboards leaderboards;
+}
+
+[Serializable]
+public class CashoutEvent
+{
+  public Leaderboards leaderboards;
+  public List<CashoutPayout> payouts;
+}
+
+[Serializable]
+public class CashoutPayout
+{
+  public double win;
+  public double balance;
+  public string username;
+  public string userId;
 }
 
 [Serializable]

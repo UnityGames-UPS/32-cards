@@ -382,38 +382,38 @@ public class DealerController : MonoBehaviour
       }
       dealSequenceRoutine = StartCoroutine(PlayAllDealSegments());
     }
-    else if (Input.GetKeyDown(KeyCode.Alpha1))
-    {
-      if (dealSequenceRoutine != null)
-      {
-        StopCoroutine(dealSequenceRoutine);
-      }
-      PlayDealSegment(0, null);
-    }
-    else if (Input.GetKeyDown(KeyCode.Alpha2))
-    {
-      if (dealSequenceRoutine != null)
-      {
-        StopCoroutine(dealSequenceRoutine);
-      }
-      PlayDealSegment(1, null);
-    }
-    else if (Input.GetKeyDown(KeyCode.Alpha3))
-    {
-      if (dealSequenceRoutine != null)
-      {
-        StopCoroutine(dealSequenceRoutine);
-      }
-      PlayDealSegment(2, null);
-    }
-    else if (Input.GetKeyDown(KeyCode.Alpha4))
-    {
-      if (dealSequenceRoutine != null)
-      {
-        StopCoroutine(dealSequenceRoutine);
-      }
-      PlayDealSegment(3, null);
-    }
+    // else if (Input.GetKeyDown(KeyCode.Alpha1))
+    // {
+    //   if (dealSequenceRoutine != null)
+    //   {
+    //     StopCoroutine(dealSequenceRoutine);
+    //   }
+    //   PlayDealSegment(0, null);
+    // }
+    // else if (Input.GetKeyDown(KeyCode.Alpha2))
+    // {
+    //   if (dealSequenceRoutine != null)
+    //   {
+    //     StopCoroutine(dealSequenceRoutine);
+    //   }
+    //   PlayDealSegment(1, null);
+    // }
+    // else if (Input.GetKeyDown(KeyCode.Alpha3))
+    // {
+    //   if (dealSequenceRoutine != null)
+    //   {
+    //     StopCoroutine(dealSequenceRoutine);
+    //   }
+    //   PlayDealSegment(2, null);
+    // }
+    // else if (Input.GetKeyDown(KeyCode.Alpha4))
+    // {
+    //   if (dealSequenceRoutine != null)
+    //   {
+    //     StopCoroutine(dealSequenceRoutine);
+    //   }
+    //   PlayDealSegment(3, null);
+    // }
   }
 
 }

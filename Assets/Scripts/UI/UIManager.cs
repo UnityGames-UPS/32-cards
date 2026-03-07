@@ -57,6 +57,7 @@ public class UiManager : MonoBehaviour
   [Space(10)]
   [Header("GamePage")]
   [SerializeField] private GameObject gamePage;
+  [SerializeField] private LeaderboardController leaderboardController;
   [SerializeField] private TMP_Text GPUsernameText;
   [SerializeField] private TMP_Text GPminBetText;
   [SerializeField] private TMP_Text GProundIDText;
@@ -303,7 +304,7 @@ public class UiManager : MonoBehaviour
 
   private string FormatAmount(double value)
   {
-    return System.Math.Abs(value % 1d) < 0.000001d ? value.ToString("0") : value.ToString("N2");
+    return GameUtility.FormatCurrency(value);
   }
 
   internal void SetBalanceText(double balance)
@@ -323,6 +324,11 @@ public class UiManager : MonoBehaviour
   {
     HPusernameText.text = initData.player.username;
     GPUsernameText.text = initData.player.username;
+    if (leaderboardController != null)
+    {
+      leaderboardController.Initialize();
+      leaderboardController.SetLocalPlayer(initData.player.username, null);
+    }
 
     SetLobbyPlayerCounts(initData.gameData.lobby);
 
@@ -363,6 +369,12 @@ public class UiManager : MonoBehaviour
     homePage.SetActive(false);
     gamePage.SetActive(true);
     loadingPage.SetActive(false);
+
+    if (leaderboardController != null)
+    {
+      leaderboardController.Initialize();
+      leaderboardController.UpdateLeaderboard(data.leaderboards);
+    }
   }
 
   internal void OnLeaveLevel()
@@ -370,6 +382,17 @@ public class UiManager : MonoBehaviour
     homePage.SetActive(true);
     gamePage.SetActive(false);
     loadingPage.SetActive(false);
+
+    if (leaderboardController != null)
+    {
+      leaderboardController.Hide();
+    }
+  }
+
+  internal void OnLeaderboardUpdated(Leaderboards leaderboards)
+  {
+    if (leaderboardController == null) return;
+    leaderboardController.UpdateLeaderboard(leaderboards);
   }
 
   IEnumerator GoHomeButton()
