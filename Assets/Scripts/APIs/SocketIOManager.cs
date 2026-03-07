@@ -18,6 +18,7 @@ public class SocketIOManager : MonoBehaviour
   [SerializeField] internal JSFunctCalls JSManager;
   [SerializeField] private string testToken;
   [SerializeField] internal InitRoot initData;
+  private string pendingSwitchLevel = null;
 
   private bool isConnected = false;
   private bool hasEverConnected = false;
@@ -271,6 +272,18 @@ public class SocketIOManager : MonoBehaviour
     EmitRequest("JOIN_LEVEL", payload, HandleJoinLevelAck);
   }
 
+  internal void EmitSwitchLevel(string roomName)
+  {
+    if (string.IsNullOrEmpty(roomName))
+    {
+      Debug.LogError("EmitSwitchLevel called with empty roomName.");
+      return;
+    }
+
+    pendingSwitchLevel = roomName;
+    EmitRequest("HOME", new { }, HandleSwitchLevelLeaveAck);
+  }
+
   private void EmitRequest<T>(string requestType, T payload, Action<string> ackCallback)
   {
     try
@@ -341,11 +354,44 @@ public class SocketIOManager : MonoBehaviour
   private void HandleLobbyCount(string jsonObject)
   {
     Debug.Log("LOBBY_COUNT: " + jsonObject);
+    try
+    {
+      LobbyCountEvent response = JsonConvert.DeserializeObject<LobbyCountEvent>(jsonObject);
+      if (response != null)
+      {
+        uiManager.SetLobbyPlayerCounts(response.lobby);
+        uiManager.SetGamePagePlayerCount(response.lobby);
+      }
+      else
+      {
+        Debug.LogError("Lobby count data is null");
+      }
+    }
+    catch (Exception ex)
+    {
+      Debug.LogError("Error parsing lobby count data: " + ex.Message);
+    }
   }
 
   private void HandleRoundStart(string jsonObject)
   {
     Debug.Log("ROUND_START: " + jsonObject);
+    try
+    {
+      RoundStartEvent response = JsonConvert.DeserializeObject<RoundStartEvent>(jsonObject);
+      if (response != null)
+      {
+        uiManager.OnRoundStart(response);
+      }
+      else
+      {
+        Debug.LogError("Round start data is null");
+      }
+    }
+    catch (Exception ex)
+    {
+      Debug.LogError("Error parsing round start data: " + ex.Message);
+    }
   }
 
   private void HandleBettingTimer(string jsonObject)
@@ -416,10 +462,16 @@ public class SocketIOManager : MonoBehaviour
       if (response != null && response.success)
       {
         uiManager.OnEnterLevelWithData(response.payload);
+        pendingSwitchLevel = null;
       }
       else
       {
         Debug.LogError("Failed to join level");
+        if (!string.IsNullOrEmpty(pendingSwitchLevel))
+        {
+          Debug.LogError("Switch level flow failed during JOIN_LEVEL.");
+          pendingSwitchLevel = null;
+        }
       }
     }
     catch (Exception ex)
@@ -450,6 +502,38 @@ public class SocketIOManager : MonoBehaviour
       Debug.LogError("Error parsing leave level response: " + ex.Message);
     }
   }
+
+  void HandleSwitchLevelLeaveAck(string json)
+  {
+    Debug.Log("SWITCH LEAVE RESP: " + json);
+    try
+    {
+      LeaveLevelResponse response = JsonConvert.DeserializeObject<LeaveLevelResponse>(json);
+      if (response != null && response.success)
+      {
+        uiManager.SetLobbyPlayerCounts(response.payload.lobby);
+        uiManager.SetBalanceText(response.payload.balance);
+
+        if (string.IsNullOrEmpty(pendingSwitchLevel))
+        {
+          Debug.LogError("Switch level target is missing after leave ack.");
+          return;
+        }
+
+        EmitJoinRoom(pendingSwitchLevel);
+      }
+      else
+      {
+        Debug.LogError("Failed to leave level during switch flow.");
+        pendingSwitchLevel = null;
+      }
+    }
+    catch (Exception ex)
+    {
+      Debug.LogError("Error parsing switch leave response: " + ex.Message);
+      pendingSwitchLevel = null;
+    }
+  }
 }
 
 //AUTH
@@ -461,6 +545,12 @@ public class AuthTokenData
 }
 
 //COMMON
+
+[Serializable]
+public class Stats
+{
+  public string matchSide;
+}
 
 [Serializable]
 public class Leaderboards
@@ -478,6 +568,25 @@ public class LeaderboardEntry
   public int rank;
 }
 
+//LOBBY COUNT EVENT
+[Serializable]
+public class LobbyCountEvent
+{
+  public Lobby lobby;
+  public int playerCount;
+}
+
+//ROUND START EVENT
+[Serializable]
+public class RoundStartEvent
+{
+  public string roundId;
+  public long startedAt;
+  public long bettingEndTime;
+  public long serverTime;
+  public int playerCount;
+}
+
 //JOIN LEVEL ACK
 [Serializable]
 public class JoinLevelResponse
@@ -489,10 +598,11 @@ public class JoinLevelResponse
 [Serializable]
 public class JoinLevelResponsePayload
 {
-  public string roomId; 
+  public string roomId;
   public string oldRoomId;
   public int playerCount;
   public string level;
+  public List<string> stats;
   public Leaderboards leaderboards;
   public RoundState roundState;
 }
@@ -500,7 +610,12 @@ public class JoinLevelResponsePayload
 [Serializable]
 public class RoundState
 {
-  public string roundId; // Incompelete
+  public string roundId;
+  public long startedAt;
+  public long bettingEndTime;
+  public long serverTime;
+  public int timeRemaining;
+  public string phase;
 }
 
 //LEAVE LEVEL ACK
@@ -519,7 +634,7 @@ public class LeaveLevelResponsePayload
   public string roomId;
   public string oldRoomId;
   public Lobby lobby;
-  public double balance; 
+  public double balance;
 }
 
 //INIT

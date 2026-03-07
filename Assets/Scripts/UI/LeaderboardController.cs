@@ -48,6 +48,7 @@ public class LeaderboardController : MonoBehaviour
   private readonly Dictionary<int, LeaderboardPlayerBlock> winnersSlotToBlock = new Dictionary<int, LeaderboardPlayerBlock>();
   private readonly Dictionary<int, Vector2> richestRestPositions = new Dictionary<int, Vector2>();
   private readonly Dictionary<int, Vector2> winnersRestPositions = new Dictionary<int, Vector2>();
+  private readonly Dictionary<int, Vector2> textRestPositions = new Dictionary<int, Vector2>();
   private readonly Dictionary<int, List<Coroutine>> blockCoroutines = new Dictionary<int, List<Coroutine>>();
   private readonly Dictionary<string, Sprite> cachedAvatars = new Dictionary<string, Sprite>();
 
@@ -763,8 +764,10 @@ public class LeaderboardController : MonoBehaviour
     if (textComponent == null) yield break;
 
     RectTransform textRect = textComponent.GetComponent<RectTransform>();
+    if (textRect == null) yield break;
+
     CanvasGroup canvasGroup = GetOrAddCanvasGroup(textComponent.gameObject);
-    Vector2 startPos = textRect.anchoredPosition;
+    Vector2 startPos = GetTextRestPosition(textComponent);
     Vector2 endPos = startPos + new Vector2(0f, -textMoveDistance);
     float elapsed = 0f;
 
@@ -778,7 +781,7 @@ public class LeaderboardController : MonoBehaviour
       yield return null;
     }
 
-    textRect.anchoredPosition = Vector2.zero;
+    textRect.anchoredPosition = startPos;
     canvasGroup.alpha = 0f;
     textComponent.gameObject.SetActive(false);
   }
@@ -789,9 +792,12 @@ public class LeaderboardController : MonoBehaviour
 
     var cg = GetOrAddCanvasGroup(textComponent.gameObject);
     var textRect = textComponent.GetComponent<RectTransform>();
+    if (textRect == null) yield break;
+
+    Vector2 restPos = GetTextRestPosition(textComponent);
     if (textRect != null)
     {
-      textRect.anchoredPosition = new Vector2(0f, -textMoveDistance);
+      textRect.anchoredPosition = restPos + new Vector2(0f, -textMoveDistance);
     }
 
     cg.alpha = 0f;
@@ -806,12 +812,12 @@ public class LeaderboardController : MonoBehaviour
       cg.alpha = eased;
       if (textRect != null)
       {
-        textRect.anchoredPosition = Vector2.Lerp(new Vector2(0f, -textMoveDistance), Vector2.zero, eased);
+        textRect.anchoredPosition = Vector2.Lerp(restPos + new Vector2(0f, -textMoveDistance), restPos, eased);
       }
       yield return null;
     }
 
-    if (textRect != null) textRect.anchoredPosition = Vector2.zero;
+    if (textRect != null) textRect.anchoredPosition = restPos;
     cg.alpha = 1f;
   }
 
@@ -823,12 +829,28 @@ public class LeaderboardController : MonoBehaviour
     if (textRect != null)
     {
       textRect.DOKill(complete: false);
-      textRect.anchoredPosition = Vector2.zero;
+      textRect.anchoredPosition = GetTextRestPosition(textComponent);
     }
 
     var cg = GetOrAddCanvasGroup(textComponent.gameObject);
     cg.alpha = 1f;
     textComponent.gameObject.SetActive(true);
+  }
+
+  private Vector2 GetTextRestPosition(TMP_Text textComponent)
+  {
+    if (textComponent == null) return Vector2.zero;
+    RectTransform textRect = textComponent.GetComponent<RectTransform>();
+    if (textRect == null) return Vector2.zero;
+
+    int id = textComponent.GetInstanceID();
+    if (!textRestPositions.TryGetValue(id, out var restPos))
+    {
+      restPos = textRect.anchoredPosition;
+      textRestPositions[id] = restPos;
+    }
+
+    return restPos;
   }
 
   private CanvasGroup GetOrAddCanvasGroup(GameObject go)

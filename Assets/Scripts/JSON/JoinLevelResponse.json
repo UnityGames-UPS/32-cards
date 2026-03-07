@@ -105,7 +105,7 @@
       "{\"matchSide\":\"player_11\"}",
       "{\"matchSide\":\"player_9\"}",
       "{\"matchSide\":\"player_11\"}",
-      {"matchSide":"player_10"}
+      "{\"matchSide\":\"player_10\"}"
     ],
     "leaderboards": {
       "richest": [

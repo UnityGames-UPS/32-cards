@@ -12,6 +12,8 @@ public class UiManager : MonoBehaviour
 {
   [SerializeField] private AudioManager audioController;
   [SerializeField] private SocketIOManager socketManager;
+  [SerializeField] private BetPanelManager betPanelManager;
+  [SerializeField] private LeaderboardController leaderboardController;
   [SerializeField] private Button HistoryClose_button;
   [SerializeField] private Button InfoClose_button;
   [SerializeField] private Button InfoLeft_button;
@@ -26,6 +28,7 @@ public class UiManager : MonoBehaviour
   [SerializeField] private GameObject HistoryPopup_Object;
   [SerializeField] private GameObject InfoPopup_Object;
   [SerializeField] private GameObject StartupPanel;
+  [SerializeField] private float popupBGTargetAlpha255 = 230f;
 
   [Space(10)]
   [Header("HomePage")]
@@ -57,11 +60,15 @@ public class UiManager : MonoBehaviour
   [Space(10)]
   [Header("GamePage")]
   [SerializeField] private GameObject gamePage;
-  [SerializeField] private LeaderboardController leaderboardController;
+
   [SerializeField] private TMP_Text GPUsernameText;
+  [SerializeField] private TMP_Text GPUsernameText2;
   [SerializeField] private TMP_Text GPminBetText;
+  [SerializeField] private TMP_Text GPseparateMinBetText;
+  [SerializeField] private TMP_Text GPseparateMaxBetText;
   [SerializeField] private TMP_Text GProundIDText;
   [SerializeField] private TMP_Text GPbalanceText;
+  [SerializeField] private TMP_Text GPPeopleCountText;
   [Header("SidePanel")]
   [SerializeField] private Button MenuButtonGP;
   [SerializeField] private Button GameRulesGP;
@@ -77,6 +84,7 @@ public class UiManager : MonoBehaviour
   [Space(10)]
   [Header("LoadingPage")]
   [SerializeField] private GameObject loadingPage;
+  [SerializeField] private TMP_Text loadingPageText;
 
   [Space(10)]
   [Header("Animation Settings")]
@@ -84,12 +92,16 @@ public class UiManager : MonoBehaviour
   [SerializeField] private float lobbyButtonsCollapsedY = 440f;
   [SerializeField] private float gpButtonsCollapsedY = 440f;
 
+  private string currentLevel = "";
   private double currentBalance;
+
+
   private int currentInfoPage = 0;
   private List<Button> menuButtons;
   private List<Button> menuButtonsGP;
   private bool isLobbyMenuExpanded = false;
   private bool isGPMenuExpanded = false;
+  private Image mainPopupBGImage;
   private readonly List<RectTransform> menuButtonsRects = new List<RectTransform>();
   private readonly List<Vector3> menuButtonsPositions = new List<Vector3>();
   private readonly List<Vector2> menuButtonsSizes = new List<Vector2>();
@@ -108,8 +120,11 @@ public class UiManager : MonoBehaviour
   bool isMusic;
   bool isSound;
 
+  internal string CurrentLevel => currentLevel;
+
   private void Awake()
   {
+    InitializePopupViews();
     AssignButtonListeners();
 
     // Homepage toggle text scroll
@@ -181,12 +196,50 @@ public class UiManager : MonoBehaviour
         if (LevelButtons[i] != null)
         {
           LevelButtons[i].onClick.RemoveAllListeners();
-          LevelButtons[i].onClick.AddListener(delegate { StartCoroutine(EnterLevel(levelIndex)); });
+          LevelButtons[i].onClick.AddListener(delegate { StartCoroutine(TryEnterLevel(levelIndex)); });
         }
       }
     }
 
     RefreshStartupDoNotShowAgainVisual();
+  }
+
+  private void InitializePopupViews()
+  {
+    SetupPopupRoot(PaytablePopup_Object);
+    SetupPopupRoot(HistoryPopup_Object);
+    SetupPopupRoot(InfoPopup_Object);
+    SetupPopupRoot(StartupPanel);
+
+    if (MainPopup_Object != null)
+    {
+      MainPopup_Object.SetActive(true);
+      if (MainPopup_Object.transform.childCount > 0)
+      {
+        Transform bgChild = MainPopup_Object.transform.GetChild(0);
+        if (bgChild != null)
+          mainPopupBGImage = bgChild.GetComponent<Image>();
+      }
+
+      if (mainPopupBGImage != null)
+      {
+        mainPopupBGImage.enabled = true;
+        mainPopupBGImage.raycastTarget = false;
+        Color bgColor = mainPopupBGImage.color;
+        bgColor.a = 0f;
+        mainPopupBGImage.color = bgColor;
+      }
+    }
+  }
+
+  private void SetupPopupRoot(GameObject popupRoot)
+  {
+    if (popupRoot == null)
+      return;
+
+    popupRoot.SetActive(true);
+    popupRoot.transform.DOKill();
+    popupRoot.transform.localScale = Vector3.zero;
   }
 
   private void AssignButtonListeners()
@@ -277,9 +330,9 @@ public class UiManager : MonoBehaviour
   {
     if (StartupDoNotShowAgainCheckmark)
       StartupDoNotShowAgainCheckmark.SetActive(GetDoNotShowAgain());
-  }
+  } 
 
-  IEnumerator EnterLevel(int level)
+  IEnumerator TryEnterLevel(int level)
   {
     if (audioController) audioController.PlayButtonAudio();
     string levelName = "";
@@ -294,17 +347,19 @@ public class UiManager : MonoBehaviour
     if (string.IsNullOrEmpty(levelName)) Debug.LogError("Invalid level index: " + level);
     else
     {
+      loadingPageText.text = "Entering a secure room";
       loadingPage.SetActive(true);
 
       yield return new WaitForSecondsRealtime(0.5f);
 
+      currentLevel = levelName;
       if (socketManager) socketManager.EmitJoinRoom(levelName);
     }
   }
 
-  private string FormatAmount(double value)
+  private string FormatAmount(double value, bool skipKFormat = false)
   {
-    return GameUtility.FormatCurrency(value);
+    return GameUtility.FormatCurrency(value, skipKFormat);
   }
 
   internal void SetBalanceText(double balance)
@@ -314,7 +369,7 @@ public class UiManager : MonoBehaviour
     DOTween.To(() => currentBalance, x => currentBalance = x, balance, 0.5f)
         .OnUpdate(() =>
         {
-          string formattedBalance = FormatAmount(currentBalance);
+          string formattedBalance = FormatAmount(currentBalance, true);
           HPbalanceText.text = formattedBalance;
           GPbalanceText.text = formattedBalance;
         });
@@ -324,6 +379,7 @@ public class UiManager : MonoBehaviour
   {
     HPusernameText.text = initData.player.username;
     GPUsernameText.text = initData.player.username;
+    GPUsernameText2.text = initData.player.username;
     if (leaderboardController != null)
     {
       leaderboardController.Initialize();
@@ -343,6 +399,31 @@ public class UiManager : MonoBehaviour
     LevelButtonsMaxBetText[3].text = FormatAmount(initData.gameData.wagers.main_bets.player_11.max_bet_limit.high_roller);
   }
 
+  internal void OnRoundStart(RoundStartEvent roundData)
+  {
+    UpdateGamePageMinMaxTexts();
+
+    if (roundData.roundId != null && !string.IsNullOrEmpty(roundData.roundId))
+      GProundIDText.text = roundData.roundId;
+
+    if (roundData.playerCount > 0)
+      GPPeopleCountText.text = roundData.playerCount.ToString();
+  }
+
+  internal void SetGamePagePlayerCount(Lobby lobby)
+  {
+    int count = 0;
+    switch (currentLevel)
+    {
+      case "casual": count = lobby.casual; break;
+      case "novice": count = lobby.novice; break;
+      case "expert": count = lobby.expert; break;
+      case "high_roller": count = lobby.high_roller; break;
+    }
+    
+    GPPeopleCountText.text = count.ToString();
+  }
+
   internal void SetLobbyPlayerCounts(Lobby lobby)
   {
     int total = lobby.casual + lobby.novice + lobby.expert + lobby.high_roller;
@@ -356,15 +437,17 @@ public class UiManager : MonoBehaviour
 
   internal void OnEnterLevelWithData(JoinLevelResponsePayload data)
   {
-    GProundIDText.text = data.roomId[5..Mathf.Min(5 + 12, data.roomId.Length)];
+    if (!string.IsNullOrEmpty(data.level))
+      currentLevel = data.level;
 
-    switch (data.level)
-    {
-      case "casual": GPminBetText.text = FormatAmount(socketManager.initData.gameData.bets.casual[0]); break;
-      case "novice": GPminBetText.text = FormatAmount(socketManager.initData.gameData.bets.novice[0]); break;
-      case "expert": GPminBetText.text = FormatAmount(socketManager.initData.gameData.bets.expert[0]); break;
-      case "high_roller": GPminBetText.text = FormatAmount(socketManager.initData.gameData.bets.high_roller[0]); break;
-    }
+    if (data.roundState != null && !string.IsNullOrEmpty(data.roundState.roundId))
+      GProundIDText.text = data.roundState.roundId;
+
+    if (data.playerCount > 0)
+      GPPeopleCountText.text = data.playerCount.ToString();
+
+    UpdateGamePageMinMaxTexts();
+    UpdateBetChipTextsForCurrentLevel();
 
     homePage.SetActive(false);
     gamePage.SetActive(true);
@@ -374,6 +457,101 @@ public class UiManager : MonoBehaviour
     {
       leaderboardController.Initialize();
       leaderboardController.UpdateLeaderboard(data.leaderboards);
+    }
+  }
+
+  private void UpdateGamePageMinMaxTexts()
+  {
+    if (socketManager == null || socketManager.initData == null || socketManager.initData.gameData == null || socketManager.initData.gameData.bets == null || socketManager.initData.gameData.wagers == null || socketManager.initData.gameData.wagers.main_bets == null)
+      return;
+
+    double minBet = 0d;
+    double maxBet = 0d;
+    switch (currentLevel)
+    {
+      case "casual":
+        if (socketManager.initData.gameData.bets.casual != null && socketManager.initData.gameData.bets.casual.Count > 0)
+          minBet = socketManager.initData.gameData.bets.casual[0];
+        maxBet = socketManager.initData.gameData.wagers.main_bets.player_11.max_bet_limit.casual;
+        break;
+      case "novice":
+        if (socketManager.initData.gameData.bets.novice != null && socketManager.initData.gameData.bets.novice.Count > 0)
+          minBet = socketManager.initData.gameData.bets.novice[0];
+        maxBet = socketManager.initData.gameData.wagers.main_bets.player_11.max_bet_limit.novice;
+        break;
+      case "expert":
+        if (socketManager.initData.gameData.bets.expert != null && socketManager.initData.gameData.bets.expert.Count > 0)
+          minBet = socketManager.initData.gameData.bets.expert[0];
+        maxBet = socketManager.initData.gameData.wagers.main_bets.player_11.max_bet_limit.expert;
+        break;
+      case "high_roller":
+        if (socketManager.initData.gameData.bets.high_roller != null && socketManager.initData.gameData.bets.high_roller.Count > 0)
+          minBet = socketManager.initData.gameData.bets.high_roller[0];
+        maxBet = socketManager.initData.gameData.wagers.main_bets.player_11.max_bet_limit.high_roller;
+        break;
+      default:
+        return;
+    }
+
+    string minFormatted = FormatAmount(minBet);
+    string maxFormatted = FormatAmount(maxBet);
+
+    if (GPminBetText != null)
+      GPminBetText.text = minFormatted;
+
+    if (GPseparateMinBetText != null)
+      GPseparateMinBetText.text = minFormatted + "\nMin";
+
+    if (GPseparateMaxBetText != null)
+      GPseparateMaxBetText.text = maxFormatted + "\nMax";
+  }
+
+  private void UpdateBetChipTextsForCurrentLevel()
+  {
+    if (socketManager == null || socketManager.initData == null || socketManager.initData.gameData == null || socketManager.initData.gameData.bets == null)
+      return;
+
+    BetPanelManager panelManager = GetBetPanelManager();
+    if (panelManager == null)
+      return;
+
+    List<double> levelBets = GetBetsForLevel(currentLevel, socketManager.initData.gameData.bets);
+    panelManager.RestoreCachedChipSprites();
+    panelManager.SetChipValues(levelBets);
+  }
+
+  private BetPanelManager GetBetPanelManager()
+  {
+    if (betPanelManager != null)
+      return betPanelManager;
+
+    BetPanelManager[] panelManagers = Resources.FindObjectsOfTypeAll<BetPanelManager>();
+    for (int i = 0; i < panelManagers.Length; i++)
+    {
+      if (panelManagers[i] != null && panelManagers[i].gameObject.scene.IsValid())
+      {
+        betPanelManager = panelManagers[i];
+        break;
+      }
+    }
+
+    return betPanelManager;
+  }
+
+  private List<double> GetBetsForLevel(string levelName, Bets bets)
+  {
+    switch (levelName)
+    {
+      case "casual":
+        return bets.casual;
+      case "novice":
+        return bets.novice;
+      case "expert":
+        return bets.expert;
+      case "high_roller":
+        return bets.high_roller;
+      default:
+        return null;
     }
   }
 
@@ -389,6 +567,23 @@ public class UiManager : MonoBehaviour
     }
   }
 
+  internal IEnumerator SwitchLevelFromBetOptions(string targetLevel)
+  {
+    if (string.IsNullOrEmpty(targetLevel))
+    {
+      Debug.LogError("SwitchLevelFromBetOptions called with empty targetLevel.");
+      yield break;
+    }
+
+    loadingPageText.text = "Entering a secure room";
+    loadingPage.SetActive(true);
+    gamePage.SetActive(false);
+
+    yield return new WaitForSecondsRealtime(0.5f);
+
+    socketManager.EmitSwitchLevel(targetLevel);
+  }
+
   internal void OnLeaderboardUpdated(Leaderboards leaderboards)
   {
     if (leaderboardController == null) return;
@@ -397,14 +592,15 @@ public class UiManager : MonoBehaviour
 
   IEnumerator GoHomeButton()
   {
-
     if (audioController) audioController.PlayBetButtonAudio();
     RetractMenuGP();
+    loadingPageText.text = "Leaving table....";
     loadingPage.SetActive(true);
     gamePage.SetActive(false);
 
     yield return new WaitForSecondsRealtime(0.5f);
 
+    currentLevel = "";
     socketManager.EmitLeaveRoom();
   }
 
@@ -543,7 +739,15 @@ public class UiManager : MonoBehaviour
   internal void OpenPopup(GameObject Popup)
   {
     if (audioController) audioController.PlayButtonAudio();
-    if (MainPopup_Object) MainPopup_Object.SetActive(true);
+    if (mainPopupBGImage != null)
+    {
+      mainPopupBGImage.DOKill();
+      mainPopupBGImage.raycastTarget = true;
+      Color bgColor = mainPopupBGImage.color;
+      bgColor.a = 0f;
+      mainPopupBGImage.color = bgColor;
+      mainPopupBGImage.DOFade(Mathf.Clamp01(popupBGTargetAlpha255 / 255f), 0.5f);
+    }
 
     if (Popup)
     {
@@ -551,6 +755,7 @@ public class UiManager : MonoBehaviour
       if (Popup == InfoPopup_Object)
         UpdateInfoUI();
       var rect = Popup.transform;
+      rect.DOKill();
 
       // Start from small
       rect.localScale = Vector3.zero;
@@ -565,9 +770,20 @@ public class UiManager : MonoBehaviour
   {
     if (audioController) audioController.PlayButtonAudio();
 
+    if (mainPopupBGImage != null)
+    {
+      mainPopupBGImage.DOKill();
+      mainPopupBGImage.DOFade(0f, 0.6f).OnComplete(() =>
+      {
+        if (mainPopupBGImage != null)
+          mainPopupBGImage.raycastTarget = false;
+      });
+    }
+
     if (Popup)
     {
       var rect = Popup.transform;
+      rect.DOKill();
 
       // Scale down smoothly
       rect.DOScale(Vector3.zero, 0.6f)
@@ -575,12 +791,12 @@ public class UiManager : MonoBehaviour
           .OnComplete(() =>
           {
             Popup.SetActive(false);
-            if (MainPopup_Object) MainPopup_Object.SetActive(false);
           });
     }
     else
     {
-      if (MainPopup_Object) MainPopup_Object.SetActive(false);
+      if (mainPopupBGImage != null)
+        mainPopupBGImage.raycastTarget = false;
     }
   }
 

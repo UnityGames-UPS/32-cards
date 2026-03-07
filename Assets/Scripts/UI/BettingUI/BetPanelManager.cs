@@ -60,38 +60,20 @@ public class BetPanelManager : MonoBehaviour
   [SerializeField] private float cancelButtonExpandedX = -229f;
   [SerializeField] private float doubleButtonExpandedX = -117f;
 
-  [Header("Bet Options Popup")]
-  [SerializeField] private RectTransform betOptionsPopupRoot;
-  [SerializeField] private Button betOptionsOpenButton;
-  [SerializeField] private Button betOptionsConfirmButton;
-  [SerializeField] private Button betOptionsBGCloseButton;
-  [SerializeField] private Image betOptionsBGImage;
-
   private readonly Stack<BetUndoEntry> betUndoStack = new Stack<BetUndoEntry>();
   private readonly List<List<BetChipView>> chipsPerSpot = new List<List<BetChipView>>();
+  private readonly List<Sprite> cachedChipOptionSprites = new List<Sprite>();
+  private Sprite cachedMainChipSprite;
 
   private bool areChipOptionsExpanded;
   private bool areBetActionsExpanded;
 
 
-  private void Awake()
-  {
-    InitializeBetOptionsPopupState();
-  }
-
   private void Start()
   {
+    CacheChipSprites();
     InitializeSpotState();
     BindButtonListeners();
-  }
-
-  private void InitializeBetOptionsPopupState()
-  {
-    if (betOptionsPopupRoot != null)
-      betOptionsPopupRoot.localScale = Vector3.zero;
-
-    if (betOptionsBGImage != null)
-      betOptionsBGImage.enabled = false;
   }
 
   private void InitializeSpotState()
@@ -172,39 +154,41 @@ public class BetPanelManager : MonoBehaviour
       undoBetButton.onClick.RemoveAllListeners();
       undoBetButton.onClick.AddListener(UndoLastBet);
     }
-
-    if (betOptionsOpenButton != null)
-    {
-      betOptionsOpenButton.onClick.RemoveAllListeners();
-      betOptionsOpenButton.onClick.AddListener(OpenBetOptionsPopup);
-    }
-
-    if (betOptionsBGCloseButton != null)
-    {
-      betOptionsBGCloseButton.onClick.RemoveAllListeners();
-      betOptionsBGCloseButton.onClick.AddListener(CloseBetOptionsPopup);
-    }
-
-    if (betOptionsConfirmButton != null)
-    {
-      betOptionsConfirmButton.onClick.RemoveAllListeners();
-      betOptionsConfirmButton.onClick.AddListener(CloseBetOptionsPopup);
-    }
   }
 
-  internal void OnCoinOptionButtonPressed(Button selectedCoinButton)
+  internal void SetChipValues(List<double> orderedBets)
   {
-    if (selectedCoinButton == null)
+    if (orderedBets == null || orderedBets.Count == 0)
       return;
+
+    if (mainChip != null && mainChip.chipValueText != null)
+      mainChip.chipValueText.text = GameUtility.FormatCurrency(orderedBets[0]);
 
     for (int i = 0; i < chipOptions.Count; i++)
     {
-      var option = chipOptions[i];
-      if (option != null && option.button == selectedCoinButton)
-      {
-        ApplySelectedChipOption(option);
+      if (i + 1 >= orderedBets.Count)
         break;
-      }
+
+      ChipButtonView option = chipOptions[i];
+      if (option == null || option.chipValueText == null)
+        continue;
+
+      option.chipValueText.text = GameUtility.FormatCurrency(orderedBets[i + 1]);
+    }
+  }
+
+  internal void RestoreCachedChipSprites()
+  {
+    if (mainChip != null && mainChip.chipImage != null)
+      mainChip.chipImage.sprite = cachedMainChipSprite;
+
+    for (int i = 0; i < chipOptions.Count && i < cachedChipOptionSprites.Count; i++)
+    {
+      ChipButtonView option = chipOptions[i];
+      if (option == null || option.chipImage == null)
+        continue;
+
+      option.chipImage.sprite = cachedChipOptionSprites[i];
     }
   }
 
@@ -266,46 +250,6 @@ public class BetPanelManager : MonoBehaviour
     }
 
     areChipOptionsExpanded = false;
-  }
-
-  private void OpenBetOptionsPopup()
-  {
-    if (betOptionsPopupRoot == null)
-      return;
-
-    betOptionsPopupRoot.DOKill();
-    betOptionsPopupRoot.localScale = Vector3.zero;
-    
-    if (betOptionsBGImage != null)
-    {
-      betOptionsBGImage.enabled = false;
-      betOptionsBGImage.gameObject.SetActive(true);
-    }
-
-    betOptionsPopupRoot.DOScale(Vector3.one, 0.3f).OnComplete(() =>
-    {
-      betOptionsBGImage.enabled = true;
-    });
-  }
-
-  private void CloseBetOptionsPopup()
-  {
-    if (betOptionsPopupRoot == null)
-      return;
-
-    if(betOptionsBGImage != null)
-    {
-      betOptionsBGImage.enabled = false;
-    }
-
-    betOptionsPopupRoot.DOKill();
-    betOptionsPopupRoot.DOScale(Vector3.zero, 0.3f).OnComplete(() =>
-    {
-      if (betOptionsBGImage != null)
-      {
-        betOptionsBGImage.gameObject.SetActive(false);        
-      }
-    });
   }
 
   private void ApplySelectedChipOption(ChipButtonView selectedOption)
@@ -514,4 +458,15 @@ public class BetPanelManager : MonoBehaviour
     return spotIndex >= 0 && spotIndex < betSpots.Count;
   }
 
+  private void CacheChipSprites()
+  {
+    cachedMainChipSprite = mainChip != null && mainChip.chipImage != null ? mainChip.chipImage.sprite : null;
+
+    cachedChipOptionSprites.Clear();
+    for (int i = 0; i < chipOptions.Count; i++)
+    {
+      ChipButtonView option = chipOptions[i];
+      cachedChipOptionSprites.Add(option != null && option.chipImage != null ? option.chipImage.sprite : null);
+    }
+  }
 }
