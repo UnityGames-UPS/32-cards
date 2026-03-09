@@ -402,6 +402,22 @@ public class SocketIOManager : MonoBehaviour
   private void HandleBonus(string jsonObject)
   {
     Debug.Log("BONUS: " + jsonObject);
+    try
+    {
+      BonusEvent response = JsonConvert.DeserializeObject<BonusEvent>(jsonObject);
+      if (response != null)
+      {
+        uiManager.OnBonus(response);
+      }
+      else
+      {
+        Debug.LogError("Bonus data is null");
+      }
+    }
+    catch (Exception ex)
+    {
+      Debug.LogError("Error parsing bonus data: " + ex.Message);
+    }
   }
 
   private void HandleBetPlaced(string jsonObject)
@@ -412,6 +428,22 @@ public class SocketIOManager : MonoBehaviour
   private void HandleCardDealt(string jsonObject)
   {
     Debug.Log("CARD_DEALT: " + jsonObject);
+    try
+    {
+      CardDealtEvent response = JsonConvert.DeserializeObject<CardDealtEvent>(jsonObject);
+      if (response != null)
+      {
+        uiManager.OnCardDealt(response);
+      }
+      else
+      {
+        Debug.LogError("Card dealt data is null");
+      }
+    }
+    catch (Exception ex)
+    {
+      Debug.LogError("Error parsing card dealt data: " + ex.Message);
+    }
   }
 
   private void HandleRoundEnd(string jsonObject)
@@ -435,10 +467,8 @@ public class SocketIOManager : MonoBehaviour
     try
     {
       CashoutEvent response = JsonConvert.DeserializeObject<CashoutEvent>(jsonObject);
-      if (response != null && response.leaderboards != null)
-      {
-        uiManager.OnLeaderboardUpdated(response.leaderboards);
-      }
+      if (response != null)
+        uiManager.OnCashout(response);
     }
     catch (Exception ex)
     {
@@ -602,6 +632,33 @@ public class RoundEndEvent
 {
   public string roundId;
   public int winner; //Incomepelete we receive more data here. Maybe usefull
+}
+
+[Serializable]
+public class BonusEvent
+{
+  public string roundId;
+  public int bonusPlayer;
+  public double bonusMultiplier;
+}
+
+[Serializable]
+public class CardDealtEvent
+{
+  public string roundId;
+  public Card card;
+  public int player;
+  public int bonusPlayer;
+  public double bonusMultiplier;
+  public int cardsDealt;
+}
+
+[Serializable]
+public class Card
+{
+  public string suit;
+  public string rank;
+  public string color;
 }
 
 //JOIN LEVEL ACK

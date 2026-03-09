@@ -1,0 +1,39 @@
+{
+  "roundId": "3f17be93-66e5-4352-a203-4fbbc2d30197",
+  "matchSide": "player_11",
+  "winner": 11,
+  "scores": {
+    "player_8": 16,
+    "player_9": 18,
+    "player_10": 16,
+    "player_11": 20
+  },
+  "player8Cards": [
+    {
+      "suit": "diamonds",
+      "rank": "8",
+      "color": "red"
+    }
+  ],
+  "player9Cards": [
+    {
+      "suit": "spades",
+      "rank": "9",
+      "color": "black"
+    }
+  ],
+  "player10Cards": [
+    {
+      "suit": "hearts",
+      "rank": "6",
+      "color": "red"
+    }
+  ],
+  "player11Cards": [
+    {
+      "suit": "diamonds",
+      "rank": "9",
+      "color": "red"
+    }
+  ]
+}

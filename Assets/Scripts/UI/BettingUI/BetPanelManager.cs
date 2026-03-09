@@ -9,6 +9,12 @@ using UnityEngine.UI;
 public class BetPanelManager : MonoBehaviour
 {
   [Serializable]
+  private class AnnouncerView
+  {
+    public CanvasGroup canvasGroup;
+  }
+
+  [Serializable]
   private class ChipButtonView
   {
     public Button button;
@@ -60,6 +66,25 @@ public class BetPanelManager : MonoBehaviour
   [SerializeField] private float cancelButtonExpandedX = -229f;
   [SerializeField] private float doubleButtonExpandedX = -117f;
 
+  [Header("Round Announcer")]
+  [SerializeField] private RectTransform announcerParent;
+  [SerializeField] private AnnouncerView lightGreenAnnouncer;
+  [SerializeField] private AnnouncerView yellowAnnouncer;
+  [SerializeField] private AnnouncerView pinkAnnouncer;
+  [SerializeField] private AnnouncerView darkGreenAnnouncer;
+  [SerializeField] private RectTransform timerTextRoot;
+  [SerializeField] private CanvasGroup timerTextCanvasGroup;
+  [SerializeField] private TMP_Text timerText;
+  [SerializeField] private Color bettingTimerColor = Color.white;
+  [SerializeField] private Color finalCountdownTimerColor = Color.white;
+  [SerializeField] private float announcerFadeDuration = 0.25f;
+  [SerializeField] private float timerFadeDuration = 0.2f;
+  [SerializeField] private float timerScalePunch = 1.4f;
+  [SerializeField] private float announcerScalePunch = 1.4f;
+  [SerializeField] private float scaleUpDuration = 0.16f;
+  [SerializeField] private float scaleDownDuration = 0.16f;
+  [SerializeField] private float postRoundAnimationDelay = 3f;
+
   private readonly Stack<BetUndoEntry> betUndoStack = new Stack<BetUndoEntry>();
   private readonly List<List<BetChipView>> chipsPerSpot = new List<List<BetChipView>>();
   private readonly List<Sprite> cachedChipOptionSprites = new List<Sprite>();
@@ -67,13 +92,35 @@ public class BetPanelManager : MonoBehaviour
 
   private bool areChipOptionsExpanded;
   private bool areBetActionsExpanded;
+  private Coroutine roundCountdownRoutine;
+  private Coroutine nextRoundRoutine;
+  private bool hasReceivedFirstCardDealt;
+  private string activeRoundId;
+  private bool roundEndReceived;
+  private Vector3 timerTextBaseScale = Vector3.one;
+  private Vector3 announcerParentBaseScale = Vector3.one;
 
 
   private void Start()
   {
     CacheChipSprites();
     InitializeSpotState();
+    InitializeRoundAnnouncerState();
     BindButtonListeners();
+  }
+
+  private void OnDisable()
+  {
+    StopRoundRoutines();
+    DOTween.Kill(timerTextRoot);
+    KillAnnouncerTweens(lightGreenAnnouncer);
+    KillAnnouncerTweens(yellowAnnouncer);
+    KillAnnouncerTweens(pinkAnnouncer);
+    KillAnnouncerTweens(darkGreenAnnouncer);
+    if (announcerParent != null)
+      announcerParent.DOKill();
+    if (timerTextCanvasGroup != null)
+      timerTextCanvasGroup.DOKill();
   }
 
   private void InitializeSpotState()
@@ -190,6 +237,75 @@ public class BetPanelManager : MonoBehaviour
 
       option.chipImage.sprite = cachedChipOptionSprites[i];
     }
+  }
+
+  internal void OnRoundStart(RoundStartEvent roundData)
+  {
+    if (roundData == null)
+      return;
+
+    activeRoundId = roundData.roundId;
+    hasReceivedFirstCardDealt = false;
+    roundEndReceived = false;
+
+    if (nextRoundRoutine != null)
+    {
+      StopCoroutine(nextRoundRoutine);
+      nextRoundRoutine = null;
+    }
+
+    if (roundCountdownRoutine != null)
+      StopCoroutine(roundCountdownRoutine);
+
+    roundCountdownRoutine = StartCoroutine(RunBettingCountdown(roundData));
+  }
+
+  internal void OnBonus(BonusEvent bonusData)
+  {
+    if (bonusData == null)
+      return;
+
+    if (!string.IsNullOrEmpty(activeRoundId) && !string.IsNullOrEmpty(bonusData.roundId) && activeRoundId != bonusData.roundId)
+      return;
+
+    if (roundCountdownRoutine != null)
+    {
+      StopCoroutine(roundCountdownRoutine);
+      roundCountdownRoutine = null;
+    }
+
+    FadeTimer(false);
+    FadeToAnnouncer(pinkAnnouncer, true);
+  }
+
+  internal void OnCardDealt(CardDealtEvent cardDealtData)
+  {
+    if (cardDealtData == null || hasReceivedFirstCardDealt)
+      return;
+
+    if (!string.IsNullOrEmpty(activeRoundId) && !string.IsNullOrEmpty(cardDealtData.roundId) && activeRoundId != cardDealtData.roundId)
+      return;
+
+    hasReceivedFirstCardDealt = true;
+    HideAllAnnouncers();
+  }
+
+  internal void OnRoundEnd()
+  {
+    roundEndReceived = true;
+  }
+
+  internal void OnCashout()
+  {
+    if (!roundEndReceived)
+      return;
+
+    roundEndReceived = false;
+
+    if (nextRoundRoutine != null)
+      StopCoroutine(nextRoundRoutine);
+
+    nextRoundRoutine = StartCoroutine(RunNextRoundCountdown());
   }
 
   private void ToggleChipOptions()
@@ -468,5 +584,205 @@ public class BetPanelManager : MonoBehaviour
       ChipButtonView option = chipOptions[i];
       cachedChipOptionSprites.Add(option != null && option.chipImage != null ? option.chipImage.sprite : null);
     }
+  }
+
+  private void InitializeRoundAnnouncerState()
+  {
+    timerTextBaseScale = timerTextRoot != null ? timerTextRoot.localScale : Vector3.one;
+    announcerParentBaseScale = announcerParent != null ? announcerParent.localScale : Vector3.one;
+
+    SetAnnouncerVisible(lightGreenAnnouncer, false, true);
+    SetAnnouncerVisible(yellowAnnouncer, false, true);
+    SetAnnouncerVisible(pinkAnnouncer, false, true);
+    SetAnnouncerVisible(darkGreenAnnouncer, false, true);
+    SetTimerVisible(false, true);
+  }
+
+  private IEnumerator RunBettingCountdown(RoundStartEvent roundData)
+  {
+    int startValue = GetBettingStartValue(roundData);
+    bool switchedToYellow = false;
+    bool firstTick = true;
+
+    FadeTimer(true);
+    FadeToAnnouncer(lightGreenAnnouncer, true);
+
+    for (int value = startValue; value >= 0; value--)
+    {
+      if (value == 5 && !switchedToYellow)
+      {
+        FadeToAnnouncer(yellowAnnouncer, true);
+        switchedToYellow = true;
+      }
+
+      SetTimerValue(value, bettingTimerColor);
+
+      if (value == startValue && firstTick)
+      {
+        PlaySynchronizedScale(lightGreenAnnouncer);
+        firstTick = false;
+      }
+      else if (value == 5)
+      {
+        PlaySynchronizedScale(yellowAnnouncer);
+      }
+      else if (value <= 4)
+      {
+        PlayTimerScaleOnly();
+      }
+
+      yield return new WaitForSecondsRealtime(1f);
+    }
+
+    roundCountdownRoutine = null;
+  }
+
+  private IEnumerator RunNextRoundCountdown()
+  {
+    yield return new WaitForSecondsRealtime(postRoundAnimationDelay);
+
+    FadeTimer(true);
+    FadeToAnnouncer(darkGreenAnnouncer, true);
+
+    for (int value = 4; value >= 0; value--)
+    {
+      SetTimerValue(value, finalCountdownTimerColor);
+      yield return new WaitForSecondsRealtime(1f);
+    }
+
+    nextRoundRoutine = null;
+  }
+
+  private int GetBettingStartValue(RoundStartEvent roundData)
+  {
+    long timeRemainingMs = roundData.bettingEndTime - roundData.serverTime;
+    int startValue = Mathf.CeilToInt(timeRemainingMs / 1000f) - 1;
+    return Mathf.Clamp(startValue, 1, 14);
+  }
+
+  private void StopRoundRoutines()
+  {
+    if (roundCountdownRoutine != null)
+    {
+      StopCoroutine(roundCountdownRoutine);
+      roundCountdownRoutine = null;
+    }
+
+    if (nextRoundRoutine != null)
+    {
+      StopCoroutine(nextRoundRoutine);
+      nextRoundRoutine = null;
+    }
+  }
+
+  private void SetTimerValue(int value, Color color)
+  {
+    if (timerText != null)
+    {
+      timerText.text = value.ToString();
+      timerText.color = color;
+    }
+  }
+
+  private void FadeTimer(bool visible)
+  {
+    if (timerTextCanvasGroup == null)
+      return;
+
+    timerTextCanvasGroup.DOKill();
+    timerTextCanvasGroup.DOFade(visible ? 1f : 0f, timerFadeDuration).SetEase(Ease.Linear);
+  }
+
+  private void SetTimerVisible(bool visible, bool immediate)
+  {
+    if (timerTextCanvasGroup == null)
+      return;
+
+    timerTextCanvasGroup.DOKill();
+    timerTextCanvasGroup.alpha = visible ? 1f : 0f;
+    if (timerTextRoot != null)
+      timerTextRoot.localScale = timerTextBaseScale;
+  }
+
+  private void FadeToAnnouncer(AnnouncerView target, bool visible)
+  {
+    SetAnnouncerVisible(lightGreenAnnouncer, target == lightGreenAnnouncer && visible, false);
+    SetAnnouncerVisible(yellowAnnouncer, target == yellowAnnouncer && visible, false);
+    SetAnnouncerVisible(pinkAnnouncer, target == pinkAnnouncer && visible, false);
+    SetAnnouncerVisible(darkGreenAnnouncer, target == darkGreenAnnouncer && visible, false);
+  }
+
+  private void HideAllAnnouncers()
+  {
+    SetAnnouncerVisible(lightGreenAnnouncer, false, false);
+    SetAnnouncerVisible(yellowAnnouncer, false, false);
+    SetAnnouncerVisible(pinkAnnouncer, false, false);
+    SetAnnouncerVisible(darkGreenAnnouncer, false, false);
+  }
+
+  private void SetAnnouncerVisible(AnnouncerView announcer, bool visible, bool immediate)
+  {
+    if (announcer == null || announcer.canvasGroup == null)
+      return;
+
+    announcer.canvasGroup.DOKill();
+    if (immediate)
+    {
+      announcer.canvasGroup.alpha = visible ? 1f : 0f;
+      if (announcerParent != null)
+        announcerParent.localScale = announcerParentBaseScale;
+      return;
+    }
+
+    announcer.canvasGroup.DOFade(visible ? 1f : 0f, announcerFadeDuration).SetEase(Ease.Linear);
+  }
+
+  private void PlaySynchronizedScale(AnnouncerView announcer)
+  {
+    PlayTimerScaleOnly();
+    PlayAnnouncerScale(announcer);
+  }
+
+  private void PlayTimerScaleOnly()
+  {
+    if (timerTextRoot == null)
+      return;
+
+    timerTextRoot.DOKill();
+    timerTextRoot.localScale = timerTextBaseScale;
+    timerTextRoot
+      .DOScale(timerTextBaseScale * timerScalePunch, scaleUpDuration)
+      .SetEase(Ease.OutQuad)
+      .OnComplete(() =>
+      {
+        if (timerTextRoot != null)
+          timerTextRoot.DOScale(timerTextBaseScale, scaleDownDuration).SetEase(Ease.InQuad);
+      });
+  }
+
+  private void PlayAnnouncerScale(AnnouncerView announcer)
+  {
+    if (announcer == null || announcerParent == null)
+      return;
+
+    announcerParent.DOKill();
+    announcerParent.localScale = announcerParentBaseScale;
+    announcerParent
+      .DOScale(announcerParentBaseScale * announcerScalePunch, scaleUpDuration)
+      .SetEase(Ease.OutQuad)
+      .OnComplete(() =>
+      {
+        if (announcerParent != null)
+          announcerParent.DOScale(announcerParentBaseScale, scaleDownDuration).SetEase(Ease.InQuad);
+      });
+  }
+
+  private void KillAnnouncerTweens(AnnouncerView announcer)
+  {
+    if (announcer == null)
+      return;
+
+    if (announcer.canvasGroup != null)
+      announcer.canvasGroup.DOKill();
   }
 }

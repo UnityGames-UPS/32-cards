@@ -379,7 +379,7 @@ public class UiManager : MonoBehaviour
   internal void OnInit(InitRoot initData)
   {
     HPusernameText.text = initData.player.username;
-    GPUsernameText.text = initData.player.username;
+    GPUsernameText.text = GameUtility.FormatUsername(initData.player.username);
     GPUsernameText2.text = initData.player.username;
     if (leaderboardController != null)
     {
@@ -409,6 +409,21 @@ public class UiManager : MonoBehaviour
 
     if (roundData.playerCount > 0)
       GPPeopleCountText.text = roundData.playerCount.ToString();
+
+    if (betPanelManager != null)
+      betPanelManager.OnRoundStart(roundData);
+  }
+
+  internal void OnBonus(BonusEvent bonusData)
+  {
+    if (betPanelManager != null)
+      betPanelManager.OnBonus(bonusData);
+  }
+
+  internal void OnCardDealt(CardDealtEvent cardDealtData)
+  {
+    if (betPanelManager != null)
+      betPanelManager.OnCardDealt(cardDealtData);
   }
 
   internal void SetGamePagePlayerCount(Lobby lobby)
@@ -467,6 +482,18 @@ public class UiManager : MonoBehaviour
   {
     if (gameStatsUIController != null)
       gameStatsUIController.OnNewRoundResult(sideValue);
+
+    if (betPanelManager != null)
+      betPanelManager.OnRoundEnd();
+  }
+
+  internal void OnCashout(CashoutEvent cashoutEvent)
+  {
+    if (cashoutEvent != null && cashoutEvent.leaderboards != null && leaderboardController != null)
+      leaderboardController.UpdateLeaderboard(cashoutEvent.leaderboards);
+
+    if (betPanelManager != null)
+      betPanelManager.OnCashout();
   }
 
   private void UpdateGamePageMinMaxTexts()

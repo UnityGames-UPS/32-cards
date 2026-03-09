@@ -1,0 +1,46 @@
+{
+  "roundId": "3d910de6-5df9-488f-bdc1-1165d63f3133",
+  "card": {
+    "suit": "diamonds",
+    "rank": "6",
+    "color": "red"
+  },
+  "player": 11,
+  "bonusPlayer": 9,
+  "bonusMultiplier": 5.7,
+  "player8Cards": [
+    {
+      "suit": "clubs",
+      "rank": "Q",
+      "color": "black"
+    }
+  ],
+  "player9Cards": [
+    {
+      "suit": "clubs",
+      "rank": "8",
+      "color": "black"
+    }
+  ],
+  "player10Cards": [
+    {
+      "suit": "diamonds",
+      "rank": "Q",
+      "color": "red"
+    }
+  ],
+  "player11Cards": [
+    {
+      "suit": "diamonds",
+      "rank": "6",
+      "color": "red"
+    }
+  ],
+  "scores": {
+    "player_8": 20,
+    "player_9": 17,
+    "player_10": 22,
+    "player_11": 17
+  },
+  "cardsDealt": 4
+}

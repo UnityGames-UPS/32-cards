@@ -27,4 +27,18 @@ internal static class GameUtility
     if (cache.Count < 300) cache[amount] = result;
     return result;
   }
+
+  internal static string FormatUsername(string username)
+  {
+    if (string.IsNullOrEmpty(username) || username.Length <= 4) return username;
+
+    int firstChars = 1;
+    int lastChars = 3;
+    int maskedLength = username.Length - firstChars - lastChars;
+    if (maskedLength <= 0) return username;
+
+    return username.Substring(0, firstChars)
+         + new string('*', 3)
+         + username.Substring(username.Length - lastChars);
+  }
 }

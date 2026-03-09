@@ -1,9 +1,9 @@
 {
   "id": "ML-32C",
   "roundInterval": 15000,
-  "cardInterval": 2000,
-  "bonusInterval": 2000,
-  "cashoutInterval": 5000,
+  "cardInterval": 3000,
+  "bonusInterval": 3000,
+  "cashoutInterval": 8000,
   "bettingTimerSyncInterval": 1000,
   "roomLimit": 200,
   "cardLimit": 5,
