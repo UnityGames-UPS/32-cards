@@ -1,0 +1,40 @@
+{
+  "roundId": "97854622-2f8a-4fed-bb8c-2da9cae26766",
+  "card": {
+    "suit": "spades",
+    "rank": "9",
+    "color": "black"
+  },
+  "player": 10,
+  "bonusPlayer": 8,
+  "bonusMultiplier": 14,
+  "player8Cards": [
+    {
+      "suit": "hearts",
+      "rank": "K",
+      "color": "red"
+    }
+  ],
+  "player9Cards": [
+    {
+      "suit": "diamonds",
+      "rank": "10",
+      "color": "red"
+    }
+  ],
+  "player10Cards": [
+    {
+      "suit": "spades",
+      "rank": "9",
+      "color": "black"
+    }
+  ],
+  "player11Cards": [],
+  "scores": {
+    "player_8": 21,
+    "player_9": 19,
+    "player_10": 19,
+    "player_11": 11
+  },
+  "cardsDealt": 3
+}

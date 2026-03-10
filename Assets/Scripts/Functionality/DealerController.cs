@@ -6,6 +6,13 @@ using System;
 public class DealerController : MonoBehaviour
 {
   [Serializable]
+  private class CardDealRequest
+  {
+    public int Player;
+    public Card CardData;
+  }
+
+  [Serializable]
   private class DealSegment
   {
     public int StartFrame;
@@ -37,8 +44,6 @@ public class DealerController : MonoBehaviour
   private List<Sprite> DealerReset_Sprites;
   [SerializeField]
   private List<Sprite> DealerDeal_Sprites;
-  [SerializeField]
-  private List<Sprite> DealerRest_Sprites;
   [SerializeField]
   private List<Sprite> BothhandsShuffle_Sprites;
   [SerializeField]
@@ -79,12 +84,22 @@ public class DealerController : MonoBehaviour
   private Transform Box_Transform;
   [SerializeField]
   private CardController cardManager;
+  [Header("Cashout Reset")]
+  [SerializeField]
+  private float CardDespawnStartDelay = 0.25f;
+  [SerializeField]
+  private float CardDespawnMiddleGroupDelay = 0.15f;
+  [SerializeField]
+  private float CardDisableToDestroyDelay = 0.08f;
+  [SerializeField] private float CardResetDelayOnCashout = 9;
 
   private int bothHandsDefaultSiblingIndex;
   private int leftHandDefaultSiblingIndex;
   private int rightHandDefaultSiblingIndex;
   private Coroutine dealSequenceRoutine;
+  private Coroutine queuedDealRoutine;
   private bool isDealSegmentPlaying;
+  private readonly Queue<CardDealRequest> pendingDeals = new Queue<CardDealRequest>();
 
   private void Awake()
   {
@@ -157,7 +172,7 @@ public class DealerController : MonoBehaviour
 
     DealerImageAnim_IA.AnimationSpeed = 15;
     BothHandAnim_IA.AnimationSpeed = 15;
-    TopDownHandsAnim_IA.AnimationSpeed = 15;
+    TopDownHandsAnim_IA.AnimationSpeed = 6.5f;
 
     BothHands_Object.SetActive(true);
     LeftHand_Object.SetActive(false);
@@ -219,9 +234,9 @@ public class DealerController : MonoBehaviour
     return segment != null;
   }
 
-  private void PlayDealSegment(int spotIndex, Action onComplete)
+  private void PlayDealSegment(int player, Card cardData, Action onComplete)
   {
-    if (!TryGetDealSegment(spotIndex, out DealSegment segment))
+    if (!TryGetSegmentIndexForPlayer(player, out int spotIndex) || !TryGetDealSegment(spotIndex, out DealSegment segment))
     {
       isDealSegmentPlaying = false;
       onComplete?.Invoke();
@@ -236,6 +251,8 @@ public class DealerController : MonoBehaviour
       return;
     }
     isDealSegmentPlaying = true;
+    bool hasSpawnedCard = false;
+    int targetSpawnFrame = GetSpawnFrameForPlayer(player);
     SetLayeringForLeftHand(true);
     SetLayeringForRightHand(true);
 
@@ -256,20 +273,10 @@ public class DealerController : MonoBehaviour
 
     DealerImageAnim_IA.PlaySegment(segment.StartFrame, segment.EndFrame, (frame) =>
     {
-      switch (frame)
+      if (!hasSpawnedCard && frame == targetSpawnFrame)
       {
-        case 29:
-          SpawnCard(8);
-          break;
-        case 91:
-          SpawnCard(9);
-          break;
-        case 150:
-          SpawnCard(10);
-          break;
-        case 212:
-          SpawnCard(11);
-          break;
+        hasSpawnedCard = true;
+        SpawnCard(player, cardData);
       }
     }, () =>
     {
@@ -287,9 +294,68 @@ public class DealerController : MonoBehaviour
   {
     for (int i = 0; i < 4; i++)
     {
-      PlayDealSegment(i, null);
+      int player = 8 + i;
+      PlayDealSegment(player, null, null);
       yield return new WaitUntil(() => !isDealSegmentPlaying);
     }
+  }
+
+  internal void OnCardDealt(CardDealtEvent cardDealtEvent)
+  {
+    if (cardDealtEvent == null || cardDealtEvent.card == null)
+    {
+      return;
+    }
+
+    if (cardManager != null)
+    {
+      cardManager.SyncDealtCards(cardDealtEvent);
+    }
+
+    pendingDeals.Enqueue(new CardDealRequest
+    {
+      Player = cardDealtEvent.player,
+      CardData = cardDealtEvent.card
+    });
+
+    if (queuedDealRoutine == null)
+    {
+      queuedDealRoutine = StartCoroutine(ProcessPendingDeals());
+    }
+  }
+
+  internal IEnumerator OnCashout()
+  {
+    pendingDeals.Clear();
+    if (queuedDealRoutine != null)
+    {
+      StopCoroutine(queuedDealRoutine);
+      queuedDealRoutine = null;
+    }
+    if (dealSequenceRoutine != null)
+    {
+      StopCoroutine(dealSequenceRoutine);
+      dealSequenceRoutine = null;
+    }
+
+    yield return new WaitForSecondsRealtime(CardResetDelayOnCashout); 
+    resetCardsAnimation();
+    if (cardManager != null)
+    {
+      cardManager.BeginCashoutReset(CardDespawnStartDelay, CardDespawnMiddleGroupDelay, CardDisableToDestroyDelay);
+    }
+  }
+
+  private IEnumerator ProcessPendingDeals()
+  {
+    while (pendingDeals.Count > 0)
+    {
+      CardDealRequest request = pendingDeals.Dequeue();
+      PlayDealSegment(request.Player, request.CardData, null);
+      yield return new WaitUntil(() => !isDealSegmentPlaying);
+    }
+
+    queuedDealRoutine = null;
   }
 
   internal void BoxOpenAnimation()
@@ -359,29 +425,71 @@ public class DealerController : MonoBehaviour
     }
   }
 
-  void SpawnCard(int type)
+  private bool TryGetSegmentIndexForPlayer(int player, out int spotIndex)
   {
-    cardManager.SpawnCard(type);
+    switch (player)
+    {
+      case 8:
+        spotIndex = 0;
+        return true;
+      case 9:
+        spotIndex = 1;
+        return true;
+      case 10:
+        spotIndex = 2;
+        return true;
+      case 11:
+        spotIndex = 3;
+        return true;
+      default:
+        spotIndex = -1;
+        return false;
+    }
+  }
+
+  private int GetSpawnFrameForPlayer(int player)
+  {
+    switch (player)
+    {
+      case 8:
+        return 29;
+      case 9:
+        return 91;
+      case 10:
+        return 150;
+      case 11:
+        return 212;
+      default:
+        return -1;
+    }
+  }
+
+  void SpawnCard(int type, Card cardData)
+  {
+    if (cardManager != null)
+    {
+      cardManager.SpawnCard(type, cardData);
+    }
   }
 
   private void Update()
   {
-    if (Input.GetKeyDown(KeyCode.A))
-    {
-      ShuffleCardsAnimation();
-    }
-    else if (Input.GetKeyDown(KeyCode.B))
-    {
-      resetCardsAnimation();
-    }
-    else if (Input.GetKeyDown(KeyCode.C))
-    {
-      if (dealSequenceRoutine != null)
-      {
-        StopCoroutine(dealSequenceRoutine);
-      }
-      dealSequenceRoutine = StartCoroutine(PlayAllDealSegments());
-    }
+    // if (Input.GetKeyDown(KeyCode.A))
+    // {
+    //   ShuffleCardsAnimation();
+    // }
+    // else if (Input.GetKeyDown(KeyCode.B))
+    // {
+    //   resetCardsAnimation();
+    // }
+    // else if (Input.GetKeyDown(KeyCode.C))
+    // {
+    //   if (dealSequenceRoutine != null)
+    //   {
+    //     StopCoroutine(dealSequenceRoutine);
+    //   }
+    //   dealSequenceRoutine = StartCoroutine(PlayAllDealSegments());
+    // }
     // else if (Input.GetKeyDown(KeyCode.Alpha1))
     // {
     //   if (dealSequenceRoutine != null)

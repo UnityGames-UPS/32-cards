@@ -3,7 +3,7 @@
   "roundInterval": 15000,
   "cardInterval": 3000,
   "bonusInterval": 3000,
-  "cashoutInterval": 8000,
+  "cashoutInterval": 16000,
   "bettingTimerSyncInterval": 1000,
   "roomLimit": 200,
   "cardLimit": 5,

@@ -8850,6 +8850,10 @@ MonoBehaviour:
   BettingPanel_Transform: {fileID: 1109786909}
   Box_Transform: {fileID: 1115978281}
   cardManager: {fileID: 1353297145}
+  CardDespawnStartDelay: 0.25
+  CardDespawnMiddleGroupDelay: 0.15
+  CardDisableToDestroyDelay: 0.08
+  CardResetDelayOnCashout: 8
 --- !u!1 &263767648
 GameObject:
   m_ObjectHideFlags: 0
@@ -38000,8 +38004,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   uiManager: {fileID: 2115417990}
+  dealerController: {fileID: 261641904}
   JSManager: {fileID: 1519490010}
-  testToken: 9c62d23e06424158956e0c64e0cfa96c
+  testToken: 82ac3f2689604d319e7d4ff80e6ce8b0
   initData:
     id: 
     gameData:
@@ -40204,39 +40209,103 @@ MonoBehaviour:
   RevealAtFlipPercent: 0.3
   TopDownRevealAtFlipPercent: 0.5
   FlipDirection: -1
-  RandomCardSprites:
-  - {fileID: -1158457127, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
-  - {fileID: -1100661038, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
-  - {fileID: -1220238682, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
-  - {fileID: -1161684792, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
-  - {fileID: -338066336, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
-  - {fileID: -1457175059, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
-  - {fileID: -1557873817, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
-  - {fileID: 2018880596, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
-  - {fileID: 1492366752, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
-  - {fileID: 1119860044, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
-  - {fileID: -450575436, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
-  - {fileID: -2089236979, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
-  - {fileID: -1513475264, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
-  - {fileID: 670449431, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
-  - {fileID: -2090065519, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
-  - {fileID: -276811549, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
-  - {fileID: -128598178, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
-  - {fileID: -1821263632, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
-  - {fileID: -1285973637, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
-  - {fileID: -620467857, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
-  - {fileID: 637542305, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
-  - {fileID: 944985120, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
-  - {fileID: 336650870, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
-  - {fileID: -2013848014, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
-  - {fileID: 1297579579, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
-  - {fileID: 1588609295, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
-  - {fileID: -1869605389, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
-  - {fileID: 691716873, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
-  - {fileID: 1490188220, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
-  - {fileID: 1842429947, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
-  - {fileID: -1538906717, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
-  - {fileID: 1470903008, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
+  CardSprites:
+  - Suit: hearts
+    Rank: 6
+    Sprite: {fileID: -128598178, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
+  - Suit: hearts
+    Rank: 7
+    Sprite: {fileID: -1821263632, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
+  - Suit: hearts
+    Rank: 8
+    Sprite: {fileID: -1285973637, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
+  - Suit: hearts
+    Rank: 9
+    Sprite: {fileID: -620467857, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
+  - Suit: hearts
+    Rank: 10
+    Sprite: {fileID: 637542305, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
+  - Suit: hearts
+    Rank: J
+    Sprite: {fileID: 944985120, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
+  - Suit: hearts
+    Rank: Q
+    Sprite: {fileID: 336650870, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
+  - Suit: hearts
+    Rank: K
+    Sprite: {fileID: -2013848014, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
+  - Suit: diamonds
+    Rank: 6
+    Sprite: {fileID: 1492366752, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
+  - Suit: diamonds
+    Rank: 7
+    Sprite: {fileID: 1119860044, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
+  - Suit: diamonds
+    Rank: 8
+    Sprite: {fileID: -450575436, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
+  - Suit: diamonds
+    Rank: 9
+    Sprite: {fileID: -2089236979, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
+  - Suit: diamonds
+    Rank: 10
+    Sprite: {fileID: -1513475264, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
+  - Suit: diamonds
+    Rank: J
+    Sprite: {fileID: 670449431, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
+  - Suit: diamonds
+    Rank: Q
+    Sprite: {fileID: -2090065519, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
+  - Suit: diamonds
+    Rank: K
+    Sprite: {fileID: -276811549, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
+  - Suit: spades
+    Rank: 6
+    Sprite: {fileID: -1158457127, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
+  - Suit: spades
+    Rank: 7
+    Sprite: {fileID: -1100661038, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
+  - Suit: spades
+    Rank: 8
+    Sprite: {fileID: -1220238682, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
+  - Suit: spades
+    Rank: 9
+    Sprite: {fileID: -1161684792, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
+  - Suit: spades
+    Rank: 10
+    Sprite: {fileID: -338066336, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
+  - Suit: spades
+    Rank: J
+    Sprite: {fileID: -1457175059, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
+  - Suit: spades
+    Rank: Q
+    Sprite: {fileID: -1557873817, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
+  - Suit: spades
+    Rank: K
+    Sprite: {fileID: 2018880596, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
+  - Suit: clubs
+    Rank: 6
+    Sprite: {fileID: 1297579579, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
+  - Suit: clubs
+    Rank: 7
+    Sprite: {fileID: 1588609295, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
+  - Suit: clubs
+    Rank: 8
+    Sprite: {fileID: -1869605389, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
+  - Suit: clubs
+    Rank: 9
+    Sprite: {fileID: 691716873, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
+  - Suit: clubs
+    Rank: 10
+    Sprite: {fileID: 1490188220, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
+  - Suit: clubs
+    Rank: J
+    Sprite: {fileID: 1842429947, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
+  - Suit: clubs
+    Rank: Q
+    Sprite: {fileID: -1538906717, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
+  - Suit: clubs
+    Rank: K
+    Sprite: {fileID: 1470903008, guid: b167cea0f3804473d868c2af7b09ff52, type: 3}
   SpawnPoint_Transform: {fileID: 1141691580}
   Card8Pos_Transform: {fileID: 1713862211}
   Card9Pos_Transform: {fileID: 72107004}
@@ -54690,7 +54759,7 @@ MonoBehaviour:
   announcerScalePunch: 1.2
   scaleUpDuration: 0.15
   scaleDownDuration: 0.15
-  postRoundAnimationDelay: 2
+  postRoundAnimationDelay: 11
 --- !u!4 &1893526749
 Transform:
   m_ObjectHideFlags: 0

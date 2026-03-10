@@ -9,6 +9,7 @@ using Best.SocketIO.Events;
 public class SocketIOManager : MonoBehaviour
 {
   [SerializeField] private UiManager uiManager;
+  [SerializeField] private DealerController dealerController;
   internal bool isResultdone = false;
   protected string nameSpace = "playground-multiplayer"; //BackendChanges
   private Socket gameSocket; //BackendChanges
@@ -433,6 +434,8 @@ public class SocketIOManager : MonoBehaviour
       CardDealtEvent response = JsonConvert.DeserializeObject<CardDealtEvent>(jsonObject);
       if (response != null)
       {
+        if (dealerController != null)
+          dealerController.OnCardDealt(response);
         uiManager.OnCardDealt(response);
       }
       else
@@ -468,7 +471,11 @@ public class SocketIOManager : MonoBehaviour
     {
       CashoutEvent response = JsonConvert.DeserializeObject<CashoutEvent>(jsonObject);
       if (response != null)
+      {
+        if (dealerController != null)
+          StartCoroutine(dealerController.OnCashout());
         uiManager.OnCashout(response);
+      }
     }
     catch (Exception ex)
     {
@@ -650,6 +657,10 @@ public class CardDealtEvent
   public int player;
   public int bonusPlayer;
   public double bonusMultiplier;
+  public List<Card> player8Cards;
+  public List<Card> player9Cards;
+  public List<Card> player10Cards;
+  public List<Card> player11Cards;
   public int cardsDealt;
 }
 

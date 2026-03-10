@@ -83,7 +83,7 @@ public class BetPanelManager : MonoBehaviour
   [SerializeField] private float announcerScalePunch = 1.4f;
   [SerializeField] private float scaleUpDuration = 0.16f;
   [SerializeField] private float scaleDownDuration = 0.16f;
-  [SerializeField] private float postRoundAnimationDelay = 3f;
+  [SerializeField] private float postRoundAnimationDelay = 11f;
 
   private readonly Stack<BetUndoEntry> betUndoStack = new Stack<BetUndoEntry>();
   private readonly List<List<BetChipView>> chipsPerSpot = new List<List<BetChipView>>();
@@ -96,7 +96,6 @@ public class BetPanelManager : MonoBehaviour
   private Coroutine nextRoundRoutine;
   private bool hasReceivedFirstCardDealt;
   private string activeRoundId;
-  private bool roundEndReceived;
   private Vector3 timerTextBaseScale = Vector3.one;
   private Vector3 announcerParentBaseScale = Vector3.one;
 
@@ -246,7 +245,6 @@ public class BetPanelManager : MonoBehaviour
 
     activeRoundId = roundData.roundId;
     hasReceivedFirstCardDealt = false;
-    roundEndReceived = false;
 
     if (nextRoundRoutine != null)
     {
@@ -292,16 +290,11 @@ public class BetPanelManager : MonoBehaviour
 
   internal void OnRoundEnd()
   {
-    roundEndReceived = true;
+
   }
 
   internal void OnCashout()
   {
-    if (!roundEndReceived)
-      return;
-
-    roundEndReceived = false;
-
     if (nextRoundRoutine != null)
       StopCoroutine(nextRoundRoutine);
 
