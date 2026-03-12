@@ -10,6 +10,7 @@ public class DealerController : MonoBehaviour
   {
     public int Player;
     public Card CardData;
+    public CardDealtScores Scores;
   }
 
   [Serializable]
@@ -192,6 +193,11 @@ public class DealerController : MonoBehaviour
     DealerImageAnim_IA.StartAnimation();
     BothHandAnim_IA.StartAnimation();
     TopDownHandsAnim_IA.StartAnimation();
+
+    if (cardManager != null)
+    {
+      cardManager.FadeOutScoreTexts();
+    }
   }
 
   private void PrepareDealAnimationState()
@@ -234,7 +240,7 @@ public class DealerController : MonoBehaviour
     return segment != null;
   }
 
-  private void PlayDealSegment(int player, Card cardData, Action onComplete)
+  private void PlayDealSegment(int player, Card cardData, CardDealtScores scores, Action onComplete)
   {
     if (!TryGetSegmentIndexForPlayer(player, out int spotIndex) || !TryGetDealSegment(spotIndex, out DealSegment segment))
     {
@@ -259,6 +265,7 @@ public class DealerController : MonoBehaviour
     if (TopDownHandsParent_Object != null)
     {
       TopDownHandsParent_Object.SetActive(true);
+      TopDownHandsAnim_IA.gameObject.SetActive(true);
       TopDownHandsAnim_IA.PlaySegment(segment.StartFrame, segment.EndFrame, (frame) =>
       {
       }, null);
@@ -276,7 +283,7 @@ public class DealerController : MonoBehaviour
       if (!hasSpawnedCard && frame == targetSpawnFrame)
       {
         hasSpawnedCard = true;
-        SpawnCard(player, cardData);
+        SpawnCard(player, cardData, scores);
       }
     }, () =>
     {
@@ -295,7 +302,7 @@ public class DealerController : MonoBehaviour
     for (int i = 0; i < 4; i++)
     {
       int player = 8 + i;
-      PlayDealSegment(player, null, null);
+      PlayDealSegment(player, null, null, null);
       yield return new WaitUntil(() => !isDealSegmentPlaying);
     }
   }
@@ -315,12 +322,21 @@ public class DealerController : MonoBehaviour
     pendingDeals.Enqueue(new CardDealRequest
     {
       Player = cardDealtEvent.player,
-      CardData = cardDealtEvent.card
+      CardData = cardDealtEvent.card,
+      Scores = cardDealtEvent.scores
     });
 
     if (queuedDealRoutine == null)
     {
       queuedDealRoutine = StartCoroutine(ProcessPendingDeals());
+    }
+  }
+
+  internal void OnRoundEnd(int winner)
+  {
+    if (cardManager != null)
+    {
+      cardManager.OnRoundWin(winner);
     }
   }
 
@@ -351,7 +367,7 @@ public class DealerController : MonoBehaviour
     while (pendingDeals.Count > 0)
     {
       CardDealRequest request = pendingDeals.Dequeue();
-      PlayDealSegment(request.Player, request.CardData, null);
+      PlayDealSegment(request.Player, request.CardData, request.Scores, null);
       yield return new WaitUntil(() => !isDealSegmentPlaying);
     }
 
@@ -464,11 +480,11 @@ public class DealerController : MonoBehaviour
     }
   }
 
-  void SpawnCard(int type, Card cardData)
+  void SpawnCard(int type, Card cardData, CardDealtScores scores)
   {
     if (cardManager != null)
     {
-      cardManager.SpawnCard(type, cardData);
+      cardManager.SpawnCard(type, cardData, scores);
     }
   }
 

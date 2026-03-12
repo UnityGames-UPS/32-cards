@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
+using DG.Tweening;
 
 public class CardController : MonoBehaviour
 {
@@ -42,16 +44,31 @@ public class CardController : MonoBehaviour
   [SerializeField] private Transform TopDownCard2_Transform;
   [SerializeField] private Transform TopDownCard3_Transform;
   [SerializeField] private Transform TopDownCard4_Transform;
+  [Header("Score Texts")]
+  [SerializeField] private TMP_Text ScoreText_P8;
+  [SerializeField] private TMP_Text ScoreText_P9;
+  [SerializeField] private TMP_Text ScoreText_P10;
+  [SerializeField] private TMP_Text ScoreText_P11;
+  [SerializeField] private float ScoreFadeInDuration = 0.3f;
+  [SerializeField] private float ScoreFadeOutDuration = 0.4f;
+  [SerializeField] private float ScoreWinScalePeak = 1.4f;
+  [SerializeField] private float ScoreWinScaleDuration = 0.5f;
   private readonly Dictionary<int, List<Card>> dealtCardsByPlayer = new Dictionary<int, List<Card>>();
   private readonly Dictionary<int, List<SpawnedCardPair>> spawnedCardsByPlayer = new Dictionary<int, List<SpawnedCardPair>>();
   private Coroutine cashoutResetRoutine;
+  private Tween scoreWinTween;
+  private readonly Dictionary<int, Tween> scoreFadeTweens = new Dictionary<int, Tween>();
 
   private void Awake()
   {
     InitializePlayerCollections();
+    SetScoreTextAlpha(ScoreText_P8, 0f);
+    SetScoreTextAlpha(ScoreText_P9, 0f);
+    SetScoreTextAlpha(ScoreText_P10, 0f);
+    SetScoreTextAlpha(ScoreText_P11, 0f);
   }
 
-  internal void SpawnCard(int type, Card cardData)
+  internal void SpawnCard(int type, Card cardData, CardDealtScores scores)
   {
     InitializePlayerCollections();
 
@@ -84,13 +101,15 @@ public class CardController : MonoBehaviour
       return;
     }
 
+    int scoreForPlayer = GetScoreForPlayer(type, scores);
+
     GameObject cardref = GameObject.Instantiate(prefab, parent, false);
     cardref.transform.localPosition = Vector3.zero;
     cardref.transform.localRotation = Quaternion.identity;
     cardref.transform.localScale = Vector3.one;
 
     cardref.transform.localEulerAngles = new Vector3(0f, 0f, 180f);
-    StartCoroutine(FlipAndReveal(cardref, cardSprite));
+    StartCoroutine(FlipAndReveal(cardref, cardSprite, type, scoreForPlayer));
     TrackSpawnedCards(type, cardref, topDownCard);
   }
 
@@ -164,7 +183,7 @@ public class CardController : MonoBehaviour
     return cardref;
   }
 
-  private IEnumerator FlipAndReveal(GameObject cardref, Sprite cardSprite)
+  private IEnumerator FlipAndReveal(GameObject cardref, Sprite cardSprite, int player = -1, int score = 0)
   {
     if (cardref == null) yield break;
 
@@ -203,6 +222,16 @@ public class CardController : MonoBehaviour
       yield return null;
     }
     if (!revealed) SetCardSprite(cardImage, trapezoid, cardSprite);
+
+    if (player >= 8 && player <= 11)
+    {
+      TMP_Text scoreText = GetScoreText(player);
+      if (scoreText != null)
+      {
+        scoreText.text = score.ToString();
+        FadeInScoreText(player, scoreText);
+      }
+    }
   }
 
   private void SetCardSprite(Image cardImage, UITrapezoidTopNarrow trapezoid, Sprite cardSprite)
@@ -228,28 +257,17 @@ public class CardController : MonoBehaviour
     float wait = Mathf.Max(0f, WaitForFlipSeconds);
     if (wait > 0f) yield return new WaitForSeconds(wait);
 
-    bool revealed = false;
     float duration = Mathf.Max(0.01f, CardFlipDurationSeconds);
-    float elapsed = 0f;
-    float revealPercent = Mathf.Clamp01(TopDownRevealAtFlipPercent);
-    while (elapsed < duration)
-    {
-      elapsed += Time.deltaTime;
-      float t = Mathf.Clamp01(elapsed / duration);
-      float angle = Mathf.Lerp(0f, 180f, t);
-      if (angle < 90f)
-      {
-        cardref.transform.localEulerAngles = new Vector3(angle, 0f, 180f);
-      }
-      else
-      {
-        cardref.transform.localEulerAngles = new Vector3(180f - angle, 0f, 0f);
-      }
-      if (!revealed && t >= revealPercent) { SetCardSprite(cardImage, null, cardSprite); revealed = true; }
-      yield return null;
-    }
-    if (!revealed) SetCardSprite(cardImage, null, cardSprite);
-    cardref.transform.localEulerAngles = Vector3.zero;
+    float half = duration * 0.5f;
+    float revealTime = duration * Mathf.Clamp01(TopDownRevealAtFlipPercent);
+
+    // Phase 1: (0,0,180)→(90,0,180), snap z to 0 at midpoint, Phase 2: (90,0,0)→(0,0,0)
+    Sequence seq = DOTween.Sequence();
+    seq.Append(cardref.transform.DOLocalRotate(new Vector3(90f, 0f, 180f), half).SetEase(Ease.Linear));
+    seq.AppendCallback(() => cardref.transform.localEulerAngles = new Vector3(90f, 0f, 0f));
+    seq.Append(cardref.transform.DOLocalRotate(Vector3.zero, half).SetEase(Ease.Linear));
+    seq.InsertCallback(revealTime, () => SetCardSprite(cardImage, null, cardSprite));
+    yield return seq.WaitForCompletion();
   }
 
   private void InitializePlayerCollections()
@@ -332,6 +350,71 @@ public class CardController : MonoBehaviour
 
     Debug.LogWarning($"CardController could not resolve sprite for suit '{cardData.suit}' and rank '{cardData.rank}'.");
     return null;
+  }
+
+  private TMP_Text GetScoreText(int player)
+  {
+    switch (player)
+    {
+      case 8: return ScoreText_P8;
+      case 9: return ScoreText_P9;
+      case 10: return ScoreText_P10;
+      case 11: return ScoreText_P11;
+      default: return null;
+    }
+  }
+
+  private int GetScoreForPlayer(int player, CardDealtScores scores)
+  {
+    if (scores == null) return 0;
+    switch (player)
+    {
+      case 8: return scores.player_8;
+      case 9: return scores.player_9;
+      case 10: return scores.player_10;
+      case 11: return scores.player_11;
+      default: return 0;
+    }
+  }
+
+  private void SetScoreTextAlpha(TMP_Text text, float alpha)
+  {
+    if (text == null) return;
+    Color c = text.color;
+    c.a = alpha;
+    text.color = c;
+  }
+
+  private void FadeInScoreText(int player, TMP_Text scoreText)
+  {
+    if (scoreFadeTweens.TryGetValue(player, out Tween existing)) existing?.Kill();
+    scoreFadeTweens[player] = scoreText.DOFade(1f, ScoreFadeInDuration).SetEase(Ease.Linear);
+  }
+
+  internal void FadeOutScoreTexts()
+  {
+    FadeOutScoreText(8, ScoreText_P8);
+    FadeOutScoreText(9, ScoreText_P9);
+    FadeOutScoreText(10, ScoreText_P10);
+    FadeOutScoreText(11, ScoreText_P11);
+  }
+
+  private void FadeOutScoreText(int player, TMP_Text scoreText)
+  {
+    if (scoreText == null) return;
+    if (scoreFadeTweens.TryGetValue(player, out Tween existing)) existing?.Kill();
+    scoreFadeTweens[player] = scoreText.DOFade(0f, ScoreFadeOutDuration).SetEase(Ease.Linear);
+  }
+
+  internal void OnRoundWin(int winner)
+  {
+    TMP_Text winText = GetScoreText(winner);
+    if (winText == null) return;
+    scoreWinTween?.Kill();
+    float half = Mathf.Max(0.01f, ScoreWinScaleDuration) * 0.5f;
+    scoreWinTween = DOTween.Sequence()
+      .Append(winText.transform.DOScale(ScoreWinScalePeak, half).SetEase(Ease.OutElastic))
+      .Append(winText.transform.DOScale(1f, half).SetEase(Ease.InQuad));
   }
 
   private IEnumerator ResetCardsForCashout(float startDelay, float middleGroupDelay, float disableToDestroyDelay)

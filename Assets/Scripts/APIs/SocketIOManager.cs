@@ -154,6 +154,7 @@ public class SocketIOManager : MonoBehaviour
     gameSocket.On<string>("game:card_dealt", HandleCardDealt);
     gameSocket.On<string>("game:round_end", HandleRoundEnd);
     gameSocket.On<string>("game:cashout", HandleCashout);
+    gameSocket.On<string>("game:cashout_timer", HandleCashoutTimer);
     gameSocket.On<string>("game:leaderboard_update", HandleLeaderboardUpdate);
     gameSocket.On<string>("pong", OnPongReceived);
     manager.Open();
@@ -254,6 +255,97 @@ public class SocketIOManager : MonoBehaviour
       gameSocket.Emit("ping");
       yield return new WaitForSeconds(pingInterval);
     }
+  }
+
+  internal void EmitPlaceBet(int amountIndex, string betOption, Action<PlaceBetResponse> callback)
+  {
+    var payload = new { amountIndex = amountIndex, betType = "main_bets", betOption = betOption };
+    EmitRequest("PLACE_BET", payload, (string json) =>
+    {
+      try
+      {
+        PlaceBetResponse response = JsonConvert.DeserializeObject<PlaceBetResponse>(json);
+        Debug.Log("PLACE_BET RESPONSE: " + json);
+        callback?.Invoke(response);
+      }
+      catch (Exception ex)
+      {
+        Debug.LogError("Error parsing PLACE_BET response: " + ex.Message);
+        callback?.Invoke(null);
+      }
+    });
+  }
+
+  internal void EmitCancelBet(Action<CancelBetResponse> callback)
+  {
+    EmitRequest("CANCEL_BET", new { }, (string json) =>
+    {
+      try
+      {
+        CancelBetResponse response = JsonConvert.DeserializeObject<CancelBetResponse>(json);
+        Debug.Log("CANCEL_BET RESPONSE: " + json);
+        callback?.Invoke(response);
+      }
+      catch (Exception ex)
+      {
+        Debug.LogError("Error parsing CANCEL_BET response: " + ex.Message);
+        callback?.Invoke(null);
+      }
+    });
+  }
+
+  internal void EmitDoubleBet(Action<DoubleBetResponse> callback)
+  {
+    EmitRequest("DOUBLE_BET", new { }, (string json) =>
+    {
+      try
+      {
+        DoubleBetResponse response = JsonConvert.DeserializeObject<DoubleBetResponse>(json);
+        Debug.Log("DOUBLE_BET RESPONSE: " + json);
+        callback?.Invoke(response);
+      }
+      catch (Exception ex)
+      {
+        Debug.LogError("Error parsing DOUBLE_BET response: " + ex.Message);
+        callback?.Invoke(null);
+      }
+    });
+  }
+
+  internal void EmitRepeatBet(Action<RepeatBetResponse> callback)
+  {
+    EmitRequest("REPEAT_BET", new { }, (string json) =>
+    {
+      try
+      {
+        RepeatBetResponse response = JsonConvert.DeserializeObject<RepeatBetResponse>(json);
+        Debug.Log("REPEAT_BET RESPONSE: " + json);
+        callback?.Invoke(response);
+      }
+      catch (Exception ex)
+      {
+        Debug.LogError("Error parsing REPEAT_BET response: " + ex.Message);
+        callback?.Invoke(null);
+      }
+    });
+  }
+
+  internal void EmitUndoBet(Action<UndoBetResponse> callback)
+  {
+    EmitRequest("UNDO_BET", new { }, (string json) =>
+    {
+      try
+      {
+        UndoBetResponse response = JsonConvert.DeserializeObject<UndoBetResponse>(json);
+        Debug.Log("UNDO_BET RESPONSE: " + json);
+        callback?.Invoke(response);
+      }
+      catch (Exception ex)
+      {
+        Debug.LogError("Error parsing UNDO_BET response: " + ex.Message);
+        callback?.Invoke(null);
+      }
+    });
   }
 
   internal void EmitLeaveRoom()
@@ -456,7 +548,11 @@ public class SocketIOManager : MonoBehaviour
     {
       RoundEndEvent response = JsonConvert.DeserializeObject<RoundEndEvent>(jsonObject);
       if (response != null)
+      {
         uiManager.OnRoundResult(response.winner);
+        if (dealerController != null)
+          dealerController.OnRoundEnd(response.winner);
+      }
     }
     catch (Exception ex)
     {
@@ -481,6 +577,12 @@ public class SocketIOManager : MonoBehaviour
     {
       Debug.LogError("Error parsing cashout data: " + ex.Message);
     }
+  }
+
+  private void HandleCashoutTimer(string jsonObject)
+  {
+    Debug.Log("CASHOUT_TIMER: " + jsonObject);
+    // Implement cashout timer handling logic here when backend sends this event
   }
 
   private void HandleLeaderboardUpdate(string jsonObject)
@@ -650,6 +752,15 @@ public class BonusEvent
 }
 
 [Serializable]
+public class CardDealtScores
+{
+  public int player_8;
+  public int player_9;
+  public int player_10;
+  public int player_11;
+}
+
+[Serializable]
 public class CardDealtEvent
 {
   public string roundId;
@@ -662,6 +773,7 @@ public class CardDealtEvent
   public List<Card> player10Cards;
   public List<Card> player11Cards;
   public int cardsDealt;
+  public CardDealtScores scores;
 }
 
 [Serializable]
@@ -853,4 +965,130 @@ public class Player9
 public class Wagers
 {
   public MainBets main_bets;
+}
+
+//PLACE BET ACK
+[Serializable]
+public class PlaceBetResponse
+{
+  public bool success;
+  public PlaceBetPayload payload;
+}
+
+[Serializable]
+public class PlaceBetPayload
+{
+  public string username;
+  public string betId;
+  public double totalBet;
+  public string betOption;
+  public double amount;
+  public double balance;
+  public string message;
+}
+
+//CANCEL BET ACK
+[Serializable]
+public class CancelBetResponse
+{
+  public bool success;
+  public CancelBetPayload payload;
+}
+
+[Serializable]
+public class CancelBetPayload
+{
+  public string message;
+  public double amount;
+  public double balance;
+  public List<CancelledBetEntry> bets;
+}
+
+[Serializable]
+public class CancelledBetEntry
+{
+  public string betId;
+  public string betType;
+  public string betOption;
+  public double amount;
+}
+
+//DOUBLE BET ACK
+[Serializable]
+public class DoubleBetResponse
+{
+  public bool success;
+  public DoubleBetPayload payload;
+}
+
+[Serializable]
+public class DoubleBetPayload
+{
+  public string message;
+  public double balance;
+  public List<DoubledBetEntry> bets;
+  public double totalBet;
+}
+
+[Serializable]
+public class DoubledBetEntry
+{
+  public string betId;
+  public double amount;
+  public double delta;
+  public string betType;
+  public string betOption;
+}
+
+//REPEAT BET ACK
+[Serializable]
+public class RepeatBetResponse
+{
+  public bool success;
+  public RepeatBetPayload payload;
+}
+
+[Serializable]
+public class RepeatBetPayload
+{
+  public List<RepeatedBetEntry> bets;
+  public double totalBet;
+  public double balance;
+  public string message;
+}
+
+[Serializable]
+public class RepeatedBetEntry
+{
+  public string betId;
+  public double amount;
+  public string betOption;
+  public string betType;
+}
+
+//UNDO BET ACK
+[Serializable]
+public class UndoBetResponse
+{
+  public bool success;
+  public UndoBetPayload payload;
+}
+
+[Serializable]
+public class UndoBetPayload
+{
+  public string message;
+  public double refundAmount;
+  public double balance;
+  public double totalBet;
+  public UndoBetEntry bet;
+}
+
+[Serializable]
+public class UndoBetEntry
+{
+  public string betId;
+  public string betType;
+  public string betOption;
+  public double amount;
 }

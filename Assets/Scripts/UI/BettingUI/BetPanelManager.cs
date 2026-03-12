@@ -66,6 +66,21 @@ public class BetPanelManager : MonoBehaviour
   [SerializeField] private float cancelButtonExpandedX = -229f;
   [SerializeField] private float doubleButtonExpandedX = -117f;
 
+  [Header("References")]
+  [SerializeField] private SocketIOManager socketManager;
+  [SerializeField] private UiManager uiManager;
+
+  [Header("Repeat Bet Button")]
+  [SerializeField] private Button repeatBetButton;
+
+  [Header("Error Popup")]
+  [SerializeField] private RectTransform errorPopupRoot;
+  [SerializeField] private CanvasGroup errorPopupCanvasGroup;
+  [SerializeField] private TMP_Text errorPopupText;
+  [SerializeField] private float popupFadeInDuration = 0.35f;
+  [SerializeField] private float popupStayDuration = 2f;
+  [SerializeField] private float popupFadeOutDuration = 0.35f;
+
   [Header("Round Announcer")]
   [SerializeField] private RectTransform announcerParent;
   [SerializeField] private AnnouncerView lightGreenAnnouncer;
@@ -90,6 +105,11 @@ public class BetPanelManager : MonoBehaviour
   private readonly List<Sprite> cachedChipOptionSprites = new List<Sprite>();
   private Sprite cachedMainChipSprite;
 
+  private static readonly string[] BetOptionNames = { "player_8", "player_9", "player_10", "player_11" };
+
+  private Vector3 errorPopupInitLocalPos;
+  private Sequence errorPopupSequence;
+
   private bool areChipOptionsExpanded;
   private bool areBetActionsExpanded;
   private Coroutine roundCountdownRoutine;
@@ -99,6 +119,16 @@ public class BetPanelManager : MonoBehaviour
   private Vector3 timerTextBaseScale = Vector3.one;
   private Vector3 announcerParentBaseScale = Vector3.one;
 
+
+  private void Awake()
+  {
+    if (errorPopupRoot != null)
+    {
+      errorPopupInitLocalPos = errorPopupRoot.localPosition;
+      if (errorPopupCanvasGroup != null)
+        errorPopupCanvasGroup.alpha = 0f;
+    }
+  }
 
   private void Start()
   {
@@ -110,6 +140,8 @@ public class BetPanelManager : MonoBehaviour
 
   private void OnDisable()
   {
+    if (errorPopupSequence != null && errorPopupSequence.IsActive())
+      errorPopupSequence.Kill();
     StopRoundRoutines();
     DOTween.Kill(timerTextRoot);
     KillAnnouncerTweens(lightGreenAnnouncer);
@@ -200,6 +232,24 @@ public class BetPanelManager : MonoBehaviour
       undoBetButton.onClick.RemoveAllListeners();
       undoBetButton.onClick.AddListener(UndoLastBet);
     }
+
+    if (cancelBetButton != null)
+    {
+      cancelBetButton.onClick.RemoveAllListeners();
+      cancelBetButton.onClick.AddListener(CancelAllBets);
+    }
+
+    if (doubleBetButton != null)
+    {
+      doubleBetButton.onClick.RemoveAllListeners();
+      doubleBetButton.onClick.AddListener(DoubleAllBets);
+    }
+
+    if (repeatBetButton != null)
+    {
+      repeatBetButton.onClick.RemoveAllListeners();
+      repeatBetButton.onClick.AddListener(RepeatLastRoundBets);
+    }
   }
 
   internal void SetChipValues(List<double> orderedBets)
@@ -245,6 +295,8 @@ public class BetPanelManager : MonoBehaviour
 
     activeRoundId = roundData.roundId;
     hasReceivedFirstCardDealt = false;
+    ClearAllChipVisuals();
+    CollapseBetActionButtons();
 
     if (nextRoundRoutine != null)
     {
@@ -375,9 +427,50 @@ public class BetPanelManager : MonoBehaviour
     RetractChipOptions();
   }
 
+  private int GetChipAmountIndex()
+  {
+    if (mainChip == null || mainChip.chipValueText == null || socketManager == null || socketManager.initData == null)
+      return 0;
+
+    string chipText = mainChip.chipValueText.text;
+    float chipValue = GameUtility.ParseFormattedCurrency(chipText);
+    string currentLevel = uiManager != null ? uiManager.CurrentLevel : "";
+    List<double> levelBets = GetLevelBets(currentLevel);
+
+    if (levelBets == null)
+      return 0;
+
+    for (int i = 0; i < levelBets.Count; i++)
+    {
+      if (Mathf.Approximately((float)levelBets[i], chipValue))
+        return i;
+    }
+
+    return 0;
+  }
+
+  private List<double> GetLevelBets(string level)
+  {
+    if (socketManager == null || socketManager.initData == null || socketManager.initData.gameData == null)
+      return null;
+
+    Bets bets = socketManager.initData.gameData.bets;
+    switch (level)
+    {
+      case "casual": return bets.casual;
+      case "novice": return bets.novice;
+      case "expert": return bets.expert;
+      case "high_roller": return bets.high_roller;
+      default: return bets.casual;
+    }
+  }
+
   private void PlaceBetOnSpot(int spotIndex)
   {
     if (!IsValidSpotIndex(spotIndex) || mainChip == null || betChipPrefab == null)
+      return;
+
+    if (spotIndex >= BetOptionNames.Length)
       return;
 
     var spot = betSpots[spotIndex];
@@ -385,6 +478,36 @@ public class BetPanelManager : MonoBehaviour
       return;
 
     RetractChipOptions();
+
+    string betOption = BetOptionNames[spotIndex];
+    int amountIndex = GetChipAmountIndex();
+
+    socketManager.EmitPlaceBet(amountIndex, betOption, (PlaceBetResponse response) =>
+    {
+      if (response == null || !response.success)
+      {
+        string errorMsg = response?.payload?.message ?? "Bet failed";
+        Debug.LogWarning("PlaceBet failed: " + errorMsg);
+        ShowErrorPopup(errorMsg);
+        return;
+      }
+
+      uiManager.SetBalanceText(response.payload.balance);
+      SpawnChipOnSpot(spotIndex, response.payload.amount);
+
+      if (!areBetActionsExpanded)
+        StartCoroutine(ExpandBetActionButtons());
+    });
+  }
+
+  private void SpawnChipOnSpot(int spotIndex, double amount)
+  {
+    if (!IsValidSpotIndex(spotIndex) || betChipPrefab == null)
+      return;
+
+    var spot = betSpots[spotIndex];
+    if (spot == null || spot.chipParent == null || spot.chipSpawnArea == null)
+      return;
 
     BetChipView spawnedChip = Instantiate(betChipPrefab, spot.chipParent);
     if (spawnedChip == null || spawnedChip.ChipRect == null || spawnedChip.ChipCanvasGroup == null)
@@ -394,8 +517,8 @@ public class BetPanelManager : MonoBehaviour
     spawnedChip.ChipRect.localScale = Vector3.one;
     spawnedChip.ChipRect.localRotation = Quaternion.identity;
 
-    string chipValueText = mainChip.chipValueText != null ? mainChip.chipValueText.text : "0";
-    Sprite chipSprite = mainChip.chipImage != null ? mainChip.chipImage.sprite : null;
+    string chipValueText = GameUtility.FormatCurrency(amount);
+    Sprite chipSprite = mainChip != null && mainChip.chipImage != null ? mainChip.chipImage.sprite : null;
     spawnedChip.SetChipVisuals(chipSprite, chipValueText);
 
     Vector2 finalPos = GetRandomAnchoredPosition(spawnedChip.ChipRect, spot.chipSpawnArea);
@@ -409,8 +532,6 @@ public class BetPanelManager : MonoBehaviour
     betUndoStack.Push(new BetUndoEntry { SpotIndex = spotIndex, ChipView = spawnedChip });
 
     UpdateSpotTotal(spotIndex);
-    if (!areBetActionsExpanded)
-      StartCoroutine(ExpandBetActionButtons());
   }
 
   private Vector2 GetRandomAnchoredPosition(RectTransform chipRect, RectTransform spawnArea)
@@ -490,6 +611,29 @@ public class BetPanelManager : MonoBehaviour
     if (betUndoStack.Count == 0)
       return;
 
+    socketManager.EmitUndoBet((UndoBetResponse response) =>
+    {
+      if (response == null || !response.success)
+      {
+        string errorMsg = response?.payload?.message ?? "Undo failed";
+        Debug.LogWarning("UndoBet failed: " + errorMsg);
+        ShowErrorPopup(errorMsg);
+        return;
+      }
+
+      uiManager.SetBalanceText(response.payload.balance);
+      RemoveLastChipVisual();
+
+      if (betUndoStack.Count == 0)
+        CollapseBetActionButtons();
+    });
+  }
+
+  private void RemoveLastChipVisual()
+  {
+    if (betUndoStack.Count == 0)
+      return;
+
     BetUndoEntry entry = betUndoStack.Pop();
     if (entry.ChipView == null || !IsValidSpotIndex(entry.SpotIndex))
       return;
@@ -499,7 +643,6 @@ public class BetPanelManager : MonoBehaviour
       return;
 
     chipRect.DOKill();
-
     chipsPerSpot[entry.SpotIndex].Remove(entry.ChipView);
 
     if (chipUndoDestroyTarget != null)
@@ -517,6 +660,165 @@ public class BetPanelManager : MonoBehaviour
       Destroy(entry.ChipView.gameObject);
       UpdateSpotTotal(entry.SpotIndex);
     }
+  }
+
+  private void CancelAllBets()
+  {
+    socketManager.EmitCancelBet((CancelBetResponse response) =>
+    {
+      if (response == null || !response.success)
+      {
+        string errorMsg = response?.payload?.message ?? "Cancel failed";
+        Debug.LogWarning("CancelBet failed: " + errorMsg);
+        ShowErrorPopup(errorMsg);
+        return;
+      }
+
+      uiManager.SetBalanceText(response.payload.balance);
+      ClearAllChipVisuals();
+      CollapseBetActionButtons();
+    });
+  }
+
+  private void DoubleAllBets()
+  {
+    socketManager.EmitDoubleBet((DoubleBetResponse response) =>
+    {
+      if (response == null || !response.success)
+      {
+        string errorMsg = response?.payload?.message ?? "Double failed";
+        Debug.LogWarning("DoubleBet failed: " + errorMsg);
+        ShowErrorPopup(errorMsg);
+        return;
+      }
+
+      uiManager.SetBalanceText(response.payload.balance);
+
+      // Spawn additional chips for each doubled bet
+      foreach (var bet in response.payload.bets)
+      {
+        int spotIndex = BetOptionToSpotIndex(bet.betOption);
+        if (spotIndex >= 0)
+          SpawnChipOnSpot(spotIndex, bet.delta);
+      }
+    });
+  }
+
+  private void RepeatLastRoundBets()
+  {
+    socketManager.EmitRepeatBet((RepeatBetResponse response) =>
+    {
+      if (response == null || !response.success)
+      {
+        string errorMsg = response?.payload?.message ?? "Repeat failed";
+        Debug.LogWarning("RepeatBet failed: " + errorMsg);
+        ShowErrorPopup(errorMsg);
+        return;
+      }
+
+      uiManager.SetBalanceText(response.payload.balance);
+
+      // Clear existing visuals first, then spawn for each repeated bet
+      ClearAllChipVisuals();
+      foreach (var bet in response.payload.bets)
+      {
+        int spotIndex = BetOptionToSpotIndex(bet.betOption);
+        if (spotIndex >= 0)
+          SpawnChipOnSpot(spotIndex, bet.amount);
+      }
+
+      if (!areBetActionsExpanded && response.payload.bets != null && response.payload.bets.Count > 0)
+        StartCoroutine(ExpandBetActionButtons());
+    });
+  }
+
+  private int BetOptionToSpotIndex(string betOption)
+  {
+    for (int i = 0; i < BetOptionNames.Length; i++)
+    {
+      if (BetOptionNames[i] == betOption)
+        return i;
+    }
+    return -1;
+  }
+
+  private void ClearAllChipVisuals()
+  {
+    betUndoStack.Clear();
+    for (int i = 0; i < chipsPerSpot.Count; i++)
+    {
+      foreach (var chip in chipsPerSpot[i])
+      {
+        if (chip != null)
+        {
+          chip.ChipRect.DOKill();
+          Destroy(chip.gameObject);
+        }
+      }
+      chipsPerSpot[i].Clear();
+      UpdateSpotTotal(i);
+    }
+  }
+
+  private void CollapseBetActionButtons()
+  {
+    areBetActionsExpanded = false;
+
+    if (betActionsPanel != null)
+    {
+      betActionsPanel.DOSizeDelta(new Vector2(0f, betActionsPanel.rect.height), betActionsAnimDuration)
+        .SetEase(Ease.InBack);
+    }
+
+    if (undoBetButton != null)
+      undoBetButton.transform.DOLocalMoveX(0f, betActionsAnimDuration).SetEase(Ease.InBack)
+        .OnComplete(() => { if (undoBetButton != null) undoBetButton.gameObject.SetActive(false); });
+
+    if (cancelBetButton != null)
+      cancelBetButton.transform.DOLocalMoveX(0f, betActionsAnimDuration).SetEase(Ease.InBack)
+        .OnComplete(() => { if (cancelBetButton != null) cancelBetButton.gameObject.SetActive(false); });
+
+    if (doubleBetButton != null)
+      doubleBetButton.transform.DOLocalMoveX(0f, betActionsAnimDuration).SetEase(Ease.InBack)
+        .OnComplete(() => { if (doubleBetButton != null) doubleBetButton.gameObject.SetActive(false); });
+  }
+
+  private void ShowErrorPopup(string message)
+  {
+    if (errorPopupRoot == null || errorPopupCanvasGroup == null)
+      return;
+
+    // Kill any running popup animation
+    if (errorPopupSequence != null && errorPopupSequence.IsActive())
+      errorPopupSequence.Kill();
+
+    // Set text
+    if (errorPopupText != null)
+      errorPopupText.text = message;
+
+    // Reset to off-screen left (init position)
+    errorPopupCanvasGroup.alpha = 0f;
+    errorPopupRoot.localPosition = errorPopupInitLocalPos;
+
+    errorPopupSequence = DOTween.Sequence();
+
+    // Slide in to center (x = 0) + fade in
+    errorPopupSequence.Append(errorPopupRoot.DOLocalMoveX(0f, popupFadeInDuration).SetEase(Ease.OutCubic));
+    errorPopupSequence.Join(errorPopupCanvasGroup.DOFade(1f, popupFadeInDuration).SetEase(Ease.OutCubic));
+
+    // Stay
+    errorPopupSequence.AppendInterval(popupStayDuration);
+
+    // Slide out to right (x = +|initX|) + fade out
+    errorPopupSequence.Append(errorPopupRoot.DOLocalMoveX(-errorPopupInitLocalPos.x, popupFadeOutDuration).SetEase(Ease.InCubic));
+    errorPopupSequence.Join(errorPopupCanvasGroup.DOFade(0f, popupFadeOutDuration).SetEase(Ease.InCubic));
+
+    // Reset to init position when done
+    errorPopupSequence.OnComplete(() =>
+    {
+      if (errorPopupRoot != null)
+        errorPopupRoot.localPosition = errorPopupInitLocalPos;
+    });
   }
 
   private IEnumerator ExpandBetActionButtons()

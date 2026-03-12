@@ -28,6 +28,23 @@ internal static class GameUtility
     return result;
   }
 
+  internal static float ParseFormattedCurrency(string text)
+  {
+    if (string.IsNullOrEmpty(text))
+      return 0f;
+
+    text = text.Trim().Replace(",", "");
+
+    bool isK = text.EndsWith("K") || text.EndsWith("k");
+    if (isK)
+      text = text.Substring(0, text.Length - 1);
+
+    if (float.TryParse(text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float value))
+      return isK ? value * 1000f : value;
+
+    return 0f;
+  }
+
   internal static string FormatUsername(string username)
   {
     if (string.IsNullOrEmpty(username) || username.Length <= 4) return username;
