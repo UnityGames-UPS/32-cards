@@ -2509,6 +2509,7 @@ GameObject:
   - component: {fileID: 74726865}
   - component: {fileID: 74726867}
   - component: {fileID: 74726866}
+  - component: {fileID: 74726868}
   m_Layer: 5
   m_Name: BlackOverlay
   m_TagString: Untagged
@@ -2573,6 +2574,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 74726864}
   m_CullTransparentMesh: 1
+--- !u!225 &74726868
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 74726864}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 0
+  m_BlocksRaycasts: 0
+  m_IgnoreParentGroups: 0
 --- !u!1 &78075450
 GameObject:
   m_ObjectHideFlags: 0
@@ -16155,6 +16168,41 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 489018517}
   m_CullTransparentMesh: 1
+--- !u!1 &494027981
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 494027982}
+  m_Layer: 5
+  m_Name: LeaderboardChipMoveParent
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &494027982
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 494027981}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 653036172}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 605}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &500649658
 GameObject:
   m_ObjectHideFlags: 0
@@ -21522,6 +21570,8 @@ RectTransform:
   - {fileID: 1586966319}
   - {fileID: 745172898}
   - {fileID: 465655085}
+  - {fileID: 494027982}
+  - {fileID: 1883401390}
   - {fileID: 284640510}
   - {fileID: 536054176}
   - {fileID: 1927685215}
@@ -25142,8 +25192,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "0.50\x03"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: cd78868266e0a4b91bb03b4b45560197, type: 2}
-  m_sharedMaterial: {fileID: 8775893420446589375, guid: cd78868266e0a4b91bb03b4b45560197, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 9c73cc7612ba74162a1a2ed924048c21, type: 2}
+  m_sharedMaterial: {fileID: 1681382614318952878, guid: 9c73cc7612ba74162a1a2ed924048c21, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -25177,7 +25227,7 @@ MonoBehaviour:
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
-  m_characterSpacing: -18.4
+  m_characterSpacing: -11.3
   m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
@@ -28071,6 +28121,7 @@ GameObject:
   - component: {fileID: 878801332}
   - component: {fileID: 878801334}
   - component: {fileID: 878801333}
+  - component: {fileID: 878801335}
   m_Layer: 5
   m_Name: BlackOverlay
   m_TagString: Untagged
@@ -28135,6 +28186,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 878801331}
   m_CullTransparentMesh: 1
+--- !u!225 &878801335
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 878801331}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 0
+  m_BlocksRaycasts: 0
+  m_IgnoreParentGroups: 0
 --- !u!1 &879809979
 GameObject:
   m_ObjectHideFlags: 0
@@ -28358,6 +28421,7 @@ GameObject:
   - component: {fileID: 882143686}
   - component: {fileID: 882143688}
   - component: {fileID: 882143687}
+  - component: {fileID: 882143689}
   m_Layer: 5
   m_Name: BlackOverlay
   m_TagString: Untagged
@@ -28422,6 +28486,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 882143685}
   m_CullTransparentMesh: 1
+--- !u!225 &882143689
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 882143685}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 0
+  m_BlocksRaycasts: 0
+  m_IgnoreParentGroups: 0
 --- !u!1 &883169886
 GameObject:
   m_ObjectHideFlags: 0
@@ -31416,8 +31492,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "0.50\x03"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: cd78868266e0a4b91bb03b4b45560197, type: 2}
-  m_sharedMaterial: {fileID: 8775893420446589375, guid: cd78868266e0a4b91bb03b4b45560197, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 9c73cc7612ba74162a1a2ed924048c21, type: 2}
+  m_sharedMaterial: {fileID: 1681382614318952878, guid: 9c73cc7612ba74162a1a2ed924048c21, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -31451,7 +31527,7 @@ MonoBehaviour:
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
-  m_characterSpacing: -18.4
+  m_characterSpacing: -11.3
   m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
@@ -31553,8 +31629,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "0.50\x03"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: cd78868266e0a4b91bb03b4b45560197, type: 2}
-  m_sharedMaterial: {fileID: 8775893420446589375, guid: cd78868266e0a4b91bb03b4b45560197, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 9c73cc7612ba74162a1a2ed924048c21, type: 2}
+  m_sharedMaterial: {fileID: 1681382614318952878, guid: 9c73cc7612ba74162a1a2ed924048c21, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -31588,7 +31664,7 @@ MonoBehaviour:
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
-  m_characterSpacing: -18.4
+  m_characterSpacing: -11.3
   m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
@@ -34033,8 +34109,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "0.50\x03"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: cd78868266e0a4b91bb03b4b45560197, type: 2}
-  m_sharedMaterial: {fileID: 8775893420446589375, guid: cd78868266e0a4b91bb03b4b45560197, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 9c73cc7612ba74162a1a2ed924048c21, type: 2}
+  m_sharedMaterial: {fileID: 1681382614318952878, guid: 9c73cc7612ba74162a1a2ed924048c21, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -34068,7 +34144,7 @@ MonoBehaviour:
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
-  m_characterSpacing: -18.4
+  m_characterSpacing: -11.3
   m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
@@ -37479,6 +37555,7 @@ GameObject:
   - component: {fileID: 1220529016}
   - component: {fileID: 1220529018}
   - component: {fileID: 1220529017}
+  - component: {fileID: 1220529019}
   m_Layer: 5
   m_Name: GreenOverlay
   m_TagString: Untagged
@@ -37543,6 +37620,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1220529015}
   m_CullTransparentMesh: 1
+--- !u!225 &1220529019
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1220529015}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 0
+  m_BlocksRaycasts: 0
+  m_IgnoreParentGroups: 0
 --- !u!1 &1225251653
 GameObject:
   m_ObjectHideFlags: 0
@@ -38617,8 +38706,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   uiManager: {fileID: 2115417990}
   dealerController: {fileID: 261641904}
+  betPanelManager: {fileID: 1893526748}
   JSManager: {fileID: 1519490010}
-  testToken: 9e7b77f82c654270a07ea7f12c01240c
+  testToken: eac9967dca38498fb8b38dcf0c208ec3
   initData:
     id: 
     gameData:
@@ -39069,14 +39159,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.39607844}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -5583603169610629838, guid: f7a2e511236b141d7b0079a78046a801, type: 3}
+  m_Sprite: {fileID: 8548086109083461126, guid: b8e51293653474e969e8b94a654661e5, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -41759,6 +41849,7 @@ GameObject:
   - component: {fileID: 1398963625}
   - component: {fileID: 1398963627}
   - component: {fileID: 1398963626}
+  - component: {fileID: 1398963628}
   m_Layer: 5
   m_Name: GreenOverlay
   m_TagString: Untagged
@@ -41823,6 +41914,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1398963624}
   m_CullTransparentMesh: 1
+--- !u!225 &1398963628
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1398963624}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 0
+  m_BlocksRaycasts: 0
+  m_IgnoreParentGroups: 0
 --- !u!1 &1403208129
 GameObject:
   m_ObjectHideFlags: 0
@@ -44041,6 +44144,7 @@ GameObject:
   - component: {fileID: 1479687479}
   - component: {fileID: 1479687481}
   - component: {fileID: 1479687480}
+  - component: {fileID: 1479687482}
   m_Layer: 5
   m_Name: BlackOverlay
   m_TagString: Untagged
@@ -44105,6 +44209,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1479687478}
   m_CullTransparentMesh: 1
+--- !u!225 &1479687482
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1479687478}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 0
+  m_BlocksRaycasts: 0
+  m_IgnoreParentGroups: 0
 --- !u!1 &1493477748
 GameObject:
   m_ObjectHideFlags: 0
@@ -52456,6 +52572,7 @@ GameObject:
   - component: {fileID: 1773595908}
   - component: {fileID: 1773595910}
   - component: {fileID: 1773595909}
+  - component: {fileID: 1773595911}
   m_Layer: 5
   m_Name: BG
   m_TagString: Untagged
@@ -52529,6 +52646,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1773595907}
   m_CullTransparentMesh: 1
+--- !u!114 &1773595911
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1773595907}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31a19414c41e5ae4aae2af33fee712f6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_ShowMaskGraphic: 1
 --- !u!1 &1773684085
 GameObject:
   m_ObjectHideFlags: 0
@@ -55052,6 +55182,41 @@ MonoBehaviour:
   scaleMultiplier: 1.2
   duration: 0.1
   ease: 6
+--- !u!1 &1883401389
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1883401390}
+  m_Layer: 5
+  m_Name: WinningChipStartRef
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1883401390
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1883401389}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 653036172}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 311}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1886768380
 GameObject:
   m_ObjectHideFlags: 0
@@ -55511,21 +55676,29 @@ MonoBehaviour:
     chipSpawnArea: {fileID: 871108528}
     totalBetRoot: {fileID: 1594270293}
     totalBetText: {fileID: 1087313496}
+    lightGlow: {fileID: 1398963628}
+    darkGlow: {fileID: 878801335}
   - betButton: {fileID: 663288302}
     chipParent: {fileID: 1784963989}
     chipSpawnArea: {fileID: 1784963989}
     totalBetRoot: {fileID: 1731129798}
     totalBetText: {fileID: 1847256498}
+    lightGlow: {fileID: 1220529019}
+    darkGlow: {fileID: 1479687482}
   - betButton: {fileID: 1913519096}
     chipParent: {fileID: 1334532419}
     chipSpawnArea: {fileID: 1334532419}
     totalBetRoot: {fileID: 65681376}
     totalBetText: {fileID: 294764261}
+    lightGlow: {fileID: 2044397298}
+    darkGlow: {fileID: 74726868}
   - betButton: {fileID: 2041059664}
     chipParent: {fileID: 785213024}
     chipSpawnArea: {fileID: 785213024}
     totalBetRoot: {fileID: 1131861531}
     totalBetText: {fileID: 1069948861}
+    lightGlow: {fileID: 2068535656}
+    darkGlow: {fileID: 882143689}
   betChipPrefab: {fileID: 4569056600961057865, guid: eb8fe43dd3fd34f7f81512ce22475157, type: 3}
   chipSpawnYOffset: 80
   chipSpawnDuration: 0.3
@@ -55543,6 +55716,25 @@ MonoBehaviour:
   socketManager: {fileID: 1272847616}
   uiManager: {fileID: 2115417990}
   repeatBetButton: {fileID: 1162501403}
+  opponentChipPrefab: {fileID: 4569056600961057865, guid: 1c48913876c434c40b19045ea452fa0c, type: 3}
+  opponentChipStartRef: {fileID: 873688885}
+  opponentChipMovingParent: {fileID: 465655085}
+  opponentChipMoveDuration: 0.4
+  opponentChipMoveScale: 0.8
+  opponentChipScaleUpDuration: 0.2
+  leaderboardController: {fileID: 1868064685}
+  roundEndDelay: 2
+  overlayFadeDuration: 0.5
+  losingChipsFadeOutDuration: 0.3
+  winningChipStartRef: {fileID: 1883401390}
+  winningChipMovingParent: {fileID: 1883401390}
+  leaderboardChipMovingParent: {fileID: 494027982}
+  preWinningChipDelay: 0.5
+  winningChipSpawnInterval: 0.2
+  winningChipMoveDuration: 0.5
+  winningChipHoldDuration: 1
+  chipReturnDuration: 0.4
+  winTotalLerpDuration: 0.8
   errorPopupRoot: {fileID: 81673485}
   errorPopupCanvasGroup: {fileID: 81673486}
   errorPopupText: {fileID: 274038458}
@@ -59731,6 +59923,7 @@ GameObject:
   - component: {fileID: 2044397295}
   - component: {fileID: 2044397297}
   - component: {fileID: 2044397296}
+  - component: {fileID: 2044397298}
   m_Layer: 5
   m_Name: GreenOverlay
   m_TagString: Untagged
@@ -59795,6 +59988,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2044397294}
   m_CullTransparentMesh: 1
+--- !u!225 &2044397298
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2044397294}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 0
+  m_BlocksRaycasts: 0
+  m_IgnoreParentGroups: 0
 --- !u!1 &2054320261
 GameObject:
   m_ObjectHideFlags: 0
@@ -60542,6 +60747,7 @@ GameObject:
   - component: {fileID: 2068535653}
   - component: {fileID: 2068535655}
   - component: {fileID: 2068535654}
+  - component: {fileID: 2068535656}
   m_Layer: 5
   m_Name: GreenOverlay
   m_TagString: Untagged
@@ -60606,6 +60812,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2068535652}
   m_CullTransparentMesh: 1
+--- !u!225 &2068535656
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2068535652}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 0
+  m_BlocksRaycasts: 0
+  m_IgnoreParentGroups: 0
 --- !u!1 &2074522038
 GameObject:
   m_ObjectHideFlags: 0
@@ -62116,6 +62334,7 @@ MonoBehaviour:
   audioController: {fileID: 1508872095}
   socketManager: {fileID: 1272847616}
   betPanelManager: {fileID: 1893526748}
+  dealerController: {fileID: 0}
   leaderboardController: {fileID: 1868064685}
   gameStatsUIController: {fileID: 1821426748}
   HistoryClose_button: {fileID: 1918362698}

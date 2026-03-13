@@ -113,6 +113,89 @@ public class CardController : MonoBehaviour
     TrackSpawnedCards(type, cardref, topDownCard);
   }
 
+  internal void SpawnCardImmediate(int type, Card cardData, CardDealtScores scores)
+  {
+    InitializePlayerCollections();
+
+    Sprite cardSprite = ResolveCardSprite(cardData);
+    GameObject topDownCard = SpawnTopDownCardImmediate(type, cardSprite);
+
+    GameObject prefab = null;
+    Transform parent = null;
+    switch (type)
+    {
+      case 8: prefab = Card8_Object; parent = Card8Pos_Transform; break;
+      case 9: prefab = Card9_Object; parent = Card9Pos_Transform; break;
+      case 10: prefab = Card10_Object; parent = Card10Pos_Transform; break;
+      case 11: prefab = Card11_Object; parent = Card11Pos_Transform; break;
+    }
+
+    if (prefab == null || parent == null) return;
+
+    GameObject cardref = GameObject.Instantiate(prefab, parent, false);
+    cardref.transform.localPosition = Vector3.zero;
+    cardref.transform.localRotation = Quaternion.identity;
+    cardref.transform.localScale = Vector3.one;
+    // Face-up final rotation (matches end state of FlipAndReveal with FlipDirection >= 0)
+    cardref.transform.localEulerAngles = new Vector3(180f, 180f, 180f);
+
+    Image cardImage = cardref.GetComponent<Image>();
+    if (cardImage == null) cardImage = cardref.GetComponentInChildren<Image>();
+    UITrapezoidTopNarrow trapezoid = cardref.GetComponent<UITrapezoidTopNarrow>();
+    if (trapezoid == null) trapezoid = cardref.GetComponentInChildren<UITrapezoidTopNarrow>();
+    SetCardSprite(cardImage, trapezoid, cardSprite);
+
+    // Match the face-up end state produced by FlipAndReveal: swap TopInset/BottomInset
+    if (trapezoid != null)
+    {
+      float origTop = trapezoid.TopInset;
+      trapezoid.TopInset = trapezoid.BottomInset;
+      trapezoid.BottomInset = origTop;
+      Graphic graphic = trapezoid.GetComponent<Graphic>();
+      if (graphic != null) graphic.SetVerticesDirty();
+    }
+
+    int scoreForPlayer = GetScoreForPlayer(type, scores);
+    if (type >= 8 && type <= 11)
+    {
+      TMP_Text scoreText = GetScoreText(type);
+      if (scoreText != null)
+      {
+        scoreText.text = scoreForPlayer.ToString();
+        SetScoreTextAlpha(scoreText, 1f);
+      }
+    }
+
+    TrackSpawnedCards(type, cardref, topDownCard);
+  }
+
+  private GameObject SpawnTopDownCardImmediate(int spotIndex, Sprite cardSprite)
+  {
+    if (TopDownCardPrefab == null) return null;
+
+    Transform parent = null;
+    switch (spotIndex)
+    {
+      case 8: parent = TopDownCard1_Transform; break;
+      case 9: parent = TopDownCard2_Transform; break;
+      case 10: parent = TopDownCard3_Transform; break;
+      case 11: parent = TopDownCard4_Transform; break;
+    }
+    if (parent == null) return null;
+
+    GameObject cardref = GameObject.Instantiate(TopDownCardPrefab, parent, false);
+    cardref.transform.localPosition = Vector3.zero;
+    cardref.transform.localRotation = Quaternion.identity;
+    cardref.transform.localScale = Vector3.one;
+    cardref.transform.localEulerAngles = Vector3.zero; // face-up final state
+
+    Image cardImage = cardref.GetComponent<Image>();
+    if (cardImage == null) cardImage = cardref.GetComponentInChildren<Image>();
+    SetCardSprite(cardImage, null, cardSprite);
+
+    return cardref;
+  }
+
   internal void SyncDealtCards(CardDealtEvent cardDealtEvent)
   {
     if (cardDealtEvent == null)

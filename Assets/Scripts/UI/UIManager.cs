@@ -13,6 +13,7 @@ public class UiManager : MonoBehaviour
   [SerializeField] private AudioManager audioController;
   [SerializeField] private SocketIOManager socketManager;
   [SerializeField] private BetPanelManager betPanelManager;
+  [SerializeField] private DealerController dealerController;
   [SerializeField] private LeaderboardController leaderboardController;
   [SerializeField] private GameStatsUIController gameStatsUIController;
   [SerializeField] private Button HistoryClose_button;
@@ -95,6 +96,11 @@ public class UiManager : MonoBehaviour
 
   private string currentLevel = "";
   private double currentBalance;
+  private bool pendingLevelEntry = false;
+  private int pendingCardsDealt = 0;
+
+  internal bool IsPendingLevelEntry => pendingLevelEntry;
+  internal int PendingCardsDealt => pendingCardsDealt;
 
 
   private int currentInfoPage = 0;
@@ -400,6 +406,12 @@ public class UiManager : MonoBehaviour
     LevelButtonsMaxBetText[3].text = FormatAmount(initData.gameData.wagers.main_bets.player_11.max_bet_limit.high_roller);
   }
 
+  internal void OnBettingTimerSync(BettingTimerEvent data)
+  {
+    if (betPanelManager != null)
+      betPanelManager.OnBettingTimerSync(data);
+  }
+
   internal void OnRoundStart(RoundStartEvent roundData)
   {
     UpdateGamePageMinMaxTexts();
@@ -422,6 +434,14 @@ public class UiManager : MonoBehaviour
 
   internal void OnCardDealt(CardDealtEvent cardDealtData)
   {
+    if (pendingLevelEntry)
+    {
+      pendingLevelEntry = false;
+      pendingCardsDealt = 0;
+      gamePage.SetActive(true);
+      loadingPage.SetActive(false);
+    }
+
     if (betPanelManager != null)
       betPanelManager.OnCardDealt(cardDealtData);
   }
@@ -440,57 +460,120 @@ public class UiManager : MonoBehaviour
     GPPeopleCountText.text = count.ToString();
   }
 
+  internal void SetGamePagePlayerCount(int count)
+  {
+    if(int.TryParse(GPPeopleCountText.text, out int currentCount))
+    {
+      if(currentCount != count)
+      {
+        GPPeopleCountText.text = count.ToString();
+      }
+    }
+  }
+
   internal void SetLobbyPlayerCounts(Lobby lobby)
   {
-    int total = lobby.casual + lobby.novice + lobby.expert + lobby.high_roller;
-    TotalPlayersText.text = total.ToString();
-
     LevelButtonsPeopleText[0].text = lobby.casual.ToString();
     LevelButtonsPeopleText[1].text = lobby.novice.ToString();
     LevelButtonsPeopleText[2].text = lobby.expert.ToString();
     LevelButtonsPeopleText[3].text = lobby.high_roller.ToString();
   }
 
+  internal void SetLobbyTotalPlayerCount(int count)
+  {
+    if(int.TryParse(TotalPlayersText.text, out int currentCount))
+    {
+      if(currentCount != count)
+      {
+        TotalPlayersText.text = count.ToString();
+      }
+    }
+  }
+
   internal void OnEnterLevelWithData(JoinLevelResponsePayload data)
   {
+    pendingLevelEntry = false;
+
+    // Always stop any in-progress dealer/card/chip animations before processing
+    // the new level state — covers all switching paths including mid-deal joins.
+    if (dealerController != null) dealerController.ResetImmediate();
+    if (betPanelManager != null) betPanelManager.ResetOnJoinIdle();
+
     if (!string.IsNullOrEmpty(data.level))
       currentLevel = data.level;
 
     if (data.roundState != null && !string.IsNullOrEmpty(data.roundState.roundId))
       GProundIDText.text = data.roundState.roundId;
 
-    if (data.playerCount > 0)
-      GPPeopleCountText.text = data.playerCount.ToString();
+    if(int.TryParse(GPPeopleCountText.text, out int currentCount))
+    {
+      if(currentCount != data.playerCount)
+      {
+        GPPeopleCountText.text = data.playerCount.ToString(); 
+      }
+    }
 
     UpdateGamePageMinMaxTexts();
     UpdateBetChipTextsForCurrentLevel();
     if (gameStatsUIController != null)
       gameStatsUIController.InitializeFromJoinStats(data.stats);
 
-    homePage.SetActive(false);
-    gamePage.SetActive(true);
-    loadingPage.SetActive(false);
-
     if (leaderboardController != null)
     {
       leaderboardController.Initialize();
       leaderboardController.UpdateLeaderboard(data.leaderboards);
     }
+
+    homePage.SetActive(false);
+
+    // roundState == null: joined after cashout or as first player — show immediately
+    if (data.roundState == null)
+    {
+      gamePage.SetActive(true);
+      loadingPage.SetActive(false);
+      return;
+    }
+
+    // Joined mid-deal — keep loading page up, wait for the next card_dealt, round_end, or cashout
+    if (data.roundState.phase == "dealing")
+    {
+      pendingLevelEntry = true;
+      pendingCardsDealt = data.roundState.cardsDealt;
+      return;
+    }
+
+    // Joined during betting phase — sync countdown and show immediately
+    if (betPanelManager != null) betPanelManager.OnJoinDuringBetting(data.roundState);
+    gamePage.SetActive(true);
+    loadingPage.SetActive(false);
   }
 
   internal void OnRoundResult(int sideValue)
   {
+    // If we joined mid-deal, cashout will arrive right after and handle the reset + page reveal
+    if (pendingLevelEntry)
+      return;
+
     if (gameStatsUIController != null)
       gameStatsUIController.OnNewRoundResult(sideValue);
-
-    if (betPanelManager != null)
-      betPanelManager.OnRoundEnd();
   }
 
   internal void OnCashout(CashoutEvent cashoutEvent)
   {
     if (cashoutEvent != null && cashoutEvent.leaderboards != null && leaderboardController != null)
       leaderboardController.UpdateLeaderboard(cashoutEvent.leaderboards);
+
+    // Joined mid-deal and the round ended before we could show the game — reset to idle and reveal
+    if (pendingLevelEntry)
+    {
+      pendingLevelEntry = false;
+      pendingCardsDealt = 0;
+      if (betPanelManager != null) betPanelManager.ResetOnJoinIdle();
+      if (dealerController != null) dealerController.ResetImmediate();
+      gamePage.SetActive(true);
+      loadingPage.SetActive(false);
+      return;
+    }
 
     if (betPanelManager != null)
       betPanelManager.OnCashout();
@@ -589,6 +672,11 @@ public class UiManager : MonoBehaviour
       yield break;
     }
 
+    // Stop all dealer/card/chip state while gamePage is still active so
+    // ImageAnimation.StopAnimation() (Invoke-based) can cancel cleanly.
+    if (dealerController != null) dealerController.ResetImmediate();
+    if (betPanelManager != null) betPanelManager.ResetOnJoinIdle();
+
     loadingPageText.text = "Entering a secure room";
     loadingPage.SetActive(true);
     gamePage.SetActive(false);
@@ -608,6 +696,12 @@ public class UiManager : MonoBehaviour
   {
     if (audioController) audioController.PlayBetButtonAudio();
     RetractMenuGP();
+
+    // Stop all dealer/card/chip state while gamePage is still active so
+    // ImageAnimation.StopAnimation() (Invoke-based) can cancel cleanly.
+    if (dealerController != null) dealerController.ResetImmediate();
+    if (betPanelManager != null) betPanelManager.ResetOnJoinIdle();
+
     loadingPageText.text = "Leaving table....";
     loadingPage.SetActive(true);
     gamePage.SetActive(false);

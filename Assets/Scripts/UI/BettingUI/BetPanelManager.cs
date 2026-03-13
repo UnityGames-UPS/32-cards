@@ -30,6 +30,8 @@ public class BetPanelManager : MonoBehaviour
     public RectTransform chipSpawnArea;
     public RectTransform totalBetRoot;
     public TMP_Text totalBetText;
+    public CanvasGroup lightGlow;
+    public CanvasGroup darkGlow;
     [NonSerialized] public Vector2 totalBetBaseSize;
   }
 
@@ -37,6 +39,12 @@ public class BetPanelManager : MonoBehaviour
   {
     public int SpotIndex;
     public BetChipView ChipView;
+  }
+
+  private class OpponentChipEntry
+  {
+    public BetChipView ChipView;
+    public string Username;
   }
 
   [Header("Chip Selector")]
@@ -73,6 +81,31 @@ public class BetPanelManager : MonoBehaviour
   [Header("Repeat Bet Button")]
   [SerializeField] private Button repeatBetButton;
 
+  [Header("Opponent Chips")]
+  [SerializeField] private BetChipView opponentChipPrefab;
+  [SerializeField] private Transform opponentChipStartRef;
+  [SerializeField] private Transform opponentChipMovingParent;
+  [SerializeField] private float opponentChipMoveDuration = 0.4f;
+  [SerializeField] private float opponentChipMoveScale = 0.8f;
+  [SerializeField] private float opponentChipScaleUpDuration = 0.3f;
+  [SerializeField] private LeaderboardController leaderboardController;
+
+  [Header("Round End Overlays")]
+  [SerializeField] private float roundEndDelay = 2f;
+  [SerializeField] private float overlayFadeDuration = 0.5f;
+  [SerializeField] private float losingChipsFadeOutDuration = 0.3f;
+
+  [Header("Winning Chips")]
+  [SerializeField] private Transform winningChipStartRef;
+  [SerializeField] private Transform winningChipMovingParent;
+  [SerializeField] private Transform leaderboardChipMovingParent;
+  [SerializeField] private float preWinningChipDelay = 0.5f;
+  [SerializeField] private float winningChipSpawnInterval = 0.2f;
+  [SerializeField] private float winningChipMoveDuration = 0.5f;
+  [SerializeField] private float winningChipHoldDuration = 0.5f;
+  [SerializeField] private float chipReturnDuration = 0.5f;
+  [SerializeField] private float winTotalLerpDuration = 0.8f;
+
   [Header("Error Popup")]
   [SerializeField] private RectTransform errorPopupRoot;
   [SerializeField] private CanvasGroup errorPopupCanvasGroup;
@@ -102,6 +135,7 @@ public class BetPanelManager : MonoBehaviour
 
   private readonly Stack<BetUndoEntry> betUndoStack = new Stack<BetUndoEntry>();
   private readonly List<List<BetChipView>> chipsPerSpot = new List<List<BetChipView>>();
+  private readonly List<List<OpponentChipEntry>> opponentChipsPerSpot = new List<List<OpponentChipEntry>>();
   private readonly List<Sprite> cachedChipOptionSprites = new List<Sprite>();
   private Sprite cachedMainChipSprite;
 
@@ -118,6 +152,12 @@ public class BetPanelManager : MonoBehaviour
   private string activeRoundId;
   private Vector3 timerTextBaseScale = Vector3.one;
   private Vector3 announcerParentBaseScale = Vector3.one;
+
+  private int currentWinner = -1;
+  private CashoutEvent pendingCashoutData;
+  private Coroutine cashoutAnimationRoutine;
+  private readonly List<BetChipView> winningClientChips = new List<BetChipView>();
+  private readonly List<OpponentChipEntry> winningOpponentChips = new List<OpponentChipEntry>();
 
 
   private void Awake()
@@ -143,6 +183,7 @@ public class BetPanelManager : MonoBehaviour
     if (errorPopupSequence != null && errorPopupSequence.IsActive())
       errorPopupSequence.Kill();
     StopRoundRoutines();
+    StopCashoutAnimation();
     DOTween.Kill(timerTextRoot);
     KillAnnouncerTweens(lightGreenAnnouncer);
     KillAnnouncerTweens(yellowAnnouncer);
@@ -163,12 +204,14 @@ public class BetPanelManager : MonoBehaviour
       chipOptions = new List<ChipButtonView>();
 
     chipsPerSpot.Clear();
+    opponentChipsPerSpot.Clear();
     for (int i = 0; i < betSpots.Count; i++)
     {
       if (betSpots[i] != null && betSpots[i].totalBetRoot != null)
         betSpots[i].totalBetBaseSize = betSpots[i].totalBetRoot.sizeDelta;
 
       chipsPerSpot.Add(new List<BetChipView>());
+      opponentChipsPerSpot.Add(new List<OpponentChipEntry>());
       UpdateSpotTotal(i);
     }
 
@@ -288,6 +331,74 @@ public class BetPanelManager : MonoBehaviour
     }
   }
 
+  internal void ResetOnJoinIdle()
+  {
+    StopRoundRoutines();
+    StopCashoutAnimation();
+    activeRoundId = null;
+    hasReceivedFirstCardDealt = false;
+    currentWinner = -1;
+    pendingCashoutData = null;
+    ClearAllChipVisuals();
+    HideAllAnnouncers();
+    SetTimerVisible(false, false);
+    ResetOverlays();
+    CollapseBetActionButtons();
+  }
+
+  internal void OnJoinDuringBetting(RoundState roundState)
+  {
+    if (roundState == null) return;
+
+    StopRoundRoutines();
+    StopCashoutAnimation();
+    activeRoundId = roundState.roundId;
+    hasReceivedFirstCardDealt = false;
+    currentWinner = -1;
+    pendingCashoutData = null;
+    ClearAllChipVisuals();
+    HideAllAnnouncers();
+    SetTimerVisible(false, false);
+    ResetOverlays();
+    CollapseBetActionButtons();
+
+    RoundStartEvent synced = new RoundStartEvent
+    {
+      roundId = roundState.roundId,
+      startedAt = roundState.startedAt,
+      bettingEndTime = roundState.bettingEndTime,
+      serverTime = roundState.serverTime
+    };
+    roundCountdownRoutine = StartCoroutine(RunBettingCountdown(synced));
+  }
+
+  internal void OnBettingTimerSync(BettingTimerEvent data)
+  {
+    if (data == null) return;
+    if (!string.IsNullOrEmpty(activeRoundId) && !string.IsNullOrEmpty(data.roundId) && activeRoundId != data.roundId) return;
+
+    long serverRemainingMs = data.bettingEndTime - data.serverTime;
+    int serverSeconds = Mathf.Clamp(Mathf.CeilToInt(serverRemainingMs / 1000f) - 1, 0, 14);
+
+    // Only resync if there is noticeable drift (>1 second off)
+    if (timerText != null && int.TryParse(timerText.text, out int displayed) && Mathf.Abs(displayed - serverSeconds) <= 1)
+      return;
+
+    if (roundCountdownRoutine != null)
+    {
+      StopCoroutine(roundCountdownRoutine);
+      roundCountdownRoutine = null;
+    }
+
+    RoundStartEvent synced = new RoundStartEvent
+    {
+      roundId = data.roundId,
+      bettingEndTime = data.bettingEndTime,
+      serverTime = data.serverTime
+    };
+    roundCountdownRoutine = StartCoroutine(RunBettingCountdown(synced));
+  }
+
   internal void OnRoundStart(RoundStartEvent roundData)
   {
     if (roundData == null)
@@ -295,6 +406,9 @@ public class BetPanelManager : MonoBehaviour
 
     activeRoundId = roundData.roundId;
     hasReceivedFirstCardDealt = false;
+
+    StopCashoutAnimation();
+    ResetOverlays();
     ClearAllChipVisuals();
     CollapseBetActionButtons();
 
@@ -340,9 +454,17 @@ public class BetPanelManager : MonoBehaviour
     HideAllAnnouncers();
   }
 
-  internal void OnRoundEnd()
+  internal void OnRoundEnd(int winner)
   {
+    currentWinner = winner;
+    if (cashoutAnimationRoutine != null)
+      StopCoroutine(cashoutAnimationRoutine);
+    cashoutAnimationRoutine = StartCoroutine(RunCashoutAnimation());
+  }
 
+  internal void SetCashoutData(CashoutEvent cashoutData)
+  {
+    pendingCashoutData = cashoutData;
   }
 
   internal void OnCashout()
@@ -351,6 +473,127 @@ public class BetPanelManager : MonoBehaviour
       StopCoroutine(nextRoundRoutine);
 
     nextRoundRoutine = StartCoroutine(RunNextRoundCountdown());
+  }
+
+  internal void OnOpponentBetPlaced(BetPlacedEvent betData)
+  {
+    if (betData == null || betData.amount <= 0)
+      return;
+
+    int spotIndex = BetOptionToSpotIndex(betData.betOption);
+    if (spotIndex < 0 || !IsValidSpotIndex(spotIndex))
+      return;
+
+    SpawnOpponentChipOnSpot(spotIndex, betData.amount, betData.username);
+  }
+
+  internal void OnOpponentBetUndo(BetPlacedEvent betData)
+  {
+    if (betData == null) return;
+
+    int spotIndex = BetOptionToSpotIndex(betData.betOption);
+    if (spotIndex < 0 || !IsValidSpotIndex(spotIndex)) return;
+
+    // Find the last chip from this opponent on this spot
+    var list = opponentChipsPerSpot[spotIndex];
+    OpponentChipEntry entry = null;
+    for (int i = list.Count - 1; i >= 0; i--)
+    {
+      if (list[i] != null && list[i].Username == betData.username)
+      {
+        entry = list[i];
+        list.RemoveAt(i);
+        break;
+      }
+    }
+
+    if (entry?.ChipView == null || entry.ChipView.ChipRect == null) return;
+
+    Vector3 targetPos;
+    Transform moveParent = null;
+
+    if (leaderboardController != null && !string.IsNullOrEmpty(entry.Username))
+    {
+      RectTransform lbRect = leaderboardController.GetPlayerPosition(entry.Username, false);
+      if (lbRect == null)
+        lbRect = leaderboardController.GetPlayerPosition(entry.Username, true);
+
+      if (lbRect != null)
+      {
+        targetPos = lbRect.position;
+        moveParent = leaderboardChipMovingParent;
+      }
+      else
+      {
+        targetPos = opponentChipStartRef != null ? opponentChipStartRef.position : entry.ChipView.ChipRect.position;
+      }
+    }
+    else
+    {
+      targetPos = opponentChipStartRef != null ? opponentChipStartRef.position : entry.ChipView.ChipRect.position;
+    }
+
+    if (moveParent != null)
+      entry.ChipView.ChipRect.SetParent(moveParent);
+
+    entry.ChipView.ChipRect.DOKill();
+    var chipView = entry.ChipView;
+    entry.ChipView.ChipRect.DOMove(targetPos, chipUndoDuration)
+      .SetEase(Ease.InBack)
+      .OnComplete(() => { if (chipView != null) Destroy(chipView.gameObject); });
+  }
+
+  private void SpawnOpponentChipOnSpot(int spotIndex, double amount, string username)
+  {
+    if (!IsValidSpotIndex(spotIndex) || opponentChipPrefab == null)
+      return;
+
+    var spot = betSpots[spotIndex];
+    if (spot == null || spot.chipParent == null || spot.chipSpawnArea == null)
+      return;
+
+    Transform movingParent = opponentChipMovingParent != null ? opponentChipMovingParent : spot.chipParent;
+    BetChipView spawnedChip = Instantiate(opponentChipPrefab, movingParent);
+    if (spawnedChip == null || spawnedChip.ChipRect == null || spawnedChip.ChipCanvasGroup == null)
+      return;
+
+    spawnedChip.ChipCanvasGroup.alpha = 1f;
+    spawnedChip.ChipRect.localScale = Vector3.one * opponentChipMoveScale;
+    spawnedChip.ChipRect.localRotation = Quaternion.identity;
+    spawnedChip.SetChipValueText(GameUtility.FormatCurrency(amount));
+
+    Vector2 finalPos = GetRandomAnchoredPosition(spawnedChip.ChipRect, spot.chipSpawnArea);
+    spawnedChip.ChipRect.SetParent(spot.chipParent);
+    spawnedChip.ChipRect.anchoredPosition = finalPos;
+    Vector3 endWorldPos = spawnedChip.ChipRect.position;
+    spawnedChip.ChipRect.SetParent(movingParent);
+
+    Vector3 startPos = opponentChipStartRef != null ? opponentChipStartRef.position : endWorldPos;
+    if (leaderboardController != null && !string.IsNullOrEmpty(username))
+    {
+      RectTransform lbRect = leaderboardController.GetPlayerPosition(username, false);
+      if (lbRect == null)
+        lbRect = leaderboardController.GetPlayerPosition(username, true);
+      if (lbRect != null)
+        startPos = lbRect.position;
+    }
+
+    spawnedChip.ChipRect.position = startPos;
+
+    Sequence seq = DOTween.Sequence();
+    seq.Join(spawnedChip.ChipRect.DOMove(endWorldPos, opponentChipMoveDuration).SetEase(Ease.OutQuad));
+    seq.Append(spawnedChip.ChipRect.DOScale(Vector3.one, opponentChipScaleUpDuration).SetEase(Ease.OutQuad));
+    Vector2 capturedFinalPos = finalPos;
+    seq.OnComplete(() =>
+    {
+      if (spawnedChip != null && spawnedChip.ChipRect != null && spot.chipParent != null)
+      {
+        spawnedChip.ChipRect.SetParent(spot.chipParent);
+        spawnedChip.ChipRect.anchoredPosition = capturedFinalPos;
+      }
+    });
+
+    opponentChipsPerSpot[spotIndex].Add(new OpponentChipEntry { ChipView = spawnedChip, Username = username });
   }
 
   private void ToggleChipOptions()
@@ -758,7 +1001,408 @@ public class BetPanelManager : MonoBehaviour
       chipsPerSpot[i].Clear();
       UpdateSpotTotal(i);
     }
+
+    for (int i = 0; i < opponentChipsPerSpot.Count; i++)
+    {
+      foreach (var entry in opponentChipsPerSpot[i])
+      {
+        if (entry?.ChipView != null)
+        {
+          entry.ChipView.ChipRect.DOKill();
+          Destroy(entry.ChipView.gameObject);
+        }
+      }
+      opponentChipsPerSpot[i].Clear();
+    }
+
+    foreach (var chip in winningClientChips)
+    {
+      if (chip != null)
+      {
+        chip.ChipRect.DOKill();
+        Destroy(chip.gameObject);
+      }
+    }
+    winningClientChips.Clear();
+
+    foreach (var entry in winningOpponentChips)
+    {
+      if (entry?.ChipView != null)
+      {
+        entry.ChipView.ChipRect.DOKill();
+        Destroy(entry.ChipView.gameObject);
+      }
+    }
+    winningOpponentChips.Clear();
   }
+
+  // ── Cashout Animation ──────────────────────────────────────────────
+
+  private IEnumerator RunCashoutAnimation()
+  {
+    int winnerSpotIndex = currentWinner - 8;
+    if (winnerSpotIndex < 0 || winnerSpotIndex >= betSpots.Count)
+      yield break;
+
+    yield return new WaitForSeconds(roundEndDelay);
+
+    // Fade overlays + fade out losing chips
+    yield return StartCoroutine(FadeOverlaysAndLosingChips(winnerSpotIndex));
+
+    yield return new WaitForSeconds(preWinningChipDelay);
+
+    // Spawn winning chips
+    yield return StartCoroutine(SpawnWinningChips(winnerSpotIndex));
+
+    yield return new WaitForSeconds(winningChipHoldDuration);
+
+    // Move all chips away from winning spot
+    yield return StartCoroutine(CleanupWinningSpotChips(winnerSpotIndex));
+
+    // Update balance from cashout payout after chips reach the undo target
+    if (pendingCashoutData?.payouts != null && socketManager?.initData != null)
+    {
+      string username = socketManager.initData.player.username;
+      foreach (var payout in pendingCashoutData.payouts)
+      {
+        if (payout.username == username)
+        {
+          uiManager.SetBalanceText(payout.balance);
+          break;
+        }
+      }
+    }
+
+    ResetOverlays();
+    currentWinner = -1;
+    pendingCashoutData = null;
+    cashoutAnimationRoutine = null;
+  }
+
+  private IEnumerator FadeOverlaysAndLosingChips(int winnerSpotIndex)
+  {
+    for (int i = 0; i < betSpots.Count; i++)
+    {
+      var spot = betSpots[i];
+      if (spot == null) continue;
+
+      if (i == winnerSpotIndex)
+      {
+        if (spot.lightGlow != null)
+        {
+          spot.lightGlow.alpha = 0f;
+          spot.lightGlow.gameObject.SetActive(true);
+          spot.lightGlow.DOFade(1f, overlayFadeDuration);
+        }
+      }
+      else
+      {
+        if (spot.darkGlow != null)
+        {
+          spot.darkGlow.alpha = 0f;
+          spot.darkGlow.gameObject.SetActive(true);
+          spot.darkGlow.DOFade(1f, overlayFadeDuration);
+        }
+      }
+    }
+
+    // At 50% of overlay fade, start fading losing chips
+    yield return new WaitForSeconds(overlayFadeDuration * 0.5f);
+
+    for (int i = 0; i < betSpots.Count; i++)
+    {
+      if (i == winnerSpotIndex) continue;
+
+      foreach (var chip in chipsPerSpot[i])
+      {
+        if (chip != null && chip.ChipCanvasGroup != null)
+          chip.ChipCanvasGroup.DOFade(0f, losingChipsFadeOutDuration);
+      }
+
+      foreach (var entry in opponentChipsPerSpot[i])
+      {
+        if (entry?.ChipView != null && entry.ChipView.ChipCanvasGroup != null)
+          entry.ChipView.ChipCanvasGroup.DOFade(0f, losingChipsFadeOutDuration);
+      }
+    }
+
+    float remainingOverlay = overlayFadeDuration * 0.5f;
+    yield return new WaitForSeconds(Mathf.Max(remainingOverlay, losingChipsFadeOutDuration));
+
+    // Destroy faded chips on losing spots
+    for (int i = 0; i < betSpots.Count; i++)
+    {
+      if (i == winnerSpotIndex) continue;
+
+      foreach (var chip in chipsPerSpot[i])
+      {
+        if (chip != null)
+        {
+          chip.ChipRect.DOKill();
+          Destroy(chip.gameObject);
+        }
+      }
+      chipsPerSpot[i].Clear();
+
+      foreach (var entry in opponentChipsPerSpot[i])
+      {
+        if (entry?.ChipView != null)
+        {
+          entry.ChipView.ChipRect.DOKill();
+          Destroy(entry.ChipView.gameObject);
+        }
+      }
+      opponentChipsPerSpot[i].Clear();
+
+      UpdateSpotTotal(i);
+    }
+  }
+
+  private IEnumerator SpawnWinningChips(int winnerSpotIndex)
+  {
+    if (!IsValidSpotIndex(winnerSpotIndex))
+      yield break;
+
+    var spot = betSpots[winnerSpotIndex];
+    if (spot == null || spot.chipParent == null || spot.chipSpawnArea == null)
+      yield break;
+
+    double payoutMultiplier = GetPayoutMultiplier(currentWinner);
+
+    // Lerp spot total text from bet amount to total win amount (bet + bet * payout)
+    float clientTotal = 0f;
+    foreach (var chip in chipsPerSpot[winnerSpotIndex])
+    {
+      if (chip != null) clientTotal += chip.ChipValue;
+    }
+    if (clientTotal > 0f)
+    {
+      float winTotal = (float)(clientTotal * (1.0 + payoutMultiplier));
+      AnimateSpotTotalToWin(winnerSpotIndex, clientTotal, winTotal);
+    }
+
+    // Client winning chips
+    for (int i = 0; i < chipsPerSpot[winnerSpotIndex].Count; i++)
+    {
+      var originalChip = chipsPerSpot[winnerSpotIndex][i];
+      if (originalChip == null) continue;
+
+      double winAmount = originalChip.ChipValue * payoutMultiplier;
+      SpawnWinningChipOnSpot(winnerSpotIndex, winAmount, originalChip.ChipSprite, false, null);
+      yield return new WaitForSeconds(winningChipSpawnInterval);
+    }
+
+    // Opponent winning chips
+    for (int i = 0; i < opponentChipsPerSpot[winnerSpotIndex].Count; i++)
+    {
+      var entry = opponentChipsPerSpot[winnerSpotIndex][i];
+      if (entry?.ChipView == null) continue;
+
+      double winAmount = entry.ChipView.ChipValue * payoutMultiplier;
+      SpawnWinningChipOnSpot(winnerSpotIndex, winAmount, null, true, entry.Username);
+      yield return new WaitForSeconds(winningChipSpawnInterval);
+    }
+  }
+
+  private void SpawnWinningChipOnSpot(int spotIndex, double amount, Sprite chipSprite, bool isOpponent, string username)
+  {
+    var spot = betSpots[spotIndex];
+    if (spot == null || spot.chipParent == null || spot.chipSpawnArea == null)
+      return;
+
+    BetChipView prefab = isOpponent ? opponentChipPrefab : betChipPrefab;
+    if (prefab == null) return;
+
+    Transform movingParent = winningChipMovingParent != null ? winningChipMovingParent : spot.chipParent;
+    BetChipView spawnedChip = Instantiate(prefab, movingParent);
+    if (spawnedChip == null || spawnedChip.ChipRect == null || spawnedChip.ChipCanvasGroup == null)
+      return;
+
+    spawnedChip.ChipCanvasGroup.alpha = 1f;
+    spawnedChip.ChipRect.localScale = isOpponent ? Vector3.one * opponentChipMoveScale : Vector3.one;
+    spawnedChip.ChipRect.localRotation = Quaternion.identity;
+
+    if (isOpponent)
+      spawnedChip.SetChipValueText(GameUtility.FormatCurrency(amount));
+    else
+      spawnedChip.SetChipVisuals(chipSprite, GameUtility.FormatCurrency(amount));
+
+    // Get final anchored position by temporarily parenting to chipParent
+    Vector2 finalAnchoredPos = GetRandomAnchoredPosition(spawnedChip.ChipRect, spot.chipSpawnArea);
+    spawnedChip.ChipRect.SetParent(spot.chipParent);
+    spawnedChip.ChipRect.anchoredPosition = finalAnchoredPos;
+    Vector3 endWorldPos = spawnedChip.ChipRect.position;
+    spawnedChip.ChipRect.SetParent(movingParent);
+
+    if (winningChipStartRef != null)
+      spawnedChip.ChipRect.position = winningChipStartRef.position;
+
+    Sequence seq = DOTween.Sequence();
+    seq.Join(spawnedChip.ChipRect.DOMove(endWorldPos, winningChipMoveDuration).SetEase(Ease.OutQuad));
+    if (isOpponent)
+      seq.Append(spawnedChip.ChipRect.DOScale(Vector3.one, opponentChipScaleUpDuration).SetEase(Ease.OutQuad));
+
+    Vector2 capturedPos = finalAnchoredPos;
+    seq.OnComplete(() =>
+    {
+      if (spawnedChip != null && spawnedChip.ChipRect != null && spot.chipParent != null)
+      {
+        spawnedChip.ChipRect.SetParent(spot.chipParent);
+        spawnedChip.ChipRect.anchoredPosition = capturedPos;
+      }
+    });
+
+    if (isOpponent)
+      winningOpponentChips.Add(new OpponentChipEntry { ChipView = spawnedChip, Username = username });
+    else
+      winningClientChips.Add(spawnedChip);
+  }
+
+  private IEnumerator CleanupWinningSpotChips(int winnerSpotIndex)
+  {
+    // Client chips (original + winning) → undo target → destroy
+    var clientChips = new List<BetChipView>();
+    clientChips.AddRange(chipsPerSpot[winnerSpotIndex]);
+    clientChips.AddRange(winningClientChips);
+
+    foreach (var chip in clientChips)
+    {
+      if (chip == null || chip.ChipRect == null) continue;
+      chip.ChipRect.DOKill();
+      if (chipUndoDestroyTarget != null)
+      {
+        var c = chip;
+        chip.ChipRect.DOMove(chipUndoDestroyTarget.position, chipReturnDuration)
+          .SetEase(Ease.InBack)
+          .OnComplete(() => { if (c != null) Destroy(c.gameObject); });
+      }
+      else
+      {
+        Destroy(chip.gameObject);
+      }
+    }
+
+    // Opponent chips (original + winning) → leaderboard or start ref
+    var opponentEntries = new List<OpponentChipEntry>();
+    opponentEntries.AddRange(opponentChipsPerSpot[winnerSpotIndex]);
+    opponentEntries.AddRange(winningOpponentChips);
+
+    foreach (var entry in opponentEntries)
+    {
+      if (entry?.ChipView == null || entry.ChipView.ChipRect == null) continue;
+
+      Vector3 targetPos;
+      Transform moveParent = null;
+      bool onLeaderboard = false;
+
+      if (leaderboardController != null && !string.IsNullOrEmpty(entry.Username))
+      {
+        RectTransform lbRect = leaderboardController.GetPlayerPosition(entry.Username, false);
+        if (lbRect == null)
+          lbRect = leaderboardController.GetPlayerPosition(entry.Username, true);
+
+        if (lbRect != null)
+        {
+          targetPos = lbRect.position;
+          moveParent = leaderboardChipMovingParent;
+          onLeaderboard = true;
+        }
+        else
+        {
+          targetPos = opponentChipStartRef != null ? opponentChipStartRef.position : entry.ChipView.ChipRect.position;
+        }
+      }
+      else
+      {
+        targetPos = opponentChipStartRef != null ? opponentChipStartRef.position : entry.ChipView.ChipRect.position;
+      }
+
+      if (moveParent != null && onLeaderboard)
+        entry.ChipView.ChipRect.SetParent(moveParent);
+
+      entry.ChipView.ChipRect.DOKill();
+      var chipView = entry.ChipView;
+      entry.ChipView.ChipRect.DOMove(targetPos, chipReturnDuration)
+        .SetEase(Ease.InQuad)
+        .OnComplete(() => { if (chipView != null) Destroy(chipView.gameObject); });
+    }
+
+    chipsPerSpot[winnerSpotIndex].Clear();
+    opponentChipsPerSpot[winnerSpotIndex].Clear();
+    winningClientChips.Clear();
+    winningOpponentChips.Clear();
+
+    UpdateSpotTotal(winnerSpotIndex);
+
+    yield return new WaitForSeconds(chipReturnDuration + 0.1f);
+  }
+
+  private void ResetOverlays()
+  {
+    for (int i = 0; i < betSpots.Count; i++)
+    {
+      var spot = betSpots[i];
+      if (spot == null) continue;
+
+      if (spot.lightGlow != null)
+      {
+        spot.lightGlow.DOKill();
+        spot.lightGlow.alpha = 0f;
+        spot.lightGlow.gameObject.SetActive(false);
+      }
+
+      if (spot.darkGlow != null)
+      {
+        spot.darkGlow.DOKill();
+        spot.darkGlow.alpha = 0f;
+        spot.darkGlow.gameObject.SetActive(false);
+      }
+    }
+  }
+
+  private void AnimateSpotTotalToWin(int spotIndex, float fromValue, float toValue)
+  {
+    var spot = betSpots[spotIndex];
+    if (spot?.totalBetText == null) return;
+
+    float current = fromValue;
+    DOTween.To(() => current, x =>
+    {
+      current = x;
+      spot.totalBetText.text = x.ToString("N2");
+    }, toValue, winTotalLerpDuration).SetEase(Ease.OutQuad);
+  }
+
+  private double GetPayoutMultiplier(int playerNumber)
+  {
+    if (socketManager == null || socketManager.initData == null ||
+        socketManager.initData.gameData == null || socketManager.initData.gameData.wagers == null ||
+        socketManager.initData.gameData.wagers.main_bets == null)
+      return 1;
+
+    var mainBets = socketManager.initData.gameData.wagers.main_bets;
+    switch (playerNumber)
+    {
+      case 8: return mainBets.player_8 != null && mainBets.player_8.payout != null && mainBets.player_8.payout.Count > 1 ? mainBets.player_8.payout[1] : 1;
+      case 9: return mainBets.player_9 != null && mainBets.player_9.payout != null && mainBets.player_9.payout.Count > 1 ? mainBets.player_9.payout[1] : 1;
+      case 10: return mainBets.player_10 != null && mainBets.player_10.payout != null && mainBets.player_10.payout.Count > 1 ? mainBets.player_10.payout[1] : 1;
+      case 11: return mainBets.player_11 != null && mainBets.player_11.payout != null && mainBets.player_11.payout.Count > 1 ? mainBets.player_11.payout[1] : 1;
+      default: return 1;
+    }
+  }
+
+  private void StopCashoutAnimation()
+  {
+    if (cashoutAnimationRoutine != null)
+    {
+      StopCoroutine(cashoutAnimationRoutine);
+      cashoutAnimationRoutine = null;
+    }
+    currentWinner = -1;
+    pendingCashoutData = null;
+  }
+
+  // ── UI Helpers ─────────────────────────────────────────────────────
 
   private void CollapseBetActionButtons()
   {
@@ -881,6 +1525,8 @@ public class BetPanelManager : MonoBehaviour
     }
   }
 
+  // ── Round Announcer ────────────────────────────────────────────────
+
   private void InitializeRoundAnnouncerState()
   {
     timerTextBaseScale = timerTextRoot != null ? timerTextRoot.localScale : Vector3.one;
@@ -896,11 +1542,11 @@ public class BetPanelManager : MonoBehaviour
   private IEnumerator RunBettingCountdown(RoundStartEvent roundData)
   {
     int startValue = GetBettingStartValue(roundData);
-    bool switchedToYellow = false;
+    bool switchedToYellow = startValue <= 5;
     bool firstTick = true;
 
     FadeTimer(true);
-    FadeToAnnouncer(lightGreenAnnouncer, true);
+    FadeToAnnouncer(switchedToYellow ? yellowAnnouncer : lightGreenAnnouncer, true);
 
     for (int value = startValue; value >= 0; value--)
     {

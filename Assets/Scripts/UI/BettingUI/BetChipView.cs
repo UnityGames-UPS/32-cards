@@ -12,6 +12,7 @@ public class BetChipView : MonoBehaviour
 
   public RectTransform ChipRect => chipRect;
   public CanvasGroup ChipCanvasGroup => chipCanvasGroup;
+  public Sprite ChipSprite => chipImage != null ? chipImage.sprite : null;
   public float ChipValue
   {
     get
@@ -28,6 +29,12 @@ public class BetChipView : MonoBehaviour
     if (chipImage != null)
       chipImage.sprite = sprite;
 
+    if (chipValueText != null)
+      chipValueText.text = valueText;
+  }
+
+  public void SetChipValueText(string valueText)
+  {
     if (chipValueText != null)
       chipValueText.text = valueText;
   }

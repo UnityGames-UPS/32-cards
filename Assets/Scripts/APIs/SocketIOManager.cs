@@ -10,6 +10,7 @@ public class SocketIOManager : MonoBehaviour
 {
   [SerializeField] private UiManager uiManager;
   [SerializeField] private DealerController dealerController;
+  [SerializeField] private BetPanelManager betPanelManager;
   internal bool isResultdone = false;
   protected string nameSpace = "playground-multiplayer"; //BackendChanges
   private Socket gameSocket; //BackendChanges
@@ -147,6 +148,8 @@ public class SocketIOManager : MonoBehaviour
     gameSocket.On<Error>(SocketIOEventTypes.Error, OnError);
     gameSocket.On<string>("game:init", HandleInitData);
     gameSocket.On<string>("game:lobby_count", HandleLobbyCount);
+    gameSocket.On<string>("room:joined", HandleRoomJoined);
+    gameSocket.On<string>("room:left", HandleRoomLeft);
     gameSocket.On<string>("game:round_start", HandleRoundStart);
     gameSocket.On<string>("game:betting_timer", HandleBettingTimer);
     gameSocket.On<string>("game:bonus", HandleBonus);
@@ -159,6 +162,8 @@ public class SocketIOManager : MonoBehaviour
     gameSocket.On<string>("pong", OnPongReceived);
     manager.Open();
   }
+
+  
 
   // Connected event handler implementation
   void OnConnected(ConnectResponse resp)
@@ -487,9 +492,61 @@ public class SocketIOManager : MonoBehaviour
     }
   }
 
+  private void HandleRoomJoined(string obj)
+  {
+    Debug.Log("ROOM_JOINED: " + obj);
+    try
+    {
+      RoomJoinedLeftEvent response = JsonConvert.DeserializeObject<RoomJoinedLeftEvent>(obj);
+      if (response != null)
+      {
+        uiManager.SetLobbyTotalPlayerCount(response.playerCount);
+      }
+      else
+      {
+        Debug.LogError("Room joined data is null");
+      }
+    }
+    catch (Exception ex)
+    {
+      Debug.LogError("Error parsing room joined data: " + ex.Message);
+    }
+  }
+
+  private void HandleRoomLeft(string obj)
+  {
+    Debug.Log("ROOM_LEFT: " + obj);
+    try
+    {
+      RoomJoinedLeftEvent response = JsonConvert.DeserializeObject<RoomJoinedLeftEvent>(obj);
+      if (response != null)
+      {
+        uiManager.SetLobbyTotalPlayerCount(response.playerCount);
+      }
+      else
+      {
+        Debug.LogError("Room left data is null");
+      }
+    }
+    catch (Exception ex)
+    {
+      Debug.LogError("Error parsing room left data: " + ex.Message);
+    }
+  }
+
   private void HandleBettingTimer(string jsonObject)
   {
     Debug.Log("BETTING_TIMER: " + jsonObject);
+    try
+    {
+      BettingTimerEvent response = JsonConvert.DeserializeObject<BettingTimerEvent>(jsonObject);
+      if (response != null)
+        uiManager.OnBettingTimerSync(response);
+    }
+    catch (Exception ex)
+    {
+      Debug.LogError("Error parsing betting timer data: " + ex.Message);
+    }
   }
 
   private void HandleBonus(string jsonObject)
@@ -516,6 +573,24 @@ public class SocketIOManager : MonoBehaviour
   private void HandleBetPlaced(string jsonObject)
   {
     Debug.Log("BET_PLACED: " + jsonObject);
+    try
+    {
+      BetPlacedEvent response = JsonConvert.DeserializeObject<BetPlacedEvent>(jsonObject);
+      if (response != null && initData != null && response.username != initData.player.username)
+      {
+        if (betPanelManager != null)
+        {
+          if (response.amount > 0)
+            betPanelManager.OnOpponentBetPlaced(response);
+          else if (response.amount < 0)
+            betPanelManager.OnOpponentBetUndo(response);
+        }
+      }
+    }
+    catch (Exception ex)
+    {
+      Debug.LogError("Error parsing bet placed data: " + ex.Message);
+    }
   }
 
   private void HandleCardDealt(string jsonObject)
@@ -526,9 +601,21 @@ public class SocketIOManager : MonoBehaviour
       CardDealtEvent response = JsonConvert.DeserializeObject<CardDealtEvent>(jsonObject);
       if (response != null)
       {
-        if (dealerController != null)
-          dealerController.OnCardDealt(response);
+        bool wasPending = uiManager.IsPendingLevelEntry;
+        int previousCardsDealt = uiManager.PendingCardsDealt;
         uiManager.OnCardDealt(response);
+
+        if (wasPending)
+        {
+          // Joined mid-deal: spawn previous cards silently then animate current
+          if (dealerController != null)
+            dealerController.OnJoinDuringDeal(response, previousCardsDealt);
+        }
+        else
+        {
+          if (dealerController != null)
+            dealerController.OnCardDealt(response);
+        }
       }
       else
       {
@@ -549,9 +636,15 @@ public class SocketIOManager : MonoBehaviour
       RoundEndEvent response = JsonConvert.DeserializeObject<RoundEndEvent>(jsonObject);
       if (response != null)
       {
+        bool wasPending = uiManager.IsPendingLevelEntry;
         uiManager.OnRoundResult(response.winner);
-        if (dealerController != null)
-          dealerController.OnRoundEnd(response.winner);
+        if (!wasPending)
+        {
+          if (dealerController != null)
+            dealerController.OnRoundEnd(response.winner);
+          if (betPanelManager != null)
+            betPanelManager.OnRoundEnd(response.winner);
+        }
       }
     }
     catch (Exception ex)
@@ -568,9 +661,12 @@ public class SocketIOManager : MonoBehaviour
       CashoutEvent response = JsonConvert.DeserializeObject<CashoutEvent>(jsonObject);
       if (response != null)
       {
-        if (dealerController != null)
+        bool wasPending = uiManager.IsPendingLevelEntry;
+        if (!wasPending && dealerController != null)
           StartCoroutine(dealerController.OnCashout());
         uiManager.OnCashout(response);
+        if (!wasPending && betPanelManager != null)
+          betPanelManager.SetCashoutData(response);
       }
     }
     catch (Exception ex)
@@ -594,7 +690,9 @@ public class SocketIOManager : MonoBehaviour
       if (response != null && response.leaderboards != null)
       {
         uiManager.OnLeaderboardUpdated(response.leaderboards);
+        uiManager.SetGamePagePlayerCount(response.playerCount);
       }
+      
     }
     catch (Exception ex)
     {
@@ -638,6 +736,7 @@ public class SocketIOManager : MonoBehaviour
       if (response != null && response.success)
       {
         uiManager.SetLobbyPlayerCounts(response.payload.lobby);
+        uiManager.SetLobbyTotalPlayerCount(response.payload.playerCount);
         uiManager.SetBalanceText(response.payload.balance);
         uiManager.OnLeaveLevel();
       }
@@ -685,6 +784,17 @@ public class SocketIOManager : MonoBehaviour
   }
 }
 
+//BET PLACED EVENT
+[Serializable]
+public class BetPlacedEvent
+{
+  public string username;
+  public string betId;
+  public string betType;
+  public string betOption;
+  public double amount;
+}
+
 //AUTH
 [Serializable]
 public class AuthTokenData
@@ -715,6 +825,13 @@ public class LeaderboardEntry
   public double balance;
   public double totalWins;
   public int rank;
+}
+
+//ROOM JOINED EVENT
+[Serializable]
+public class RoomJoinedLeftEvent
+{
+  public int playerCount;
 }
 
 //LOBBY COUNT EVENT
@@ -813,6 +930,16 @@ public class RoundState
   public long serverTime;
   public int timeRemaining;
   public string phase;
+  public int cardsDealt;
+}
+
+[Serializable]
+public class BettingTimerEvent
+{
+  public string roundId;
+  public long serverTime;
+  public long bettingEndTime;
+  public int timeRemaining;
 }
 
 //LEAVE LEVEL ACK
@@ -881,6 +1008,7 @@ public class GameData
 public class LeaderboardUpdateEvent
 {
   public Leaderboards leaderboards;
+  public int playerCount;
 }
 
 [Serializable]

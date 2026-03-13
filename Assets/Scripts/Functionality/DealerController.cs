@@ -307,6 +307,79 @@ public class DealerController : MonoBehaviour
     }
   }
 
+  internal void ResetImmediate()
+  {
+    pendingDeals.Clear();
+    if (queuedDealRoutine != null)
+    {
+      StopCoroutine(queuedDealRoutine);
+      queuedDealRoutine = null;
+    }
+    if (dealSequenceRoutine != null)
+    {
+      StopCoroutine(dealSequenceRoutine);
+      dealSequenceRoutine = null;
+    }
+    isDealSegmentPlaying = false;
+
+    // Explicitly stop all ImageAnimations (they use Invoke, not coroutines)
+    // so stopping the coroutines above is not enough to cancel scheduled frames.
+    if (DealerImageAnim_IA != null) DealerImageAnim_IA.StopAnimation();
+    if (LeftHandAnim_IA != null) LeftHandAnim_IA.StopAnimation();
+    if (RightHandAnim_IA != null) RightHandAnim_IA.StopAnimation();
+    if (BothHandAnim_IA != null) BothHandAnim_IA.StopAnimation();
+    if (TopDownHandsAnim_IA != null)
+    {
+      TopDownHandsAnim_IA.StopAnimation();
+      TopDownHandsAnim_IA.gameObject.SetActive(false);
+    }
+
+    SwitchToRest();
+    if (cardManager != null)
+      cardManager.ClearAllCardsImmediate();
+  }
+
+  internal void OnJoinDuringDeal(CardDealtEvent response, int previousCardsDealt)
+  {
+    if (response == null) return;
+
+    pendingDeals.Clear();
+    if (queuedDealRoutine != null) { StopCoroutine(queuedDealRoutine); queuedDealRoutine = null; }
+    if (dealSequenceRoutine != null) { StopCoroutine(dealSequenceRoutine); dealSequenceRoutine = null; }
+
+    if (cardManager != null)
+    {
+      cardManager.SyncDealtCards(response);
+      // Spawn all previously dealt cards face-up immediately (skip the current player's last card)
+      SpawnPlayerCardsSilent(8, response.player8Cards, response.player == 8 ? 1 : 0, response.scores);
+      SpawnPlayerCardsSilent(9, response.player9Cards, response.player == 9 ? 1 : 0, response.scores);
+      SpawnPlayerCardsSilent(10, response.player10Cards, response.player == 10 ? 1 : 0, response.scores);
+      SpawnPlayerCardsSilent(11, response.player11Cards, response.player == 11 ? 1 : 0, response.scores);
+    }
+
+    // Queue the current card as a normal animated deal
+    pendingDeals.Enqueue(new CardDealRequest
+    {
+      Player = response.player,
+      CardData = response.card,
+      Scores = response.scores
+    });
+
+    if (queuedDealRoutine == null)
+      queuedDealRoutine = StartCoroutine(ProcessPendingDeals());
+  }
+
+  private void SpawnPlayerCardsSilent(int player, List<Card> cards, int skipLast, CardDealtScores scores)
+  {
+    if (cards == null || cardManager == null) return;
+    int count = cards.Count - skipLast;
+    for (int i = 0; i < count; i++)
+    {
+      if (cards[i] != null)
+        cardManager.SpawnCardImmediate(player, cards[i], scores);
+    }
+  }
+
   internal void OnCardDealt(CardDealtEvent cardDealtEvent)
   {
     if (cardDealtEvent == null || cardDealtEvent.card == null)

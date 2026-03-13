@@ -1,56 +1,56 @@
 {
-  "roundId": "97854622-2f8a-4fed-bb8c-2da9cae26766",
+  "roundId": "7e916f3c-ed6a-4f4a-8217-093d1aed767b",
   "card": {
-    "suit": "hearts",
-    "rank": "Q",
-    "color": "red"
+    "suit": "clubs",
+    "rank": "K",
+    "color": "black"
   },
-  "player": 9,
-  "bonusPlayer": 8,
-  "bonusMultiplier": 14,
+  "player": 10,
+  "bonusPlayer": 10,
+  "bonusMultiplier": 2.7,
   "player8Cards": [
     {
-      "suit": "hearts",
-      "rank": "K",
-      "color": "red"
-    },
-    {
-      "suit": "spades",
-      "rank": "K",
+      "suit": "clubs",
+      "rank": "8",
       "color": "black"
     }
   ],
   "player9Cards": [
     {
-      "suit": "diamonds",
-      "rank": "10",
-      "color": "red"
+      "suit": "spades",
+      "rank": "8",
+      "color": "black"
     },
     {
       "suit": "hearts",
-      "rank": "Q",
+      "rank": "K",
       "color": "red"
     }
   ],
   "player10Cards": [
     {
       "suit": "spades",
-      "rank": "9",
+      "rank": "7",
+      "color": "black"
+    },
+    {
+      "suit": "clubs",
+      "rank": "K",
       "color": "black"
     }
   ],
   "player11Cards": [
     {
       "suit": "clubs",
-      "rank": "10",
+      "rank": "6",
       "color": "black"
     }
   ],
   "scores": {
-    "player_8": 34,
-    "player_9": 31,
-    "player_10": 19,
-    "player_11": 21
+    "player_8": 16,
+    "player_9": 30,
+    "player_10": 30,
+    "player_11": 17
   },
   "cardsDealt": 6
 }
