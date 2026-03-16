@@ -99,6 +99,7 @@ public class DealerController : MonoBehaviour
   private int rightHandDefaultSiblingIndex;
   private Coroutine dealSequenceRoutine;
   private Coroutine queuedDealRoutine;
+  private Coroutine cashoutRoutine;
   private bool isDealSegmentPlaying;
   private readonly Queue<CardDealRequest> pendingDeals = new Queue<CardDealRequest>();
 
@@ -320,6 +321,11 @@ public class DealerController : MonoBehaviour
       StopCoroutine(dealSequenceRoutine);
       dealSequenceRoutine = null;
     }
+    if (cashoutRoutine != null)
+    {
+      StopCoroutine(cashoutRoutine);
+      cashoutRoutine = null;
+    }
     isDealSegmentPlaying = false;
 
     // Explicitly stop all ImageAnimations (they use Invoke, not coroutines)
@@ -413,7 +419,7 @@ public class DealerController : MonoBehaviour
     }
   }
 
-  internal IEnumerator OnCashout()
+  internal void OnCashout()
   {
     pendingDeals.Clear();
     if (queuedDealRoutine != null)
@@ -426,13 +432,22 @@ public class DealerController : MonoBehaviour
       StopCoroutine(dealSequenceRoutine);
       dealSequenceRoutine = null;
     }
+    if (cashoutRoutine != null)
+    {
+      StopCoroutine(cashoutRoutine);
+    }
+    cashoutRoutine = StartCoroutine(CashoutSequence());
+  }
 
-    yield return new WaitForSecondsRealtime(CardResetDelayOnCashout); 
+  private IEnumerator CashoutSequence()
+  {
+    yield return new WaitForSecondsRealtime(CardResetDelayOnCashout);
     resetCardsAnimation();
     if (cardManager != null)
     {
       cardManager.BeginCashoutReset(CardDespawnStartDelay, CardDespawnMiddleGroupDelay, CardDisableToDestroyDelay);
     }
+    cashoutRoutine = null;
   }
 
   private IEnumerator ProcessPendingDeals()
@@ -612,5 +627,4 @@ public class DealerController : MonoBehaviour
     //   PlayDealSegment(3, null);
     // }
   }
-
 }

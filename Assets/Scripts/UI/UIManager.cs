@@ -131,6 +131,9 @@ public class UiManager : MonoBehaviour
 
   private void Awake()
   {
+    loadingPage.SetActive(false);
+    gamePage.SetActive(false);
+    homePage.SetActive(true);
     InitializePopupViews();
     AssignButtonListeners();
 
@@ -265,6 +268,9 @@ public class UiManager : MonoBehaviour
 
     if (Music) Music.onClick.RemoveAllListeners();
     if (Music) Music.onClick.AddListener(delegate { ToggleMusic(); });
+
+    if(Home) Home.onClick.RemoveAllListeners();
+    if(Home) Home.onClick.AddListener(() => socketManager.CloseGame());
 
     if (GameRulesGP) GameRulesGP.onClick.RemoveAllListeners();
     if (GameRulesGP) GameRulesGP.onClick.AddListener(delegate { OpenPopup(InfoPopup_Object); });
@@ -483,7 +489,7 @@ public class UiManager : MonoBehaviour
   {
     if(int.TryParse(TotalPlayersText.text, out int currentCount))
     {
-      if(currentCount != count)
+      if(currentCount != count && count != 0)
       {
         TotalPlayersText.text = count.ToString();
       }
@@ -539,6 +545,15 @@ public class UiManager : MonoBehaviour
     {
       pendingLevelEntry = true;
       pendingCardsDealt = data.roundState.cardsDealt;
+      return;
+    }
+
+    // Joined during cashout interval — show game page and sync countdown
+    if (data.roundState.phase == "cashout")
+    {
+      if (betPanelManager != null) betPanelManager.OnJoinDuringCashout(data.roundState.timeRemaining);
+      gamePage.SetActive(true);
+      loadingPage.SetActive(false);
       return;
     }
 
@@ -631,7 +646,7 @@ public class UiManager : MonoBehaviour
       return;
 
     List<double> levelBets = GetBetsForLevel(currentLevel, socketManager.initData.gameData.bets);
-    betPanelManager.RestoreCachedChipSprites();
+    betPanelManager.SetChipSpritesForLevel(currentLevel);
     betPanelManager.SetChipValues(levelBets);
   }
 
@@ -861,7 +876,10 @@ public class UiManager : MonoBehaviour
     {
       Popup.SetActive(true);
       if (Popup == InfoPopup_Object)
+      {
+        currentInfoPage = 0;
         UpdateInfoUI();
+      }
       var rect = Popup.transform;
       rect.DOKill();
 

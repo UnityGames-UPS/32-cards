@@ -38,7 +38,7 @@ public class SocketIOManager : MonoBehaviour
 
   void Awake()
   {
-    // RaycastBlocker.SetActive(true);
+    RaycastBlocker.SetActive(true);
   }
 
   private void Start()
@@ -46,7 +46,7 @@ public class SocketIOManager : MonoBehaviour
     OpenSocket();
   }
 
-  void CloseGame()
+  public void CloseGame()
   {
     Debug.Log("Unity: Closing Game");
     StartCoroutine(CloseSocket());
@@ -148,8 +148,6 @@ public class SocketIOManager : MonoBehaviour
     gameSocket.On<Error>(SocketIOEventTypes.Error, OnError);
     gameSocket.On<string>("game:init", HandleInitData);
     gameSocket.On<string>("game:lobby_count", HandleLobbyCount);
-    gameSocket.On<string>("room:joined", HandleRoomJoined);
-    gameSocket.On<string>("room:left", HandleRoomLeft);
     gameSocket.On<string>("game:round_start", HandleRoundStart);
     gameSocket.On<string>("game:betting_timer", HandleBettingTimer);
     gameSocket.On<string>("game:bonus", HandleBonus);
@@ -459,6 +457,7 @@ public class SocketIOManager : MonoBehaviour
       {
         uiManager.SetLobbyPlayerCounts(response.lobby);
         uiManager.SetGamePagePlayerCount(response.lobby);
+        uiManager.SetLobbyTotalPlayerCount(response.totalCount);
       }
       else
       {
@@ -489,48 +488,6 @@ public class SocketIOManager : MonoBehaviour
     catch (Exception ex)
     {
       Debug.LogError("Error parsing round start data: " + ex.Message);
-    }
-  }
-
-  private void HandleRoomJoined(string obj)
-  {
-    Debug.Log("ROOM_JOINED: " + obj);
-    try
-    {
-      RoomJoinedLeftEvent response = JsonConvert.DeserializeObject<RoomJoinedLeftEvent>(obj);
-      if (response != null)
-      {
-        uiManager.SetLobbyTotalPlayerCount(response.playerCount);
-      }
-      else
-      {
-        Debug.LogError("Room joined data is null");
-      }
-    }
-    catch (Exception ex)
-    {
-      Debug.LogError("Error parsing room joined data: " + ex.Message);
-    }
-  }
-
-  private void HandleRoomLeft(string obj)
-  {
-    Debug.Log("ROOM_LEFT: " + obj);
-    try
-    {
-      RoomJoinedLeftEvent response = JsonConvert.DeserializeObject<RoomJoinedLeftEvent>(obj);
-      if (response != null)
-      {
-        uiManager.SetLobbyTotalPlayerCount(response.playerCount);
-      }
-      else
-      {
-        Debug.LogError("Room left data is null");
-      }
-    }
-    catch (Exception ex)
-    {
-      Debug.LogError("Error parsing room left data: " + ex.Message);
     }
   }
 
@@ -663,7 +620,7 @@ public class SocketIOManager : MonoBehaviour
       {
         bool wasPending = uiManager.IsPendingLevelEntry;
         if (!wasPending && dealerController != null)
-          StartCoroutine(dealerController.OnCashout());
+          dealerController.OnCashout();
         uiManager.OnCashout(response);
         if (!wasPending && betPanelManager != null)
           betPanelManager.SetCashoutData(response);
@@ -678,7 +635,16 @@ public class SocketIOManager : MonoBehaviour
   private void HandleCashoutTimer(string jsonObject)
   {
     Debug.Log("CASHOUT_TIMER: " + jsonObject);
-    // Implement cashout timer handling logic here when backend sends this event
+    try
+    {
+      CashoutTimerEvent response = JsonConvert.DeserializeObject<CashoutTimerEvent>(jsonObject);
+      if (response != null && betPanelManager != null)
+        betPanelManager.OnCashoutTimerSync(response);
+    }
+    catch (Exception ex)
+    {
+      Debug.LogError("Error parsing cashout timer data: " + ex.Message);
+    }
   }
 
   private void HandleLeaderboardUpdate(string jsonObject)
@@ -736,7 +702,6 @@ public class SocketIOManager : MonoBehaviour
       if (response != null && response.success)
       {
         uiManager.SetLobbyPlayerCounts(response.payload.lobby);
-        uiManager.SetLobbyTotalPlayerCount(response.payload.playerCount);
         uiManager.SetBalanceText(response.payload.balance);
         uiManager.OnLeaveLevel();
       }
@@ -827,18 +792,12 @@ public class LeaderboardEntry
   public int rank;
 }
 
-//ROOM JOINED EVENT
-[Serializable]
-public class RoomJoinedLeftEvent
-{
-  public int playerCount;
-}
-
 //LOBBY COUNT EVENT
 [Serializable]
 public class LobbyCountEvent
 {
   public Lobby lobby;
+  public int totalCount;
   public int playerCount;
 }
 
@@ -940,6 +899,15 @@ public class BettingTimerEvent
   public long serverTime;
   public long bettingEndTime;
   public int timeRemaining;
+}
+
+[Serializable]
+public class CashoutTimerEvent
+{
+  public string roundId;
+  public long serverTime;
+  public long cashoutEndTime;
+  public int timeRemaining; // ms remaining in cashout interval
 }
 
 //LEAVE LEVEL ACK

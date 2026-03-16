@@ -23,6 +23,14 @@ public class BetPanelManager : MonoBehaviour
   }
 
   [Serializable]
+  private class LevelChipSprites
+  {
+    public string levelName;
+    public Sprite mainChipSprite;
+    public List<Sprite> chipOptionSprites;
+  }
+
+  [Serializable]
   private class BetSpotView
   {
     public Button betButton;
@@ -32,6 +40,7 @@ public class BetPanelManager : MonoBehaviour
     public TMP_Text totalBetText;
     public CanvasGroup lightGlow;
     public CanvasGroup darkGlow;
+    public ImageAnimation winningSpotAnim;
     [NonSerialized] public Vector2 totalBetBaseSize;
   }
 
@@ -80,6 +89,14 @@ public class BetPanelManager : MonoBehaviour
 
   [Header("Repeat Bet Button")]
   [SerializeField] private Button repeatBetButton;
+  [SerializeField] private float rebetButtonExpandedX = -200f;
+  [SerializeField] private float rebetPanelExpandedWidth = 200f;
+  [SerializeField] private float rebetAnimDuration = 0.5f;
+
+  [Header("Betting Controls Parent")]
+  [SerializeField] private RectTransform bettingControlsParent;
+  [SerializeField] private float bettingControlsHideOffsetY = -150f;
+  [SerializeField] private float bettingControlsAnimDuration = 0.4f;
 
   [Header("Opponent Chips")]
   [SerializeField] private BetChipView opponentChipPrefab;
@@ -90,10 +107,14 @@ public class BetPanelManager : MonoBehaviour
   [SerializeField] private float opponentChipScaleUpDuration = 0.3f;
   [SerializeField] private LeaderboardController leaderboardController;
 
+  [Header("Level Chip Sprites")]
+  [SerializeField] private List<LevelChipSprites> levelChipSpriteConfigs;
+
   [Header("Round End Overlays")]
   [SerializeField] private float roundEndDelay = 2f;
   [SerializeField] private float overlayFadeDuration = 0.5f;
   [SerializeField] private float losingChipsFadeOutDuration = 0.3f;
+  [SerializeField] private float overlayStayDuration = 1.5f;
 
   [Header("Winning Chips")]
   [SerializeField] private Transform winningChipStartRef;
@@ -125,13 +146,13 @@ public class BetPanelManager : MonoBehaviour
   [SerializeField] private TMP_Text timerText;
   [SerializeField] private Color bettingTimerColor = Color.white;
   [SerializeField] private Color finalCountdownTimerColor = Color.white;
-  [SerializeField] private float announcerFadeDuration = 0.25f;
-  [SerializeField] private float timerFadeDuration = 0.2f;
-  [SerializeField] private float timerScalePunch = 1.4f;
-  [SerializeField] private float announcerScalePunch = 1.4f;
-  [SerializeField] private float scaleUpDuration = 0.16f;
-  [SerializeField] private float scaleDownDuration = 0.16f;
-  [SerializeField] private float postRoundAnimationDelay = 11f;
+  [SerializeField] private float announcerFadeDuration = 0.15f;
+  [SerializeField] private float timerFadeDuration = 0.15f;
+  [SerializeField] private float timerScalePunch = 1.65f;
+  [SerializeField] private float announcerScalePunch = 1.2f;
+  [SerializeField] private float scaleUpDuration = 0.15f;
+  [SerializeField] private float scaleDownDuration = 0.15f;
+  [SerializeField] private float postRoundAnimationDelay = 10f;
 
   private readonly Stack<BetUndoEntry> betUndoStack = new Stack<BetUndoEntry>();
   private readonly List<List<BetChipView>> chipsPerSpot = new List<List<BetChipView>>();
@@ -143,6 +164,10 @@ public class BetPanelManager : MonoBehaviour
 
   private Vector3 errorPopupInitLocalPos;
   private Sequence errorPopupSequence;
+
+  private float bettingControlsBaseY;
+  private bool playerPlacedBetThisRound;
+  private bool isRebetExpanded;
 
   private bool areChipOptionsExpanded;
   private bool areBetActionsExpanded;
@@ -168,6 +193,9 @@ public class BetPanelManager : MonoBehaviour
       if (errorPopupCanvasGroup != null)
         errorPopupCanvasGroup.alpha = 0f;
     }
+
+    if (bettingControlsParent != null)
+      bettingControlsBaseY = bettingControlsParent.anchoredPosition.y;
   }
 
   private void Start()
@@ -193,6 +221,8 @@ public class BetPanelManager : MonoBehaviour
       announcerParent.DOKill();
     if (timerTextCanvasGroup != null)
       timerTextCanvasGroup.DOKill();
+    if (bettingControlsParent != null)
+      bettingControlsParent.DOKill();
   }
 
   private void InitializeSpotState()
@@ -214,6 +244,9 @@ public class BetPanelManager : MonoBehaviour
       opponentChipsPerSpot.Add(new List<OpponentChipEntry>());
       UpdateSpotTotal(i);
     }
+
+    if (repeatBetButton != null)
+      repeatBetButton.gameObject.SetActive(false);
 
     if (chipOptionsBGCloseButton != null)
     {
@@ -331,6 +364,42 @@ public class BetPanelManager : MonoBehaviour
     }
   }
 
+  internal void SetChipSpritesForLevel(string levelName)
+  {
+    LevelChipSprites config = null;
+    if (levelChipSpriteConfigs != null)
+    {
+      foreach (var c in levelChipSpriteConfigs)
+      {
+        if (c != null && c.levelName == levelName)
+        {
+          config = c;
+          break;
+        }
+      }
+    }
+
+    if (config == null)
+    {
+      RestoreCachedChipSprites();
+      return;
+    }
+
+    if (mainChip != null && mainChip.chipImage != null && config.mainChipSprite != null)
+      mainChip.chipImage.sprite = config.mainChipSprite;
+
+    if (config.chipOptionSprites != null)
+    {
+      for (int i = 0; i < chipOptions.Count && i < config.chipOptionSprites.Count; i++)
+      {
+        ChipButtonView option = chipOptions[i];
+        if (option == null || option.chipImage == null) continue;
+        if (config.chipOptionSprites[i] != null)
+          option.chipImage.sprite = config.chipOptionSprites[i];
+      }
+    }
+  }
+
   internal void ResetOnJoinIdle()
   {
     StopRoundRoutines();
@@ -339,11 +408,16 @@ public class BetPanelManager : MonoBehaviour
     hasReceivedFirstCardDealt = false;
     currentWinner = -1;
     pendingCashoutData = null;
+    playerPlacedBetThisRound = false;
     ClearAllChipVisuals();
     HideAllAnnouncers();
     SetTimerVisible(false, false);
     ResetOverlays();
     CollapseBetActionButtons();
+    CollapseRebetButton(true);
+    if (areChipOptionsExpanded)
+      RetractChipOptions();
+    AnimateBettingControlsY(bettingControlsBaseY + bettingControlsHideOffsetY, true);
   }
 
   internal void OnJoinDuringBetting(RoundState roundState)
@@ -356,11 +430,16 @@ public class BetPanelManager : MonoBehaviour
     hasReceivedFirstCardDealt = false;
     currentWinner = -1;
     pendingCashoutData = null;
+    playerPlacedBetThisRound = false;
     ClearAllChipVisuals();
     HideAllAnnouncers();
     SetTimerVisible(false, false);
     ResetOverlays();
     CollapseBetActionButtons();
+    CollapseRebetButton(true);
+    if (areChipOptionsExpanded)
+      RetractChipOptions();
+    AnimateBettingControlsY(bettingControlsBaseY + bettingControlsHideOffsetY, true);
 
     RoundStartEvent synced = new RoundStartEvent
     {
@@ -370,6 +449,55 @@ public class BetPanelManager : MonoBehaviour
       serverTime = roundState.serverTime
     };
     roundCountdownRoutine = StartCoroutine(RunBettingCountdown(synced));
+  }
+
+  internal void OnCashoutTimerSync(CashoutTimerEvent data)
+  {
+    if (data == null) return;
+    if (!string.IsNullOrEmpty(activeRoundId) && !string.IsNullOrEmpty(data.roundId) && activeRoundId != data.roundId) return;
+
+    long serverRemainingMs = data.cashoutEndTime - data.serverTime;
+    if (serverRemainingMs <= 0) return;
+
+    // In the visible countdown phase, skip resync if display drift is within 1 tick
+    bool inCountdown = serverRemainingMs <= 5000;
+    if (inCountdown && timerText != null && int.TryParse(timerText.text, out int displayed))
+    {
+      int expected = Mathf.Clamp(Mathf.CeilToInt(serverRemainingMs / 1000f) - 1, 0, 4);
+      if (Mathf.Abs(displayed - expected) <= 1)
+        return;
+    }
+
+    // Always resync — the default postRoundAnimationDelay may drift vs actual server interval
+    if (nextRoundRoutine != null)
+    {
+      StopCoroutine(nextRoundRoutine);
+      nextRoundRoutine = null;
+    }
+    nextRoundRoutine = StartCoroutine(RunNextRoundCountdown((int)serverRemainingMs));
+  }
+
+  internal void OnJoinDuringCashout(int timeRemainingMs)
+  {
+    StopRoundRoutines();
+    StopCashoutAnimation();
+    activeRoundId = null;
+    hasReceivedFirstCardDealt = false;
+    currentWinner = -1;
+    pendingCashoutData = null;
+    playerPlacedBetThisRound = false;
+    ClearAllChipVisuals();
+    HideAllAnnouncers();
+    SetTimerVisible(false, false);
+    ResetOverlays();
+    CollapseBetActionButtons();
+    CollapseRebetButton(true);
+    if (areChipOptionsExpanded)
+      RetractChipOptions();
+    AnimateBettingControlsY(bettingControlsBaseY + bettingControlsHideOffsetY, true);
+
+    if (timeRemainingMs > 0)
+      nextRoundRoutine = StartCoroutine(RunNextRoundCountdown(timeRemainingMs));
   }
 
   internal void OnBettingTimerSync(BettingTimerEvent data)
@@ -412,6 +540,14 @@ public class BetPanelManager : MonoBehaviour
     ClearAllChipVisuals();
     CollapseBetActionButtons();
 
+    bool shouldExpandRebet = playerPlacedBetThisRound;
+    playerPlacedBetThisRound = false;
+    AnimateBettingControlsY(bettingControlsBaseY, false);
+    if (shouldExpandRebet)
+      ExpandRebetButton();
+    else
+      CollapseRebetButton(true);
+
     if (nextRoundRoutine != null)
     {
       StopCoroutine(nextRoundRoutine);
@@ -440,6 +576,12 @@ public class BetPanelManager : MonoBehaviour
 
     FadeTimer(false);
     FadeToAnnouncer(pinkAnnouncer, true);
+
+    playerPlacedBetThisRound = HasAnyClientChips();
+
+    CollapseRebetButton(true);
+
+    AnimateBettingControlsY(bettingControlsBaseY + bettingControlsHideOffsetY, false);
   }
 
   internal void OnCardDealt(CardDealtEvent cardDealtData)
@@ -738,6 +880,7 @@ public class BetPanelManager : MonoBehaviour
       uiManager.SetBalanceText(response.payload.balance);
       SpawnChipOnSpot(spotIndex, response.payload.amount);
 
+      CollapseRebetButton(false);
       if (!areBetActionsExpanded)
         StartCoroutine(ExpandBetActionButtons());
     });
@@ -918,8 +1061,12 @@ public class BetPanelManager : MonoBehaviour
       }
 
       uiManager.SetBalanceText(response.payload.balance);
-      ClearAllChipVisuals();
       CollapseBetActionButtons();
+      AnimateCancelChips(() =>
+      {
+        if (playerPlacedBetThisRound)
+          ExpandRebetButton();
+      });
     });
   }
 
@@ -960,6 +1107,9 @@ public class BetPanelManager : MonoBehaviour
       }
 
       uiManager.SetBalanceText(response.payload.balance);
+
+      playerPlacedBetThisRound = false;
+      CollapseRebetButton(true);
 
       // Clear existing visuals first, then spawn for each repeated bet
       ClearAllChipVisuals();
@@ -1073,6 +1223,7 @@ public class BetPanelManager : MonoBehaviour
       }
     }
 
+    yield return new WaitForSecondsRealtime(overlayStayDuration);
     ResetOverlays();
     currentWinner = -1;
     pendingCashoutData = null;
@@ -1093,6 +1244,12 @@ public class BetPanelManager : MonoBehaviour
           spot.lightGlow.alpha = 0f;
           spot.lightGlow.gameObject.SetActive(true);
           spot.lightGlow.DOFade(1f, overlayFadeDuration);
+        }
+        if (spot.winningSpotAnim != null && chipsPerSpot[winnerSpotIndex].Count > 0)
+        {
+          spot.winningSpotAnim.gameObject.SetActive(true);
+          spot.winningSpotAnim.StopAnimation();
+          spot.winningSpotAnim.StartAnimation();
         }
       }
       else
@@ -1357,6 +1514,12 @@ public class BetPanelManager : MonoBehaviour
         spot.darkGlow.alpha = 0f;
         spot.darkGlow.gameObject.SetActive(false);
       }
+
+      if (spot.winningSpotAnim != null)
+      {
+        spot.winningSpotAnim.StopAnimation();
+        spot.winningSpotAnim.gameObject.SetActive(false);
+      }
     }
   }
 
@@ -1467,6 +1630,7 @@ public class BetPanelManager : MonoBehaviour
 
   private IEnumerator ExpandBetActionButtons()
   {
+    CollapseRebetButton(true);
     areBetActionsExpanded = true;
 
     if (betActionsPanel != null && betActionsPanel.rect.width != 0f)
@@ -1578,14 +1742,29 @@ public class BetPanelManager : MonoBehaviour
     roundCountdownRoutine = null;
   }
 
-  private IEnumerator RunNextRoundCountdown()
+  private IEnumerator RunNextRoundCountdown(int timeRemainingMs = -1)
   {
-    yield return new WaitForSecondsRealtime(postRoundAnimationDelay);
+    int startValue;
+    if (timeRemainingMs < 0)
+    {
+      yield return new WaitForSecondsRealtime(postRoundAnimationDelay);
+      startValue = 4;
+    }
+    else
+    {
+      // Wait out everything before the 5-tick countdown in exact ms to avoid rounding drift
+      int waitMs = Mathf.Max(0, timeRemainingMs - 5000);
+      if (waitMs > 0)
+        yield return new WaitForSecondsRealtime(waitMs / 1000f);
+
+      int countdownMs = timeRemainingMs - waitMs;
+      startValue = Mathf.Clamp(Mathf.CeilToInt(countdownMs / 1000f) - 1, 0, 4);
+    }
 
     FadeTimer(true);
     FadeToAnnouncer(darkGreenAnnouncer, true);
 
-    for (int value = 4; value >= 0; value--)
+    for (int value = startValue; value >= 0; value--)
     {
       SetTimerValue(value, finalCountdownTimerColor);
       yield return new WaitForSecondsRealtime(1f);
@@ -1725,5 +1904,210 @@ public class BetPanelManager : MonoBehaviour
 
     if (announcer.canvasGroup != null)
       announcer.canvasGroup.DOKill();
+  }
+
+  // ── Betting Controls Parent ─────────────────────────────────────────
+
+  private void AnimateBettingControlsY(float targetY, bool immediate)
+  {
+    if (bettingControlsParent == null) return;
+
+    bool isHiding = !Mathf.Approximately(targetY, bettingControlsBaseY);
+
+    bettingControlsParent.DOKill();
+
+    if (immediate)
+    {
+      if (isHiding)
+      {
+        if (areBetActionsExpanded)
+        {
+          areBetActionsExpanded = false;
+          if (betActionsPanel != null) { betActionsPanel.DOKill(); betActionsPanel.sizeDelta = new Vector2(0f, betActionsPanel.rect.height); }
+          if (undoBetButton != null) { undoBetButton.transform.DOKill(); undoBetButton.gameObject.SetActive(false); }
+          if (cancelBetButton != null) { cancelBetButton.transform.DOKill(); cancelBetButton.gameObject.SetActive(false); }
+          if (doubleBetButton != null) { doubleBetButton.transform.DOKill(); doubleBetButton.gameObject.SetActive(false); }
+        }
+
+        CollapseRebetButton(true);
+
+        if (areChipOptionsExpanded)
+        {
+          areChipOptionsExpanded = false;
+          if (chipOptionsBGCloseButton != null) chipOptionsBGCloseButton.gameObject.SetActive(false);
+          if (mainChip != null && mainChip.button != null)
+          {
+            float baseY = mainChip.button.transform.localPosition.y;
+            foreach (var option in chipOptions)
+            {
+              if (option == null || option.button == null) continue;
+              option.button.transform.DOKill();
+              option.button.transform.localPosition = new Vector3(
+                option.button.transform.localPosition.x, baseY, option.button.transform.localPosition.z);
+              option.button.gameObject.SetActive(false);
+            }
+          }
+        }
+      }
+
+      Vector2 pos = bettingControlsParent.anchoredPosition;
+      bettingControlsParent.anchoredPosition = new Vector2(pos.x, targetY);
+    }
+    else if (isHiding)
+    {
+      float delay = 0f;
+
+      if (areBetActionsExpanded)
+      {
+        CollapseBetActionButtons();
+        delay = Mathf.Max(delay, betActionsAnimDuration);
+      }
+
+      if (isRebetExpanded)
+      {
+        CollapseRebetButton(false);
+        delay = Mathf.Max(delay, rebetAnimDuration);
+      }
+
+      if (areChipOptionsExpanded)
+      {
+        RetractChipOptions();
+        delay = Mathf.Max(delay, chipOptionsAnimDuration);
+      }
+
+      if (delay > 0f)
+        DOVirtual.DelayedCall(delay, () =>
+        {
+          if (bettingControlsParent != null)
+            bettingControlsParent.DOAnchorPosY(targetY, bettingControlsAnimDuration).SetEase(Ease.OutBack);
+        });
+      else
+        bettingControlsParent.DOAnchorPosY(targetY, bettingControlsAnimDuration).SetEase(Ease.OutBack);
+    }
+    else
+    {
+      bettingControlsParent.DOAnchorPosY(targetY, bettingControlsAnimDuration).SetEase(Ease.OutBack);
+    }
+  }
+
+  internal void HideBettingControlsImmediate()
+  {
+    playerPlacedBetThisRound = false;
+    CollapseRebetButton(true);
+    CollapseBetActionButtons();
+    AnimateBettingControlsY(bettingControlsBaseY + bettingControlsHideOffsetY, true);
+  }
+
+  // ── Rebet Button ───────────────────────────────────────────────────
+
+  private void ExpandRebetButton()
+  {
+    isRebetExpanded = true;
+
+    if (betActionsPanel != null)
+    {
+      betActionsPanel.DOKill();
+      betActionsPanel.DOSizeDelta(new Vector2(rebetPanelExpandedWidth, betActionsPanel.rect.height), rebetAnimDuration)
+        .SetEase(Ease.OutBack);
+    }
+
+    if (repeatBetButton != null)
+    {
+      if (!repeatBetButton.gameObject.activeInHierarchy)
+        repeatBetButton.gameObject.SetActive(true);
+      repeatBetButton.transform.DOKill();
+      repeatBetButton.transform.DOLocalMoveX(rebetButtonExpandedX, rebetAnimDuration).SetEase(Ease.OutBack);
+    }
+  }
+
+  private void CollapseRebetButton(bool immediate)
+  {
+    if (!isRebetExpanded) return;
+    isRebetExpanded = false;
+
+    if (betActionsPanel != null)
+    {
+      betActionsPanel.DOKill();
+      if (immediate)
+        betActionsPanel.sizeDelta = new Vector2(0f, betActionsPanel.rect.height);
+      else
+        betActionsPanel.DOSizeDelta(new Vector2(0f, betActionsPanel.rect.height), rebetAnimDuration).SetEase(Ease.InBack);
+    }
+
+    if (repeatBetButton != null)
+    {
+      repeatBetButton.transform.DOKill();
+      if (immediate)
+      {
+        Vector3 lp = repeatBetButton.transform.localPosition;
+        repeatBetButton.transform.localPosition = new Vector3(0f, lp.y, lp.z);
+        repeatBetButton.gameObject.SetActive(false);
+      }
+      else
+      {
+        repeatBetButton.transform.DOLocalMoveX(0f, rebetAnimDuration).SetEase(Ease.InBack)
+          .OnComplete(() => { if (repeatBetButton != null) repeatBetButton.gameObject.SetActive(false); });
+      }
+    }
+  }
+
+  // ── Cancel All Chips Animation ─────────────────────────────────────
+
+  private void AnimateCancelChips(Action onComplete)
+  {
+    betUndoStack.Clear();
+
+    var allChips = new List<BetChipView>();
+    for (int i = 0; i < chipsPerSpot.Count; i++)
+      allChips.AddRange(chipsPerSpot[i]);
+
+    // Clear spots immediately so HasAnyClientChips() returns false during the fly-out animation
+    for (int i = 0; i < chipsPerSpot.Count; i++) { chipsPerSpot[i].Clear(); UpdateSpotTotal(i); }
+
+    int total = 0;
+    foreach (var chip in allChips)
+      if (chip != null && chip.ChipRect != null) total++;
+
+    if (total == 0)
+    {
+      onComplete?.Invoke();
+      return;
+    }
+
+    int[] remaining = { total };
+    foreach (var chip in allChips)
+    {
+      if (chip == null || chip.ChipRect == null) continue;
+
+      chip.ChipRect.DOKill();
+      var captured = chip;
+
+      if (chipUndoDestroyTarget != null)
+      {
+        chip.ChipRect.DOMove(chipUndoDestroyTarget.position, chipUndoDuration)
+          .SetEase(Ease.InBack)
+          .OnComplete(() =>
+          {
+            if (captured != null) Destroy(captured.gameObject);
+            remaining[0]--;
+            if (remaining[0] <= 0)
+              onComplete?.Invoke();
+          });
+      }
+      else
+      {
+        Destroy(chip.gameObject);
+        remaining[0]--;
+        if (remaining[0] <= 0)
+          onComplete?.Invoke();
+      }
+    }
+  }
+
+  private bool HasAnyClientChips()
+  {
+    for (int i = 0; i < chipsPerSpot.Count; i++)
+      if (chipsPerSpot[i].Count > 0) return true;
+    return false;
   }
 }

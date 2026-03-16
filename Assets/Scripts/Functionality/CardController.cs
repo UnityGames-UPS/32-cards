@@ -222,11 +222,9 @@ public class CardController : MonoBehaviour
 
   internal void ClearAllCardsImmediate()
   {
-    if (cashoutResetRoutine != null)
-    {
-      StopCoroutine(cashoutResetRoutine);
-      cashoutResetRoutine = null;
-    }
+    // Stop all coroutines (flip animations, cashout reset, etc.)
+    StopAllCoroutines();
+    cashoutResetRoutine = null;
 
     foreach (List<SpawnedCardPair> spawnedList in spawnedCardsByPlayer.Values)
     {
@@ -241,6 +239,25 @@ public class CardController : MonoBehaviour
     {
       dealtCards.Clear();
     }
+
+    // Kill score tweens and reset
+    foreach (var kvp in scoreFadeTweens)
+      kvp.Value?.Kill();
+    scoreFadeTweens.Clear();
+    scoreWinTween?.Kill();
+    scoreWinTween = null;
+
+    ResetScoreText(ScoreText_P8);
+    ResetScoreText(ScoreText_P9);
+    ResetScoreText(ScoreText_P10);
+    ResetScoreText(ScoreText_P11);
+  }
+
+  private void ResetScoreText(TMP_Text text)
+  {
+    if (text == null) return;
+    text.transform.localScale = Vector3.one;
+    SetScoreTextAlpha(text, 0f);
   }
 
   internal GameObject SpawnTopDownCard(int spotIndex, Sprite cardSprite)
@@ -311,6 +328,7 @@ public class CardController : MonoBehaviour
       TMP_Text scoreText = GetScoreText(player);
       if (scoreText != null)
       {
+        yield return new WaitForSecondsRealtime(0.2f);
         scoreText.text = score.ToString();
         FadeInScoreText(player, scoreText);
       }

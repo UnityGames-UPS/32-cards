@@ -10,10 +10,10 @@ public class BetChipView : MonoBehaviour
   [SerializeField] private Image chipImage;
   [SerializeField] private TMP_Text chipValueText;
 
-  public RectTransform ChipRect => chipRect;
-  public CanvasGroup ChipCanvasGroup => chipCanvasGroup;
-  public Sprite ChipSprite => chipImage != null ? chipImage.sprite : null;
-  public float ChipValue
+  internal RectTransform ChipRect => chipRect;
+  internal CanvasGroup ChipCanvasGroup => chipCanvasGroup;
+  internal Sprite ChipSprite => chipImage != null ? chipImage.sprite : null;
+  internal float ChipValue
   {
     get
     {
@@ -24,7 +24,7 @@ public class BetChipView : MonoBehaviour
     }
   }
 
-  public void SetChipVisuals(Sprite sprite, string valueText)
+  internal void SetChipVisuals(Sprite sprite, string valueText)
   {
     if (chipImage != null)
       chipImage.sprite = sprite;
@@ -33,7 +33,7 @@ public class BetChipView : MonoBehaviour
       chipValueText.text = valueText;
   }
 
-  public void SetChipValueText(string valueText)
+  internal void SetChipValueText(string valueText)
   {
     if (chipValueText != null)
       chipValueText.text = valueText;

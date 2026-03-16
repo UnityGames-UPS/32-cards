@@ -16,7 +16,7 @@ internal static class GameUtility
     if (amount >= 10000 && !skipKFormat)
     {
       _sb.Clear();
-      _sb.Append((amount / 1000).ToString("N2"));
+      _sb.Append((amount / 1000).ToString("N2").TrimEnd('0').TrimEnd('.'));
       _sb.Append("K");
       result = _sb.ToString();
     }

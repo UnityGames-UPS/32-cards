@@ -1,0 +1,702 @@
+fileFormatVersion: 2
+guid: f351c0d33069044cbad4d73054b7d088
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -2329864363834452359
+    second: Glow_Coin_Animation_29FPS_42_0
+  - first:
+      213: -3568834987889662214
+    second: Glow_Coin_Animation_29FPS_42_1
+  - first:
+      213: -3254212360892339966
+    second: Glow_Coin_Animation_29FPS_42_2
+  - first:
+      213: 2724396136019186031
+    second: Glow_Coin_Animation_29FPS_42_3
+  - first:
+      213: 4885875292205340345
+    second: Glow_Coin_Animation_29FPS_42_4
+  - first:
+      213: 2131185599077908623
+    second: Glow_Coin_Animation_29FPS_42_5
+  - first:
+      213: 6837050357055303906
+    second: Glow_Coin_Animation_29FPS_42_6
+  - first:
+      213: 8989627611370866165
+    second: Glow_Coin_Animation_29FPS_42_7
+  - first:
+      213: -8731014623169947988
+    second: Glow_Coin_Animation_29FPS_42_8
+  - first:
+      213: 4535383202221895430
+    second: Glow_Coin_Animation_29FPS_42_9
+  - first:
+      213: -9126762031326545578
+    second: Glow_Coin_Animation_29FPS_42_10
+  - first:
+      213: 3544020813479743278
+    second: Glow_Coin_Animation_29FPS_42_11
+  - first:
+      213: -8309813927651444073
+    second: Glow_Coin_Animation_29FPS_42_12
+  - first:
+      213: -6747202115326025402
+    second: Glow_Coin_Animation_29FPS_42_13
+  - first:
+      213: -5122171439666454921
+    second: Glow_Coin_Animation_29FPS_42_14
+  - first:
+      213: -2560963174802165666
+    second: Glow_Coin_Animation_29FPS_42_15
+  - first:
+      213: 1258779534819245804
+    second: Glow_Coin_Animation_29FPS_42_16
+  - first:
+      213: -1454680813569090701
+    second: Glow_Coin_Animation_29FPS_42_17
+  - first:
+      213: 5451247291436688325
+    second: Glow_Coin_Animation_29FPS_42_18
+  - first:
+      213: 6191311433129439774
+    second: Glow_Coin_Animation_29FPS_42_19
+  - first:
+      213: 6396518260371621408
+    second: Glow_Coin_Animation_29FPS_42_20
+  - first:
+      213: -808374532717495790
+    second: Glow_Coin_Animation_29FPS_42_21
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Glow_Coin_Animation_29FPS_42_0
+      rect:
+        serializedVersion: 2
+        x: 84
+        y: 159
+        width: 124
+        height: 138
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9765eca84b8aaafd0800000000000000
+      internalID: -2329864363834452359
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Glow_Coin_Animation_29FPS_42_1
+      rect:
+        serializedVersion: 2
+        x: 203
+        y: 275
+        width: 13
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: af6e9dcac73f87ec0800000000000000
+      internalID: -3568834987889662214
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Glow_Coin_Animation_29FPS_42_2
+      rect:
+        serializedVersion: 2
+        x: 246
+        y: 274
+        width: 14
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 209a35d6917b6d2d0800000000000000
+      internalID: -3254212360892339966
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Glow_Coin_Animation_29FPS_42_3
+      rect:
+        serializedVersion: 2
+        x: 220
+        y: 248
+        width: 23
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f61dedae9dffec520800000000000000
+      internalID: 2724396136019186031
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Glow_Coin_Animation_29FPS_42_4
+      rect:
+        serializedVersion: 2
+        x: 60
+        y: 220
+        width: 18
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9b6d1c811bd1ec340800000000000000
+      internalID: 4885875292205340345
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Glow_Coin_Animation_29FPS_42_5
+      rect:
+        serializedVersion: 2
+        x: 204
+        y: 225
+        width: 14
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f808777c20e739d10800000000000000
+      internalID: 2131185599077908623
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Glow_Coin_Animation_29FPS_42_6
+      rect:
+        serializedVersion: 2
+        x: 145
+        y: 140
+        width: 73
+        height: 80
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2e03db3531512ee50800000000000000
+      internalID: 6837050357055303906
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Glow_Coin_Animation_29FPS_42_7
+      rect:
+        serializedVersion: 2
+        x: 238
+        y: 168
+        width: 25
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5f5cdc6fea291cc70800000000000000
+      internalID: 8989627611370866165
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Glow_Coin_Animation_29FPS_42_8
+      rect:
+        serializedVersion: 2
+        x: 255
+        y: 154
+        width: 14
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ca6d639857435d680800000000000000
+      internalID: -8731014623169947988
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Glow_Coin_Animation_29FPS_42_9
+      rect:
+        serializedVersion: 2
+        x: 54
+        y: 145
+        width: 27
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 60fa5b03efae0fe30800000000000000
+      internalID: 4535383202221895430
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Glow_Coin_Animation_29FPS_42_10
+      rect:
+        serializedVersion: 2
+        x: 154
+        y: 132
+        width: 19
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6593245c94a375180800000000000000
+      internalID: -9126762031326545578
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Glow_Coin_Animation_29FPS_42_11
+      rect:
+        serializedVersion: 2
+        x: 220
+        y: 136
+        width: 23
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e2f0d002724ee2130800000000000000
+      internalID: 3544020813479743278
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Glow_Coin_Animation_29FPS_42_12
+      rect:
+        serializedVersion: 2
+        x: 312
+        y: 132
+        width: 17
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 79afdb4924c9dac80800000000000000
+      internalID: -8309813927651444073
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Glow_Coin_Animation_29FPS_42_13
+      rect:
+        serializedVersion: 2
+        x: 122
+        y: 101
+        width: 21
+        height: 37
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6416a30ac6f1d52a0800000000000000
+      internalID: -6747202115326025402
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Glow_Coin_Animation_29FPS_42_14
+      rect:
+        serializedVersion: 2
+        x: 154
+        y: 105
+        width: 24
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 77e970cc6346ae8b0800000000000000
+      internalID: -5122171439666454921
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Glow_Coin_Animation_29FPS_42_15
+      rect:
+        serializedVersion: 2
+        x: 222
+        y: 117
+        width: 19
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e507f03af81a57cd0800000000000000
+      internalID: -2560963174802165666
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Glow_Coin_Animation_29FPS_42_16
+      rect:
+        serializedVersion: 2
+        x: 272
+        y: 106
+        width: 17
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ceebe6f4155187110800000000000000
+      internalID: 1258779534819245804
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Glow_Coin_Animation_29FPS_42_17
+      rect:
+        serializedVersion: 2
+        x: 32
+        y: 83
+        width: 15
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 37b53add18fefcbe0800000000000000
+      internalID: -1454680813569090701
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Glow_Coin_Animation_29FPS_42_18
+      rect:
+        serializedVersion: 2
+        x: 117
+        y: 75
+        width: 18
+        height: 19
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5c3e4e49788b6ab40800000000000000
+      internalID: 5451247291436688325
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Glow_Coin_Animation_29FPS_42_19
+      rect:
+        serializedVersion: 2
+        x: 160
+        y: 82
+        width: 17
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e12be7902f4fbe550800000000000000
+      internalID: 6191311433129439774
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Glow_Coin_Animation_29FPS_42_20
+      rect:
+        serializedVersion: 2
+        x: 231
+        y: 67
+        width: 27
+        height: 40
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 02600c4b77ff4c850800000000000000
+      internalID: 6396518260371621408
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Glow_Coin_Animation_29FPS_42_21
+      rect:
+        serializedVersion: 2
+        x: 180
+        y: 27
+        width: 16
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 21ab6eb35a318c4f0800000000000000
+      internalID: -808374532717495790
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      Glow_Coin_Animation_29FPS_42_0: -2329864363834452359
+      Glow_Coin_Animation_29FPS_42_1: -3568834987889662214
+      Glow_Coin_Animation_29FPS_42_10: -9126762031326545578
+      Glow_Coin_Animation_29FPS_42_11: 3544020813479743278
+      Glow_Coin_Animation_29FPS_42_12: -8309813927651444073
+      Glow_Coin_Animation_29FPS_42_13: -6747202115326025402
+      Glow_Coin_Animation_29FPS_42_14: -5122171439666454921
+      Glow_Coin_Animation_29FPS_42_15: -2560963174802165666
+      Glow_Coin_Animation_29FPS_42_16: 1258779534819245804
+      Glow_Coin_Animation_29FPS_42_17: -1454680813569090701
+      Glow_Coin_Animation_29FPS_42_18: 5451247291436688325
+      Glow_Coin_Animation_29FPS_42_19: 6191311433129439774
+      Glow_Coin_Animation_29FPS_42_2: -3254212360892339966
+      Glow_Coin_Animation_29FPS_42_20: 6396518260371621408
+      Glow_Coin_Animation_29FPS_42_21: -808374532717495790
+      Glow_Coin_Animation_29FPS_42_3: 2724396136019186031
+      Glow_Coin_Animation_29FPS_42_4: 4885875292205340345
+      Glow_Coin_Animation_29FPS_42_5: 2131185599077908623
+      Glow_Coin_Animation_29FPS_42_6: 6837050357055303906
+      Glow_Coin_Animation_29FPS_42_7: 8989627611370866165
+      Glow_Coin_Animation_29FPS_42_8: -8731014623169947988
+      Glow_Coin_Animation_29FPS_42_9: 4535383202221895430
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
