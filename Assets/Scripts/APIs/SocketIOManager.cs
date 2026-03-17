@@ -27,12 +27,17 @@ public class SocketIOManager : MonoBehaviour
   private const int MaxReconnectAttempts = 5;
   private const float ReconnectDelaySeconds = 2f;
 
-  private float lastPongTime = 0f;
   private float pingInterval = 2f;
   private bool waitingForPong = false;
   private int missedPongs = 0;
-  private const int MaxMissedPongs = 5;
+  private const int MaxMissedPongs = 15;
   private Coroutine PingRoutine; //Back2 end
+  private bool hasFocus = true;
+  private bool isExiting = false;
+  private bool isBeingDestroyed = false;
+  private float focusLostTime = 0f;
+  private const float maxBackgroundTime = 120f;
+  private Coroutine focusCheckRoutine;
 
   [SerializeField] private GameObject RaycastBlocker;
 
@@ -44,6 +49,32 @@ public class SocketIOManager : MonoBehaviour
   private void Start()
   {
     OpenSocket();
+  }
+
+  private void OnDestroy()
+  {
+    isBeingDestroyed = true;
+  }
+
+  private void OnApplicationFocus(bool focus)
+  {
+    hasFocus = focus;
+
+    if (!focus)
+    {
+      focusLostTime = Time.time;
+
+      if (focusCheckRoutine == null && !isExiting && !isBeingDestroyed)
+        focusCheckRoutine = StartCoroutine(FocusTimeoutCheck());
+    }
+    else
+    {
+      if (focusCheckRoutine != null)
+      {
+        StopCoroutine(focusCheckRoutine);
+        focusCheckRoutine = null;
+      }
+    }
   }
 
   public void CloseGame()
@@ -161,7 +192,7 @@ public class SocketIOManager : MonoBehaviour
     manager.Open();
   }
 
-  
+
 
   // Connected event handler implementation
   void OnConnected(ConnectResponse resp)
@@ -182,7 +213,6 @@ public class SocketIOManager : MonoBehaviour
     // Debug.Log("✅ Received pong from server.");
     waitingForPong = false;
     missedPongs = 0;
-    lastPongTime = Time.time;
     // Debug.Log($"⏱️ Updated last pong time: {lastPongTime}");
     // Debug.Log($"📦 Pong payload: {data}");
   }
@@ -191,7 +221,7 @@ public class SocketIOManager : MonoBehaviour
   {
     Debug.LogWarning("⚠️ Disconnected from server.");
     isConnected = false;
-    uiManager.DisconnectionPopup();
+    uiManager.OpenDisconnectPopup();
     ResetPingRoutine();
   }
 
@@ -203,11 +233,37 @@ public class SocketIOManager : MonoBehaviour
 #endif
   }
 
+  private IEnumerator FocusTimeoutCheck()
+  {
+    while (!hasFocus && !isExiting && !isBeingDestroyed)
+    {
+      if (Time.time - focusLostTime >= maxBackgroundTime)
+      {
+        Debug.LogWarning("[SOCKET] Background timeout");
+        isConnected = false;
+        ResetPingRoutine();
+
+        if (manager != null)
+        {
+          try { manager.Close(); }
+          catch (Exception e) { Debug.LogWarning($"[SOCKET] Focus close error: {e.Message}"); }
+        }
+
+        uiManager.OpenDisconnectPopup();
+        focusCheckRoutine = null;
+        yield break;
+      }
+
+      yield return new WaitForSecondsRealtime(1f);
+    }
+
+    focusCheckRoutine = null;
+  }
+
   private void SendPing()
   {
     waitingForPong = false;
     missedPongs = 0;
-    lastPongTime = Time.time;
     ResetPingRoutine();
     PingRoutine = StartCoroutine(PingCheck());
   }
@@ -235,9 +291,9 @@ public class SocketIOManager : MonoBehaviour
       // If waiting for pong, and timeout passed
       if (waitingForPong)
       {
-        if (missedPongs == 2)
+        if (missedPongs == 1)
         {
-          uiManager.ReconnectionPopup();
+          uiManager.OpenReconnectPopup();
         }
         missedPongs++;
         Debug.LogWarning($"⚠️ Pong missed #{missedPongs}/{MaxMissedPongs}");
@@ -246,15 +302,13 @@ public class SocketIOManager : MonoBehaviour
         {
           Debug.LogError("❌ Unable to connect to server — 5 consecutive pongs missed.");
           isConnected = false;
-          uiManager.DisconnectionPopup();
+          uiManager.OpenDisconnectPopup();
           yield break;
         }
       }
 
       // Send next ping
       waitingForPong = true;
-      lastPongTime = Time.time;
-      // Debug.Log("📤 Sending ping...");
       gameSocket.Emit("ping");
       yield return new WaitForSeconds(pingInterval);
     }
@@ -396,6 +450,7 @@ public class SocketIOManager : MonoBehaviour
 
   internal IEnumerator CloseSocket()
   {
+    isExiting = true;
     RaycastBlocker.SetActive(true);
     ResetPingRoutine();
 
@@ -479,6 +534,11 @@ public class SocketIOManager : MonoBehaviour
       if (response != null)
       {
         uiManager.OnRoundStart(response);
+        if (dealerController != null)
+        {
+          float remaining = (float)((response.bettingEndTime - response.serverTime) / 1000.0);
+          dealerController.OnBettingStart(remaining);
+        }
       }
       else
       {
@@ -658,7 +718,7 @@ public class SocketIOManager : MonoBehaviour
         uiManager.OnLeaderboardUpdated(response.leaderboards);
         uiManager.SetGamePagePlayerCount(response.playerCount);
       }
-      
+
     }
     catch (Exception ex)
     {
@@ -876,6 +936,7 @@ public class JoinLevelResponsePayload
   public int playerCount;
   public string level;
   public List<string> stats;
+  public List<BetPlacedEvent> bets;
   public Leaderboards leaderboards;
   public RoundState roundState;
 }

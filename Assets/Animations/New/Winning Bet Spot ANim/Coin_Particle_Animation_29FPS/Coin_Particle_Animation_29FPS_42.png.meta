@@ -1,0 +1,832 @@
+fileFormatVersion: 2
+guid: d07b70a74b2104211aac6596d1266bc9
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 1460160500709308715
+    second: Coin_Particle_Animation_29FPS_42_0
+  - first:
+      213: -6335384675272351133
+    second: Coin_Particle_Animation_29FPS_42_1
+  - first:
+      213: -7741404805029098623
+    second: Coin_Particle_Animation_29FPS_42_2
+  - first:
+      213: 7156668333463129312
+    second: Coin_Particle_Animation_29FPS_42_3
+  - first:
+      213: 7496622051978687664
+    second: Coin_Particle_Animation_29FPS_42_4
+  - first:
+      213: -5210185325916753402
+    second: Coin_Particle_Animation_29FPS_42_5
+  - first:
+      213: -5328136686975028862
+    second: Coin_Particle_Animation_29FPS_42_6
+  - first:
+      213: 7397061905435251552
+    second: Coin_Particle_Animation_29FPS_42_7
+  - first:
+      213: 7790532204654235418
+    second: Coin_Particle_Animation_29FPS_42_8
+  - first:
+      213: 3098964356264792948
+    second: Coin_Particle_Animation_29FPS_42_9
+  - first:
+      213: -2065691982048739803
+    second: Coin_Particle_Animation_29FPS_42_10
+  - first:
+      213: 2505852230271391199
+    second: Coin_Particle_Animation_29FPS_42_11
+  - first:
+      213: -3140675774749657712
+    second: Coin_Particle_Animation_29FPS_42_12
+  - first:
+      213: -1032756112067598386
+    second: Coin_Particle_Animation_29FPS_42_13
+  - first:
+      213: -4010341313186194399
+    second: Coin_Particle_Animation_29FPS_42_14
+  - first:
+      213: 3483555862103431329
+    second: Coin_Particle_Animation_29FPS_42_15
+  - first:
+      213: 7693032771552791796
+    second: Coin_Particle_Animation_29FPS_42_16
+  - first:
+      213: 4380417691609688871
+    second: Coin_Particle_Animation_29FPS_42_17
+  - first:
+      213: 6114757604653393492
+    second: Coin_Particle_Animation_29FPS_42_18
+  - first:
+      213: 4782626303576814482
+    second: Coin_Particle_Animation_29FPS_42_19
+  - first:
+      213: -6202623092861799902
+    second: Coin_Particle_Animation_29FPS_42_20
+  - first:
+      213: -1367253640569447575
+    second: Coin_Particle_Animation_29FPS_42_21
+  - first:
+      213: -2594353933634742449
+    second: Coin_Particle_Animation_29FPS_42_22
+  - first:
+      213: 9037270087513371444
+    second: Coin_Particle_Animation_29FPS_42_23
+  - first:
+      213: 6870028498402757723
+    second: Coin_Particle_Animation_29FPS_42_24
+  - first:
+      213: -859482229711360617
+    second: Coin_Particle_Animation_29FPS_42_25
+  - first:
+      213: 3280057533006258262
+    second: Coin_Particle_Animation_29FPS_42_26
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Coin_Particle_Animation_29FPS_42_0
+      rect:
+        serializedVersion: 2
+        x: 138
+        y: 258
+        width: 35
+        height: 39
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b29b5d73d38834410800000000000000
+      internalID: 1460160500709308715
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Coin_Particle_Animation_29FPS_42_1
+      rect:
+        serializedVersion: 2
+        x: 174
+        y: 272
+        width: 18
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 36220f244313418a0800000000000000
+      internalID: -6335384675272351133
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Coin_Particle_Animation_29FPS_42_2
+      rect:
+        serializedVersion: 2
+        x: 203
+        y: 275
+        width: 13
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 18b0db57851019490800000000000000
+      internalID: -7741404805029098623
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Coin_Particle_Animation_29FPS_42_3
+      rect:
+        serializedVersion: 2
+        x: 246
+        y: 274
+        width: 14
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0ec4b5f7ee7915360800000000000000
+      internalID: 7156668333463129312
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Coin_Particle_Animation_29FPS_42_4
+      rect:
+        serializedVersion: 2
+        x: 152
+        y: 237
+        width: 22
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0b4bc87990a590860800000000000000
+      internalID: 7496622051978687664
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Coin_Particle_Animation_29FPS_42_5
+      rect:
+        serializedVersion: 2
+        x: 220
+        y: 248
+        width: 23
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 60277c20d04b1b7b0800000000000000
+      internalID: -5210185325916753402
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Coin_Particle_Animation_29FPS_42_6
+      rect:
+        serializedVersion: 2
+        x: 60
+        y: 220
+        width: 18
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2817022b9e7ae06b0800000000000000
+      internalID: -5328136686975028862
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Coin_Particle_Animation_29FPS_42_7
+      rect:
+        serializedVersion: 2
+        x: 84
+        y: 178
+        width: 41
+        height: 56
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 063da079c94a7a660800000000000000
+      internalID: 7397061905435251552
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Coin_Particle_Animation_29FPS_42_8
+      rect:
+        serializedVersion: 2
+        x: 191
+        y: 217
+        width: 15
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a1f08ad93c78d1c60800000000000000
+      internalID: 7790532204654235418
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Coin_Particle_Animation_29FPS_42_9
+      rect:
+        serializedVersion: 2
+        x: 204
+        y: 225
+        width: 14
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 47392cab9abb10b20800000000000000
+      internalID: 3098964356264792948
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Coin_Particle_Animation_29FPS_42_10
+      rect:
+        serializedVersion: 2
+        x: 107
+        y: 159
+        width: 40
+        height: 48
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 52ebc9a36103553e0800000000000000
+      internalID: -2065691982048739803
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Coin_Particle_Animation_29FPS_42_11
+      rect:
+        serializedVersion: 2
+        x: 145
+        y: 140
+        width: 73
+        height: 80
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fd552fca35396c220800000000000000
+      internalID: 2505852230271391199
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Coin_Particle_Animation_29FPS_42_12
+      rect:
+        serializedVersion: 2
+        x: 238
+        y: 168
+        width: 25
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0953f5bd5041a64d0800000000000000
+      internalID: -3140675774749657712
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Coin_Particle_Animation_29FPS_42_13
+      rect:
+        serializedVersion: 2
+        x: 255
+        y: 154
+        width: 14
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ec7e890b9c9eaa1f0800000000000000
+      internalID: -1032756112067598386
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Coin_Particle_Animation_29FPS_42_14
+      rect:
+        serializedVersion: 2
+        x: 54
+        y: 145
+        width: 27
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 12c9677c2d76858c0800000000000000
+      internalID: -4010341313186194399
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Coin_Particle_Animation_29FPS_42_15
+      rect:
+        serializedVersion: 2
+        x: 154
+        y: 132
+        width: 19
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1a897e39993185030800000000000000
+      internalID: 3483555862103431329
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Coin_Particle_Animation_29FPS_42_16
+      rect:
+        serializedVersion: 2
+        x: 220
+        y: 136
+        width: 23
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4fcc7d9db8423ca60800000000000000
+      internalID: 7693032771552791796
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Coin_Particle_Animation_29FPS_42_17
+      rect:
+        serializedVersion: 2
+        x: 312
+        y: 132
+        width: 17
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 72b6b3c9eae5acc30800000000000000
+      internalID: 4380417691609688871
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Coin_Particle_Animation_29FPS_42_18
+      rect:
+        serializedVersion: 2
+        x: 122
+        y: 101
+        width: 21
+        height: 37
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 456ebf0e4abfbd450800000000000000
+      internalID: 6114757604653393492
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Coin_Particle_Animation_29FPS_42_19
+      rect:
+        serializedVersion: 2
+        x: 154
+        y: 105
+        width: 24
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 293b22e984d4f5240800000000000000
+      internalID: 4782626303576814482
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Coin_Particle_Animation_29FPS_42_20
+      rect:
+        serializedVersion: 2
+        x: 222
+        y: 117
+        width: 19
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2227652f82bdbe9a0800000000000000
+      internalID: -6202623092861799902
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Coin_Particle_Animation_29FPS_42_21
+      rect:
+        serializedVersion: 2
+        x: 272
+        y: 106
+        width: 17
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 96b9ff3de0a860de0800000000000000
+      internalID: -1367253640569447575
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Coin_Particle_Animation_29FPS_42_22
+      rect:
+        serializedVersion: 2
+        x: 32
+        y: 83
+        width: 15
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f475014c7d00ffbd0800000000000000
+      internalID: -2594353933634742449
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Coin_Particle_Animation_29FPS_42_23
+      rect:
+        serializedVersion: 2
+        x: 117
+        y: 75
+        width: 18
+        height: 19
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4337f795345da6d70800000000000000
+      internalID: 9037270087513371444
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Coin_Particle_Animation_29FPS_42_24
+      rect:
+        serializedVersion: 2
+        x: 160
+        y: 82
+        width: 17
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b5c4b14358e375f50800000000000000
+      internalID: 6870028498402757723
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Coin_Particle_Animation_29FPS_42_25
+      rect:
+        serializedVersion: 2
+        x: 231
+        y: 67
+        width: 27
+        height: 40
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 79d2b4f37718214f0800000000000000
+      internalID: -859482229711360617
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Coin_Particle_Animation_29FPS_42_26
+      rect:
+        serializedVersion: 2
+        x: 180
+        y: 27
+        width: 16
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 650aea1a2fa158d20800000000000000
+      internalID: 3280057533006258262
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      Coin_Particle_Animation_29FPS_42_0: 1460160500709308715
+      Coin_Particle_Animation_29FPS_42_1: -6335384675272351133
+      Coin_Particle_Animation_29FPS_42_10: -2065691982048739803
+      Coin_Particle_Animation_29FPS_42_11: 2505852230271391199
+      Coin_Particle_Animation_29FPS_42_12: -3140675774749657712
+      Coin_Particle_Animation_29FPS_42_13: -1032756112067598386
+      Coin_Particle_Animation_29FPS_42_14: -4010341313186194399
+      Coin_Particle_Animation_29FPS_42_15: 3483555862103431329
+      Coin_Particle_Animation_29FPS_42_16: 7693032771552791796
+      Coin_Particle_Animation_29FPS_42_17: 4380417691609688871
+      Coin_Particle_Animation_29FPS_42_18: 6114757604653393492
+      Coin_Particle_Animation_29FPS_42_19: 4782626303576814482
+      Coin_Particle_Animation_29FPS_42_2: -7741404805029098623
+      Coin_Particle_Animation_29FPS_42_20: -6202623092861799902
+      Coin_Particle_Animation_29FPS_42_21: -1367253640569447575
+      Coin_Particle_Animation_29FPS_42_22: -2594353933634742449
+      Coin_Particle_Animation_29FPS_42_23: 9037270087513371444
+      Coin_Particle_Animation_29FPS_42_24: 6870028498402757723
+      Coin_Particle_Animation_29FPS_42_25: -859482229711360617
+      Coin_Particle_Animation_29FPS_42_26: 3280057533006258262
+      Coin_Particle_Animation_29FPS_42_3: 7156668333463129312
+      Coin_Particle_Animation_29FPS_42_4: 7496622051978687664
+      Coin_Particle_Animation_29FPS_42_5: -5210185325916753402
+      Coin_Particle_Animation_29FPS_42_6: -5328136686975028862
+      Coin_Particle_Animation_29FPS_42_7: 7397061905435251552
+      Coin_Particle_Animation_29FPS_42_8: 7790532204654235418
+      Coin_Particle_Animation_29FPS_42_9: 3098964356264792948
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

@@ -12,6 +12,7 @@ public class UiManager : MonoBehaviour
 {
   [SerializeField] private AudioManager audioController;
   [SerializeField] private SocketIOManager socketManager;
+  [SerializeField] private JSFunctCalls jsFunctCalls;
   [SerializeField] private BetPanelManager betPanelManager;
   [SerializeField] private DealerController dealerController;
   [SerializeField] private LeaderboardController leaderboardController;
@@ -30,6 +31,9 @@ public class UiManager : MonoBehaviour
   [SerializeField] private GameObject HistoryPopup_Object;
   [SerializeField] private GameObject InfoPopup_Object;
   [SerializeField] private GameObject StartupPanel;
+  [SerializeField] private RectTransform ReconnectPopupRectTransform;
+  [SerializeField] private RectTransform DisconnectPopupRectTransform;
+  [SerializeField] private Button DisconnectPopupCloseButton;
   [SerializeField] private float popupBGTargetAlpha255 = 230f;
 
   [Space(10)]
@@ -45,6 +49,10 @@ public class UiManager : MonoBehaviour
   [SerializeField] private TMP_Text[] LevelButtonsMinBetText;
   [SerializeField] private TMP_Text[] LevelButtonsMaxBetText;
   [SerializeField] private TMP_Text[] LevelButtonsPeopleText;
+  [SerializeField] private Image[] LevelButtonsPlayerCountBg;
+  [SerializeField] private Sprite LevelPlayerCountGreenBgSprite;
+  [SerializeField] private Sprite LevelPlayerCountRedBgSprite;
+  [SerializeField] private GameObject[] LevelButtonsHotAnimation;
   [SerializeField] private TMP_Text TotalPlayersText;
   [SerializeField] private TMP_Text HPusernameText;
   [SerializeField] private TMP_Text HPbalanceText;
@@ -89,6 +97,15 @@ public class UiManager : MonoBehaviour
   [SerializeField] private TMP_Text loadingPageText;
 
   [Space(10)]
+  [Header("Sound/Music Sprites")]
+  [SerializeField] private Sprite SoundOnSprite;
+  [SerializeField] private Sprite SoundOffSprite;
+  [SerializeField] private Sprite MusicOnSprite;
+  [SerializeField] private Sprite MusicOffSprite;
+  [SerializeField] private Sprite ExpandSprite;
+  [SerializeField] private Sprite ShrinkSprite;
+
+  [Space(10)]
   [Header("Animation Settings")]
   [SerializeField] private float MenuButtonsDuration = 0.5f;
   [SerializeField] private float lobbyButtonsCollapsedY = 440f;
@@ -126,6 +143,9 @@ public class UiManager : MonoBehaviour
   bool isExit;
   bool isMusic;
   bool isSound;
+  bool isExpanded;
+  bool disconnectedPopupOpen;
+  bool reconnectPopupOpen;
 
   internal string CurrentLevel => currentLevel;
 
@@ -134,6 +154,10 @@ public class UiManager : MonoBehaviour
     loadingPage.SetActive(false);
     gamePage.SetActive(false);
     homePage.SetActive(true);
+
+    if (LevelButtons != null)
+      foreach (var btn in LevelButtons)
+        if (btn != null) btn.transform.localScale = Vector3.zero;
     InitializePopupViews();
     AssignButtonListeners();
 
@@ -212,6 +236,14 @@ public class UiManager : MonoBehaviour
     }
 
     RefreshStartupDoNotShowAgainVisual();
+
+    ReconnectPopupRectTransform.localScale = Vector3.zero;
+    ReconnectPopupRectTransform.gameObject.SetActive(true);
+    DisconnectPopupRectTransform.localScale = Vector3.zero;
+    DisconnectPopupRectTransform.gameObject.SetActive(true);
+
+    if (jsFunctCalls != null)
+      jsFunctCalls.RegisterFullscreenListener(gameObject.name);
   }
 
   private void InitializePopupViews()
@@ -257,6 +289,12 @@ public class UiManager : MonoBehaviour
     isMusic = true;
     isSound = true;
 
+    if (DisconnectPopupCloseButton)
+    {
+      DisconnectPopupCloseButton.onClick.RemoveAllListeners();
+      DisconnectPopupCloseButton.onClick.AddListener(delegate { ClientExited(); });
+    }
+
     if (GameRules) GameRules.onClick.RemoveAllListeners();
     if (GameRules) GameRules.onClick.AddListener(delegate { OpenPopup(InfoPopup_Object); });
 
@@ -269,8 +307,11 @@ public class UiManager : MonoBehaviour
     if (Music) Music.onClick.RemoveAllListeners();
     if (Music) Music.onClick.AddListener(delegate { ToggleMusic(); });
 
-    if(Home) Home.onClick.RemoveAllListeners();
-    if(Home) Home.onClick.AddListener(() => socketManager.CloseGame());
+    if (ExpandShrink) ExpandShrink.onClick.RemoveAllListeners();
+    if (ExpandShrink) ExpandShrink.onClick.AddListener(delegate { ToggleExpandShrink(); });
+
+    if (Home) Home.onClick.RemoveAllListeners();
+    if (Home) Home.onClick.AddListener(() => ClientExited());
 
     if (GameRulesGP) GameRulesGP.onClick.RemoveAllListeners();
     if (GameRulesGP) GameRulesGP.onClick.AddListener(delegate { OpenPopup(InfoPopup_Object); });
@@ -283,6 +324,9 @@ public class UiManager : MonoBehaviour
 
     if (MusicGP) MusicGP.onClick.RemoveAllListeners();
     if (MusicGP) MusicGP.onClick.AddListener(delegate { ToggleMusic(); });
+
+    if (ExpandShrinkGP) ExpandShrinkGP.onClick.RemoveAllListeners();
+    if (ExpandShrinkGP) ExpandShrinkGP.onClick.AddListener(delegate { ToggleExpandShrink(); });
 
     if (HomeGP) HomeGP.onClick.RemoveAllListeners();
     if (HomeGP) HomeGP.onClick.AddListener(delegate { StartCoroutine(GoHomeButton()); });
@@ -343,7 +387,7 @@ public class UiManager : MonoBehaviour
   {
     if (StartupDoNotShowAgainCheckmark)
       StartupDoNotShowAgainCheckmark.SetActive(GetDoNotShowAgain());
-  } 
+  }
 
   IEnumerator TryEnterLevel(int level)
   {
@@ -410,6 +454,20 @@ public class UiManager : MonoBehaviour
     LevelButtonsMaxBetText[1].text = FormatAmount(initData.gameData.wagers.main_bets.player_11.max_bet_limit.novice);
     LevelButtonsMaxBetText[2].text = FormatAmount(initData.gameData.wagers.main_bets.player_11.max_bet_limit.expert);
     LevelButtonsMaxBetText[3].text = FormatAmount(initData.gameData.wagers.main_bets.player_11.max_bet_limit.high_roller);
+
+    AnimateLevelButtonsIn();
+  }
+
+  private void AnimateLevelButtonsIn()
+  {
+    if (LevelButtons == null) return;
+    for (int i = 0; i < LevelButtons.Length; i++)
+    {
+      if (LevelButtons[i] == null) continue;
+      LevelButtons[i].transform.DOKill();
+      LevelButtons[i].transform.localScale = Vector3.zero;
+      LevelButtons[i].transform.DOScale(Vector3.one, 0.4f).SetEase(Ease.OutQuad);
+    }
   }
 
   internal void OnBettingTimerSync(BettingTimerEvent data)
@@ -462,15 +520,15 @@ public class UiManager : MonoBehaviour
       case "expert": count = lobby.expert; break;
       case "high_roller": count = lobby.high_roller; break;
     }
-    
+
     GPPeopleCountText.text = count.ToString();
   }
 
   internal void SetGamePagePlayerCount(int count)
   {
-    if(int.TryParse(GPPeopleCountText.text, out int currentCount))
+    if (int.TryParse(GPPeopleCountText.text, out int currentCount))
     {
-      if(currentCount != count)
+      if (currentCount != count)
       {
         GPPeopleCountText.text = count.ToString();
       }
@@ -483,13 +541,47 @@ public class UiManager : MonoBehaviour
     LevelButtonsPeopleText[1].text = lobby.novice.ToString();
     LevelButtonsPeopleText[2].text = lobby.expert.ToString();
     LevelButtonsPeopleText[3].text = lobby.high_roller.ToString();
+    UpdateLevelButtonHotState(lobby);
+  }
+
+  private void UpdateLevelButtonHotState(Lobby lobby)
+  {
+    int[] counts = { lobby.casual, lobby.novice, lobby.expert, lobby.high_roller };
+
+    // Find the hot level: highest player count; on a tie, higher index (higher bets) wins
+    int hotIndex = -1;
+    int maxCount = 0;
+    for (int i = 0; i < counts.Length; i++)
+    {
+      if (counts[i] > maxCount || (counts[i] == maxCount && maxCount > 0))
+      {
+        maxCount = counts[i];
+        hotIndex = i;
+      }
+    }
+
+    for (int i = 0; i < counts.Length; i++)
+    {
+      bool hasPlayers = counts[i] > 0;
+      bool isHot = hasPlayers && i == hotIndex;
+
+      if (LevelButtonsPlayerCountBg != null && i < LevelButtonsPlayerCountBg.Length && LevelButtonsPlayerCountBg[i] != null)
+      {
+        LevelButtonsPlayerCountBg[i].gameObject.SetActive(hasPlayers);
+        if (hasPlayers)
+          LevelButtonsPlayerCountBg[i].sprite = isHot ? LevelPlayerCountRedBgSprite : LevelPlayerCountGreenBgSprite;
+      }
+
+      if (LevelButtonsHotAnimation != null && i < LevelButtonsHotAnimation.Length && LevelButtonsHotAnimation[i] != null)
+        LevelButtonsHotAnimation[i].SetActive(isHot);
+    }
   }
 
   internal void SetLobbyTotalPlayerCount(int count)
   {
-    if(int.TryParse(TotalPlayersText.text, out int currentCount))
+    if (int.TryParse(TotalPlayersText.text, out int currentCount))
     {
-      if(currentCount != count && count != 0)
+      if (currentCount != count && count != 0)
       {
         TotalPlayersText.text = count.ToString();
       }
@@ -511,11 +603,11 @@ public class UiManager : MonoBehaviour
     if (data.roundState != null && !string.IsNullOrEmpty(data.roundState.roundId))
       GProundIDText.text = data.roundState.roundId;
 
-    if(int.TryParse(GPPeopleCountText.text, out int currentCount))
+    if (int.TryParse(GPPeopleCountText.text, out int currentCount))
     {
-      if(currentCount != data.playerCount)
+      if (currentCount != data.playerCount)
       {
-        GPPeopleCountText.text = data.playerCount.ToString(); 
+        GPPeopleCountText.text = data.playerCount.ToString();
       }
     }
 
@@ -543,6 +635,8 @@ public class UiManager : MonoBehaviour
     // Joined mid-deal — keep loading page up, wait for the next card_dealt, round_end, or cashout
     if (data.roundState.phase == "dealing")
     {
+      if (betPanelManager != null && data.bets != null && data.bets.Count > 0)
+        betPanelManager.SetupOpponentChipsImmediate(data.bets, socketManager?.initData?.player?.username ?? "");
       pendingLevelEntry = true;
       pendingCardsDealt = data.roundState.cardsDealt;
       return;
@@ -559,6 +653,13 @@ public class UiManager : MonoBehaviour
 
     // Joined during betting phase — sync countdown and show immediately
     if (betPanelManager != null) betPanelManager.OnJoinDuringBetting(data.roundState);
+    if (betPanelManager != null && data.bets != null && data.bets.Count > 0)
+      betPanelManager.SetupOpponentChipsImmediate(data.bets, socketManager?.initData?.player?.username ?? "");
+    if (dealerController != null)
+    {
+      float remaining = (float)(data.roundState.timeRemaining / 1000.0);
+      dealerController.OnBettingStart(remaining);
+    }
     gamePage.SetActive(true);
     loadingPage.SetActive(false);
   }
@@ -674,9 +775,9 @@ public class UiManager : MonoBehaviour
     loadingPage.SetActive(false);
 
     if (leaderboardController != null)
-    {
       leaderboardController.Hide();
-    }
+
+    AnimateLevelButtonsIn();
   }
 
   internal IEnumerator SwitchLevelFromBetOptions(string targetLevel)
@@ -823,37 +924,41 @@ public class UiManager : MonoBehaviour
     isLobbyMenuExpanded = false;
   }
 
-  internal void LowBalPopup()
+  internal void OpenDisconnectPopup()
   {
-    // OpenPopup();
+    if(isExit)
+      return;
+
+    disconnectedPopupOpen = true;
+    DisconnectPopupRectTransform.DOScale(Vector3.one, 0.25f).SetEase(Ease.OutBack);
   }
 
-  internal void DisconnectionPopup()
+  internal void OpenReconnectPopup()
   {
-    if (!isExit)
-    {
-      // OpenPopup(DisconnectPopup_Object);
-    }
-  }
+    if(isExit)
+      return;
 
-  internal void ReconnectionPopup()
-  {
-    // OpenPopup(ReconnectPopup_Object);
+    reconnectPopupOpen = true;
+    ReconnectPopupRectTransform.DOScale(Vector3.one, 0.25f).SetEase(Ease.OutBack);
   }
 
   internal void CheckAndClosePopups()
   {
-    // if (ReconnectPopup_Object.activeInHierarchy)
-    // {
-    //     ClosePopup(ReconnectPopup_Object);
-    // }
-    // if (DisconnectPopup_Object.activeInHierarchy)
-    // {
-    //     ClosePopup(DisconnectPopup_Object);
-    // }
+    if (reconnectPopupOpen)
+    {
+      ReconnectPopupRectTransform.DOKill();
+      ReconnectPopupRectTransform.DOScale(Vector3.zero, 0.25f).SetEase(Ease.InBack);
+      reconnectPopupOpen = false;
+    }
+    if (disconnectedPopupOpen)
+    {
+      DisconnectPopupRectTransform.DOKill();
+      DisconnectPopupRectTransform.DOScale(Vector3.zero, 0.25f).SetEase(Ease.InBack);
+      disconnectedPopupOpen = false;
+    }
   }
 
-  private void CallOnExitFunction()
+  private void ClientExited()
   {
     isExit = true;
     StartCoroutine(socketManager.CloseSocket());
@@ -929,41 +1034,90 @@ public class UiManager : MonoBehaviour
   private void ToggleMusic()
   {
     isMusic = !isMusic;
-    if (isMusic)
+    Sprite musicSprite = isMusic ? MusicOnSprite : MusicOffSprite;
+    if (Music != null && musicSprite != null)
     {
-      // Music_button.gameObject.SetActive(true);
-      // MusicMute_button.gameObject.SetActive(false);
-      audioController.ToggleMute(false, "bg");
+      var img = Music.GetComponent<Image>();
+      if (img != null) img.sprite = musicSprite;
     }
-    else
+    if (MusicGP != null && musicSprite != null)
     {
-      // Music_button.gameObject.SetActive(false);
-      // MusicMute_button.gameObject.SetActive(true);
-      audioController.ToggleMute(true, "bg");
+      var img = MusicGP.GetComponent<Image>();
+      if (img != null) img.sprite = musicSprite;
     }
+    audioController.ToggleMute(!isMusic, "bg");
   }
 
   private void ToggleSound()
   {
     isSound = !isSound;
-    if (isSound)
+    Sprite soundSprite = isSound ? SoundOnSprite : SoundOffSprite;
+    if (Sound != null && soundSprite != null)
     {
-      // Sound_button.gameObject.SetActive(true);
-      // SoundMute_button.gameObject.SetActive(false);
-      if (audioController) audioController.ToggleMute(false, "button");
-      if (audioController) audioController.ToggleMute(false, "wl");
-      if (audioController) audioController.ToggleMute(false, "win");
-      if (audioController) audioController.ToggleMute(false, "bet");
-
+      var img = Sound.GetComponent<Image>();
+      if (img != null) img.sprite = soundSprite;
     }
-    else
+    if (SoundGP != null && soundSprite != null)
     {
-      // Sound_button.gameObject.SetActive(false);
-      // SoundMute_button.gameObject.SetActive(true);
-      if (audioController) audioController.ToggleMute(true, "button");
-      if (audioController) audioController.ToggleMute(true, "wl");
-      if (audioController) audioController.ToggleMute(true, "win");
-      if (audioController) audioController.ToggleMute(true, "bet");
+      var img = SoundGP.GetComponent<Image>();
+      if (img != null) img.sprite = soundSprite;
+    }
+    bool mute = !isSound;
+    if (audioController) audioController.ToggleMute(mute, "button");
+    if (audioController) audioController.ToggleMute(mute, "wl");
+    if (audioController) audioController.ToggleMute(mute, "win");
+    if (audioController) audioController.ToggleMute(mute, "bet");
+  }
+
+  private void ToggleExpandShrink()
+  {
+    isExpanded = !isExpanded;
+    ApplyExpandShrinkSprites();
+    if (jsFunctCalls != null)
+    {
+      if (isExpanded)
+        jsFunctCalls.RequestExpandGame();
+      else
+        jsFunctCalls.RequestShrinkGame();
+    }
+  }
+
+  // Called by the JS fullscreen change listener when the user exits fullscreen externally (e.g. Escape key)
+  public void OnFullscreenChanged(string value)
+  {
+    isExpanded = value == "1";
+    ApplyExpandShrinkSprites();
+  }
+
+  private void ApplyExpandShrinkSprites()
+  {
+    Sprite sprite = isExpanded ? ShrinkSprite : ExpandSprite;
+    string label = isExpanded ? "Shrink" : "Expand";
+    if (ExpandShrink != null)
+    {
+      if (sprite != null)
+      {
+        var img = ExpandShrink.GetComponent<Image>();
+        if (img != null) img.sprite = sprite;
+      }
+      if (ExpandShrink.transform.childCount > 0)
+      {
+        var txt = ExpandShrink.transform.GetChild(0).GetComponent<TMP_Text>();
+        if (txt != null) txt.text = label;
+      }
+    }
+    if (ExpandShrinkGP != null)
+    {
+      if (sprite != null)
+      {
+        var img = ExpandShrinkGP.GetComponent<Image>();
+        if (img != null) img.sprite = sprite;
+      }
+      if (ExpandShrinkGP.transform.childCount > 0)
+      {
+        var txt = ExpandShrinkGP.transform.GetChild(0).GetComponent<TMP_Text>();
+        if (txt != null) txt.text = label;
+      }
     }
   }
 

@@ -40,7 +40,10 @@ public class BetPanelManager : MonoBehaviour
     public TMP_Text totalBetText;
     public CanvasGroup lightGlow;
     public CanvasGroup darkGlow;
-    public ImageAnimation winningSpotAnim;
+    public ImageAnimation winningSpotAnimBg;
+    public ImageAnimation winningSpotAnimFg;
+    public RectTransform combinedTotalRoot;
+    public TMP_Text combinedTotalText;
     [NonSerialized] public Vector2 totalBetBaseSize;
   }
 
@@ -135,6 +138,10 @@ public class BetPanelManager : MonoBehaviour
   [SerializeField] private float popupStayDuration = 2f;
   [SerializeField] private float popupFadeOutDuration = 0.35f;
 
+  [Header("Combined Total")]
+  [SerializeField] private float combinedTotalScaleDuration = 0.25f;
+  [SerializeField] private float combinedTotalClearDelay = 0.3f;
+
   [Header("Round Announcer")]
   [SerializeField] private RectTransform announcerParent;
   [SerializeField] private AnnouncerView lightGreenAnnouncer;
@@ -196,6 +203,11 @@ public class BetPanelManager : MonoBehaviour
 
     if (bettingControlsParent != null)
       bettingControlsBaseY = bettingControlsParent.anchoredPosition.y;
+
+    if (betSpots != null)
+      foreach (var spot in betSpots)
+        if (spot?.combinedTotalRoot != null)
+          spot.combinedTotalRoot.localScale = Vector3.zero;
   }
 
   private void Start()
@@ -243,6 +255,7 @@ public class BetPanelManager : MonoBehaviour
       chipsPerSpot.Add(new List<BetChipView>());
       opponentChipsPerSpot.Add(new List<OpponentChipEntry>());
       UpdateSpotTotal(i);
+      UpdateCombinedTotal(i, true);
     }
 
     if (repeatBetButton != null)
@@ -440,6 +453,7 @@ public class BetPanelManager : MonoBehaviour
     if (areChipOptionsExpanded)
       RetractChipOptions();
     AnimateBettingControlsY(bettingControlsBaseY + bettingControlsHideOffsetY, true);
+    AnimateBettingControlsY(bettingControlsBaseY, false);
 
     RoundStartEvent synced = new RoundStartEvent
     {
@@ -645,6 +659,7 @@ public class BetPanelManager : MonoBehaviour
       {
         entry = list[i];
         list.RemoveAt(i);
+        UpdateCombinedTotal(spotIndex);
         break;
       }
     }
@@ -683,6 +698,44 @@ public class BetPanelManager : MonoBehaviour
     entry.ChipView.ChipRect.DOMove(targetPos, chipUndoDuration)
       .SetEase(Ease.InBack)
       .OnComplete(() => { if (chipView != null) Destroy(chipView.gameObject); });
+  }
+
+  internal void SetupOpponentChipsImmediate(List<BetPlacedEvent> bets, string localUsername)
+  {
+    if (bets == null || bets.Count == 0) return;
+
+    foreach (var bet in bets)
+    {
+      if (bet == null || bet.amount <= 0) continue;
+      if (bet.username == localUsername) continue;
+
+      int spotIndex = BetOptionToSpotIndex(bet.betOption);
+      if (spotIndex < 0 || !IsValidSpotIndex(spotIndex)) continue;
+
+      SpawnOpponentChipImmediate(spotIndex, bet.amount, bet.username);
+    }
+  }
+
+  private void SpawnOpponentChipImmediate(int spotIndex, double amount, string username)
+  {
+    if (!IsValidSpotIndex(spotIndex) || opponentChipPrefab == null) return;
+
+    var spot = betSpots[spotIndex];
+    if (spot == null || spot.chipParent == null || spot.chipSpawnArea == null) return;
+
+    BetChipView spawnedChip = Instantiate(opponentChipPrefab, spot.chipParent);
+    if (spawnedChip == null || spawnedChip.ChipRect == null || spawnedChip.ChipCanvasGroup == null) return;
+
+    spawnedChip.ChipCanvasGroup.alpha = 1f;
+    spawnedChip.ChipRect.localScale = Vector3.one;
+    spawnedChip.ChipRect.localRotation = Quaternion.identity;
+    spawnedChip.SetChipValueText(GameUtility.FormatCurrency(amount));
+
+    Vector2 finalPos = GetRandomAnchoredPosition(spawnedChip.ChipRect, spot.chipSpawnArea);
+    spawnedChip.ChipRect.anchoredPosition = finalPos;
+
+    opponentChipsPerSpot[spotIndex].Add(new OpponentChipEntry { ChipView = spawnedChip, Username = username });
+    UpdateCombinedTotal(spotIndex, true);
   }
 
   private void SpawnOpponentChipOnSpot(int spotIndex, double amount, string username)
@@ -736,6 +789,7 @@ public class BetPanelManager : MonoBehaviour
     });
 
     opponentChipsPerSpot[spotIndex].Add(new OpponentChipEntry { ChipView = spawnedChip, Username = username });
+    UpdateCombinedTotal(spotIndex);
   }
 
   private void ToggleChipOptions()
@@ -918,6 +972,7 @@ public class BetPanelManager : MonoBehaviour
     betUndoStack.Push(new BetUndoEntry { SpotIndex = spotIndex, ChipView = spawnedChip });
 
     UpdateSpotTotal(spotIndex);
+    UpdateCombinedTotal(spotIndex);
   }
 
   private Vector2 GetRandomAnchoredPosition(RectTransform chipRect, RectTransform spawnArea)
@@ -992,6 +1047,64 @@ public class BetPanelManager : MonoBehaviour
     }
   }
 
+  private void UpdateCombinedTotal(int spotIndex, bool immediate = false)
+  {
+    if (!IsValidSpotIndex(spotIndex)) return;
+
+    var spot = betSpots[spotIndex];
+    if (spot?.combinedTotalRoot == null || spot.combinedTotalText == null) return;
+
+    double total = 0;
+    foreach (var chip in chipsPerSpot[spotIndex])
+      if (chip != null) total += chip.ChipValue;
+    foreach (var entry in opponentChipsPerSpot[spotIndex])
+      if (entry?.ChipView != null) total += entry.ChipView.ChipValue;
+
+    spot.combinedTotalRoot.DOKill();
+
+    if (immediate)
+    {
+      spot.combinedTotalText.text = total > 0 ? GameUtility.FormatCurrency(total) : "0";
+      spot.combinedTotalRoot.localScale = total > 0 ? Vector3.one : Vector3.zero;
+      return;
+    }
+
+    if (total <= 0)
+    {
+      spot.combinedTotalRoot.DOScale(Vector3.zero, combinedTotalScaleDuration)
+        .SetEase(Ease.InBack)
+        .OnComplete(() =>
+        {
+          if (spot.combinedTotalText != null)
+            spot.combinedTotalText.text = "0";
+        });
+    }
+    else
+    {
+      string formatted = GameUtility.FormatCurrency(total);
+      bool wasZero = spot.combinedTotalRoot.localScale.x < 0.1f;
+      spot.combinedTotalText.text = formatted;
+
+      if (wasZero)
+      {
+        spot.combinedTotalRoot.localScale = Vector3.zero;
+        spot.combinedTotalRoot.DOScale(Vector3.one, combinedTotalScaleDuration)
+          .SetEase(Ease.OutBack);
+      }
+      else
+      {
+        spot.combinedTotalRoot.DOScale(Vector3.one * 1.25f, combinedTotalScaleDuration * 0.5f)
+          .SetEase(Ease.OutBack)
+          .OnComplete(() =>
+          {
+            if (spot?.combinedTotalRoot != null)
+              spot.combinedTotalRoot.DOScale(Vector3.one, combinedTotalScaleDuration * 0.5f)
+                .SetEase(Ease.InQuad);
+          });
+      }
+    }
+  }
+
   private void UndoLastBet()
   {
     if (betUndoStack.Count == 0)
@@ -1030,6 +1143,8 @@ public class BetPanelManager : MonoBehaviour
 
     chipRect.DOKill();
     chipsPerSpot[entry.SpotIndex].Remove(entry.ChipView);
+    UpdateSpotTotal(entry.SpotIndex);
+    UpdateCombinedTotal(entry.SpotIndex);
 
     if (chipUndoDestroyTarget != null)
     {
@@ -1038,7 +1153,6 @@ public class BetPanelManager : MonoBehaviour
         {
           if (entry.ChipView != null)
             Destroy(entry.ChipView.gameObject);
-          UpdateSpotTotal(entry.SpotIndex);
         });
     }
     else
@@ -1088,7 +1202,7 @@ public class BetPanelManager : MonoBehaviour
       foreach (var bet in response.payload.bets)
       {
         int spotIndex = BetOptionToSpotIndex(bet.betOption);
-        if (spotIndex >= 0)
+        if (spotIndex >= 0 && bet.delta > 0)
           SpawnChipOnSpot(spotIndex, bet.delta);
       }
     });
@@ -1163,6 +1277,7 @@ public class BetPanelManager : MonoBehaviour
         }
       }
       opponentChipsPerSpot[i].Clear();
+      UpdateCombinedTotal(i, true);
     }
 
     foreach (var chip in winningClientChips)
@@ -1245,11 +1360,20 @@ public class BetPanelManager : MonoBehaviour
           spot.lightGlow.gameObject.SetActive(true);
           spot.lightGlow.DOFade(1f, overlayFadeDuration);
         }
-        if (spot.winningSpotAnim != null && chipsPerSpot[winnerSpotIndex].Count > 0)
+        if (chipsPerSpot[winnerSpotIndex].Count > 0)
         {
-          spot.winningSpotAnim.gameObject.SetActive(true);
-          spot.winningSpotAnim.StopAnimation();
-          spot.winningSpotAnim.StartAnimation();
+          if (spot.winningSpotAnimBg != null)
+          {
+            spot.winningSpotAnimBg.gameObject.SetActive(true);
+            spot.winningSpotAnimBg.StopAnimation();
+            spot.winningSpotAnimBg.StartAnimation();
+          }
+          if (spot.winningSpotAnimFg != null)
+          {
+            spot.winningSpotAnimFg.gameObject.SetActive(true);
+            spot.winningSpotAnimFg.StopAnimation();
+            spot.winningSpotAnimFg.StartAnimation();
+          }
         }
       }
       else
@@ -1312,6 +1436,7 @@ public class BetPanelManager : MonoBehaviour
       opponentChipsPerSpot[i].Clear();
 
       UpdateSpotTotal(i);
+      UpdateCombinedTotal(i);
     }
   }
 
@@ -1492,6 +1617,11 @@ public class BetPanelManager : MonoBehaviour
     UpdateSpotTotal(winnerSpotIndex);
 
     yield return new WaitForSeconds(chipReturnDuration + 0.1f);
+
+    if (combinedTotalClearDelay > 0f)
+      yield return new WaitForSeconds(combinedTotalClearDelay);
+
+    UpdateCombinedTotal(winnerSpotIndex);
   }
 
   private void ResetOverlays()
@@ -1515,10 +1645,15 @@ public class BetPanelManager : MonoBehaviour
         spot.darkGlow.gameObject.SetActive(false);
       }
 
-      if (spot.winningSpotAnim != null)
+      if (spot.winningSpotAnimBg != null)
       {
-        spot.winningSpotAnim.StopAnimation();
-        spot.winningSpotAnim.gameObject.SetActive(false);
+        spot.winningSpotAnimBg.StopAnimation();
+        spot.winningSpotAnimBg.gameObject.SetActive(false);
+      }
+      if (spot.winningSpotAnimFg != null)
+      {
+        spot.winningSpotAnimFg.StopAnimation();
+        spot.winningSpotAnimFg.gameObject.SetActive(false);
       }
     }
   }
@@ -2062,7 +2197,7 @@ public class BetPanelManager : MonoBehaviour
       allChips.AddRange(chipsPerSpot[i]);
 
     // Clear spots immediately so HasAnyClientChips() returns false during the fly-out animation
-    for (int i = 0; i < chipsPerSpot.Count; i++) { chipsPerSpot[i].Clear(); UpdateSpotTotal(i); }
+    for (int i = 0; i < chipsPerSpot.Count; i++) { chipsPerSpot[i].Clear(); UpdateSpotTotal(i); UpdateCombinedTotal(i); }
 
     int total = 0;
     foreach (var chip in allChips)

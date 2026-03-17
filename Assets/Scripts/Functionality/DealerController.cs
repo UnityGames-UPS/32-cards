@@ -103,6 +103,9 @@ public class DealerController : MonoBehaviour
   private bool isDealSegmentPlaying;
   private readonly Queue<CardDealRequest> pendingDeals = new Queue<CardDealRequest>();
 
+  private Coroutine bettingShuffleRoutine;
+  private const float BettingShuffleMinSeconds = 8f;
+
   private void Awake()
   {
     CacheHandSiblingIndexes();
@@ -308,8 +311,29 @@ public class DealerController : MonoBehaviour
     }
   }
 
+
+  internal void OnBettingStart(float remainingSeconds)
+  {
+    if (bettingShuffleRoutine != null) { StopCoroutine(bettingShuffleRoutine); bettingShuffleRoutine = null; }
+    if (remainingSeconds < BettingShuffleMinSeconds) return;
+    bettingShuffleRoutine = StartCoroutine(BettingShuffleOnce());
+  }
+
+  private IEnumerator BettingShuffleOnce()
+  {
+    yield return new WaitForSecondsRealtime(2f);
+    ShuffleCardsAnimation();
+    bettingShuffleRoutine = null;
+  }
+
+  internal void CancelBettingShuffle()
+  {
+    if (bettingShuffleRoutine != null) { StopCoroutine(bettingShuffleRoutine); bettingShuffleRoutine = null; }
+  }
+
   internal void ResetImmediate()
   {
+    CancelBettingShuffle();
     pendingDeals.Clear();
     if (queuedDealRoutine != null)
     {
