@@ -101,6 +101,14 @@ public class BetPanelManager : MonoBehaviour
   [SerializeField] private float bettingControlsHideOffsetY = -150f;
   [SerializeField] private float bettingControlsAnimDuration = 0.4f;
 
+  [Header("Total Stake Display")]
+  [SerializeField] private RectTransform TotalStakeParent;
+  [SerializeField] private TMP_Text TotalStakeValueText;
+  [SerializeField] private float totalStakeHideOffsetY = -150f;
+  [SerializeField] private float totalStakeAnimDuration = 0.25f;
+  [SerializeField] private float totalStakePreDelay = 1f;
+  [SerializeField] private float totalStakeHoldDuration = 5f;
+
   [Header("Opponent Chips")]
   [SerializeField] private BetChipView opponentChipPrefab;
   [SerializeField] private Transform opponentChipStartRef;
@@ -141,6 +149,15 @@ public class BetPanelManager : MonoBehaviour
   [Header("Combined Total")]
   [SerializeField] private float combinedTotalScaleDuration = 0.25f;
   [SerializeField] private float combinedTotalClearDelay = 0.3f;
+
+  [Header("Round Result Text")]
+  [SerializeField] private RectTransform roundResultParent;
+  [SerializeField] private CanvasGroup roundResultCanvasGroup;
+  [SerializeField] private TMP_Text roundResultText;
+  [SerializeField] private float roundResultHideOffsetY = -150f;
+  [SerializeField] private float roundResultFadeInDuration = 0.5f;
+  [SerializeField] private float roundResultSlowMoveDuration = 1.5f;
+  [SerializeField] private float roundResultFadeOutDuration = 0.5f;
 
   [Header("Round Announcer")]
   [SerializeField] private RectTransform announcerParent;
@@ -191,6 +208,13 @@ public class BetPanelManager : MonoBehaviour
   private readonly List<BetChipView> winningClientChips = new List<BetChipView>();
   private readonly List<OpponentChipEntry> winningOpponentChips = new List<OpponentChipEntry>();
 
+  private float totalStakeBaseY;
+  private Coroutine totalStakeRoutine;
+
+  private float roundResultBaseY;
+  private double roundTotalBet;
+  private Coroutine roundResultRoutine;
+
 
   private void Awake()
   {
@@ -203,6 +227,22 @@ public class BetPanelManager : MonoBehaviour
 
     if (bettingControlsParent != null)
       bettingControlsBaseY = bettingControlsParent.anchoredPosition.y;
+
+    if (TotalStakeParent != null)
+    {
+      totalStakeBaseY = TotalStakeParent.anchoredPosition.y;
+      Vector2 tsPos = TotalStakeParent.anchoredPosition;
+      TotalStakeParent.anchoredPosition = new Vector2(tsPos.x, totalStakeBaseY + totalStakeHideOffsetY);
+    }
+
+    if (roundResultParent != null)
+    {
+      roundResultBaseY = roundResultParent.anchoredPosition.y;
+      Vector2 rrPos = roundResultParent.anchoredPosition;
+      roundResultParent.anchoredPosition = new Vector2(rrPos.x, roundResultBaseY + roundResultHideOffsetY);
+      if (roundResultCanvasGroup != null)
+        roundResultCanvasGroup.alpha = 0f;
+    }
 
     if (betSpots != null)
       foreach (var spot in betSpots)
@@ -235,6 +275,9 @@ public class BetPanelManager : MonoBehaviour
       timerTextCanvasGroup.DOKill();
     if (bettingControlsParent != null)
       bettingControlsParent.DOKill();
+    if (roundResultRoutine != null) { StopCoroutine(roundResultRoutine); roundResultRoutine = null; }
+    if (roundResultParent != null) roundResultParent.DOKill();
+    if (roundResultCanvasGroup != null) roundResultCanvasGroup.DOKill();
   }
 
   private void InitializeSpotState()
@@ -430,6 +473,8 @@ public class BetPanelManager : MonoBehaviour
     CollapseRebetButton(true);
     if (areChipOptionsExpanded)
       RetractChipOptions();
+    HideTotalStakeImmediate();
+    ResetRoundResultImmediate();
     AnimateBettingControlsY(bettingControlsBaseY + bettingControlsHideOffsetY, true);
   }
 
@@ -548,6 +593,7 @@ public class BetPanelManager : MonoBehaviour
 
     activeRoundId = roundData.roundId;
     hasReceivedFirstCardDealt = false;
+    roundTotalBet = 0;
 
     StopCashoutAnimation();
     ResetOverlays();
@@ -592,10 +638,13 @@ public class BetPanelManager : MonoBehaviour
     FadeToAnnouncer(pinkAnnouncer, true);
 
     playerPlacedBetThisRound = HasAnyClientChips();
+    roundTotalBet = GetTotalClientBet();
 
     CollapseRebetButton(true);
 
     AnimateBettingControlsY(bettingControlsBaseY + bettingControlsHideOffsetY, false);
+
+    ShowTotalStake();
   }
 
   internal void OnCardDealt(CardDealtEvent cardDealtData)
@@ -1021,7 +1070,7 @@ public class BetPanelManager : MonoBehaviour
 
     if (totalBet > 0f)
     {
-      spot.totalBetText.text = totalBet.ToString("N2");
+      spot.totalBetText.text = GameUtility.FormatCurrency(totalBet);
       if (!spot.totalBetRoot.gameObject.activeInHierarchy)
       {
         spot.totalBetRoot.DOKill();
@@ -1043,7 +1092,7 @@ public class BetPanelManager : MonoBehaviour
     else
     {
       spot.totalBetRoot.gameObject.SetActive(false);
-      spot.totalBetText.text = "0.00";
+      spot.totalBetText.text = GameUtility.FormatCurrency(0);
     }
   }
 
@@ -1336,6 +1385,27 @@ public class BetPanelManager : MonoBehaviour
           break;
         }
       }
+    }
+
+    // Fire round result text animation (don't wait)
+    if (roundTotalBet > 0 && pendingCashoutData?.payouts != null)
+    {
+      double winAmount = 0;
+      string playerName = socketManager?.initData?.player?.username;
+      if (!string.IsNullOrEmpty(playerName))
+      {
+        foreach (var payout in pendingCashoutData.payouts)
+        {
+          if (payout.username == playerName)
+          {
+            winAmount = payout.win;
+            break;
+          }
+        }
+      }
+      double net = winAmount - roundTotalBet;
+      if (roundResultRoutine != null) StopCoroutine(roundResultRoutine);
+      roundResultRoutine = StartCoroutine(RunRoundResultAnimation(net));
     }
 
     yield return new WaitForSecondsRealtime(overlayStayDuration);
@@ -1667,7 +1737,7 @@ public class BetPanelManager : MonoBehaviour
     DOTween.To(() => current, x =>
     {
       current = x;
-      spot.totalBetText.text = x.ToString("N2");
+      spot.totalBetText.text = GameUtility.FormatCurrency(x);
     }, toValue, winTotalLerpDuration).SetEase(Ease.OutQuad);
   }
 
@@ -2133,6 +2203,58 @@ public class BetPanelManager : MonoBehaviour
     AnimateBettingControlsY(bettingControlsBaseY + bettingControlsHideOffsetY, true);
   }
 
+  // ── Total Stake Display ─────────────────────────────────────────────
+
+  private float GetTotalClientBet()
+  {
+    float total = 0f;
+    for (int i = 0; i < chipsPerSpot.Count; i++)
+      for (int j = 0; j < chipsPerSpot[i].Count; j++)
+        if (chipsPerSpot[i][j] != null)
+          total += chipsPerSpot[i][j].ChipValue;
+    return total;
+  }
+
+  private void ShowTotalStake()
+  {
+    if (TotalStakeParent == null || TotalStakeValueText == null) return;
+
+    if (totalStakeRoutine != null)
+      StopCoroutine(totalStakeRoutine);
+    totalStakeRoutine = StartCoroutine(TotalStakeSequence());
+  }
+
+  private IEnumerator TotalStakeSequence()
+  {
+    float totalBet = GetTotalClientBet();
+    TotalStakeValueText.text = GameUtility.FormatCurrency(totalBet);
+
+    yield return new WaitForSecondsRealtime(totalStakePreDelay);
+
+    TotalStakeParent.DOKill();
+    TotalStakeParent.DOAnchorPosY(totalStakeBaseY, totalStakeAnimDuration).SetEase(Ease.OutBack);
+
+    yield return new WaitForSecondsRealtime(totalStakeHoldDuration);
+
+    TotalStakeParent.DOKill();
+    TotalStakeParent.DOAnchorPosY(totalStakeBaseY + totalStakeHideOffsetY, totalStakeAnimDuration).SetEase(Ease.OutBack);
+
+    totalStakeRoutine = null;
+  }
+
+  private void HideTotalStakeImmediate()
+  {
+    if (TotalStakeParent == null) return;
+    if (totalStakeRoutine != null)
+    {
+      StopCoroutine(totalStakeRoutine);
+      totalStakeRoutine = null;
+    }
+    TotalStakeParent.DOKill();
+    Vector2 pos = TotalStakeParent.anchoredPosition;
+    TotalStakeParent.anchoredPosition = new Vector2(pos.x, totalStakeBaseY + totalStakeHideOffsetY);
+  }
+
   // ── Rebet Button ───────────────────────────────────────────────────
 
   private void ExpandRebetButton()
@@ -2244,5 +2366,68 @@ public class BetPanelManager : MonoBehaviour
     for (int i = 0; i < chipsPerSpot.Count; i++)
       if (chipsPerSpot[i].Count > 0) return true;
     return false;
+  }
+
+  // ── Round Result Text Animation ─────────────────────────────────────
+
+  private IEnumerator RunRoundResultAnimation(double net)
+  {
+    if (roundResultParent == null || roundResultCanvasGroup == null || roundResultText == null)
+      yield break;
+
+    string prefix = net >= 0 ? "+" : "-";
+    string formatted = GameUtility.FormatCurrency(Math.Abs(net));
+    roundResultText.text = prefix + formatted;
+
+    float hideY = roundResultBaseY + roundResultHideOffsetY;
+    float visibleY = roundResultBaseY;
+    float aboveY = visibleY + 100f;
+    float exitY = aboveY - roundResultHideOffsetY;
+
+    roundResultParent.DOKill();
+    roundResultCanvasGroup.DOKill();
+    roundResultCanvasGroup.alpha = 0f;
+    roundResultParent.anchoredPosition = new Vector2(roundResultParent.anchoredPosition.x, hideY);
+
+    yield return new WaitForSeconds(1f);
+
+    // Phase 1: Move to visible + fade in
+    roundResultParent.DOAnchorPosY(visibleY, roundResultFadeInDuration).SetEase(Ease.OutQuad);
+    roundResultCanvasGroup.DOFade(1f, roundResultFadeInDuration).SetEase(Ease.Linear);
+    yield return new WaitForSeconds(roundResultFadeInDuration);
+
+    // Phase 2: Slow drift upward
+    roundResultParent.DOAnchorPosY(aboveY, roundResultSlowMoveDuration).SetEase(Ease.Linear);
+    yield return new WaitForSeconds(roundResultSlowMoveDuration);
+
+    // Phase 3: Continue up + fade out
+    roundResultParent.DOAnchorPosY(exitY, roundResultFadeOutDuration).SetEase(Ease.InQuad);
+    roundResultCanvasGroup.DOFade(0f, roundResultFadeOutDuration).SetEase(Ease.Linear);
+    yield return new WaitForSeconds(roundResultFadeOutDuration);
+
+    roundResultParent.anchoredPosition = new Vector2(roundResultParent.anchoredPosition.x, hideY);
+    roundResultRoutine = null;
+  }
+
+  private void ResetRoundResultImmediate()
+  {
+    if (roundResultRoutine != null)
+    {
+      StopCoroutine(roundResultRoutine);
+      roundResultRoutine = null;
+    }
+    roundTotalBet = 0;
+    if (roundResultParent != null)
+    {
+      roundResultParent.DOKill();
+      roundResultParent.anchoredPosition = new Vector2(
+        roundResultParent.anchoredPosition.x,
+        roundResultBaseY + roundResultHideOffsetY);
+    }
+    if (roundResultCanvasGroup != null)
+    {
+      roundResultCanvasGroup.DOKill();
+      roundResultCanvasGroup.alpha = 0f;
+    }
   }
 }

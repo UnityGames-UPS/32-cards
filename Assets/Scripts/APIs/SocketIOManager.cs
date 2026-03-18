@@ -387,6 +387,24 @@ public class SocketIOManager : MonoBehaviour
     });
   }
 
+  internal void EmitBetHistory(int page, Action<BetHistoryResponse> callback)
+  {
+    EmitRequest("BET_HISTORY", new { page = page }, (string json) =>
+    {
+      try
+      {
+        BetHistoryResponse response = JsonConvert.DeserializeObject<BetHistoryResponse>(json);
+        Debug.Log("BET_HISTORY RESPONSE: " + json);
+        callback?.Invoke(response);
+      }
+      catch (Exception ex)
+      {
+        Debug.LogError("Error parsing BET_HISTORY response: " + ex.Message);
+        callback?.Invoke(null);
+      }
+    });
+  }
+
   internal void EmitUndoBet(Action<UndoBetResponse> callback)
   {
     EmitRequest("UNDO_BET", new { }, (string json) =>
@@ -1248,4 +1266,41 @@ public class UndoBetEntry
   public string betType;
   public string betOption;
   public double amount;
+}
+
+//BET HISTORY ACK
+[Serializable]
+public class BetHistoryResponse
+{
+  public bool success;
+  public BetHistoryPayload payload;
+}
+
+[Serializable]
+public class BetHistoryPayload
+{
+  public List<BetHistoryEntry> history;
+  public BetHistoryMeta meta;
+}
+
+[Serializable]
+public class BetHistoryEntry
+{
+  public string round_id;
+  public double bet_amount;
+  public double win_amount;
+  public string level;
+  public int win_score;
+  public int cards_dealt;
+  public string match_side;
+  public string created_at;
+}
+
+[Serializable]
+public class BetHistoryMeta
+{
+  public int total;
+  public int page;
+  public int limit;
+  public int pages;
 }

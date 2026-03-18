@@ -17,6 +17,7 @@ public class UiManager : MonoBehaviour
   [SerializeField] private DealerController dealerController;
   [SerializeField] private LeaderboardController leaderboardController;
   [SerializeField] private GameStatsUIController gameStatsUIController;
+  [SerializeField] private BetHistoryManager betHistoryManager;
   [SerializeField] private Button HistoryClose_button;
   [SerializeField] private Button InfoClose_button;
   [SerializeField] private Button InfoLeft_button;
@@ -299,7 +300,7 @@ public class UiManager : MonoBehaviour
     if (GameRules) GameRules.onClick.AddListener(delegate { OpenPopup(InfoPopup_Object); });
 
     if (History) History.onClick.RemoveAllListeners();
-    if (History) History.onClick.AddListener(delegate { OpenPopup(HistoryPopup_Object); });
+    if (History) History.onClick.AddListener(delegate { OpenHistoryPopup(); });
 
     if (Sound) Sound.onClick.RemoveAllListeners();
     if (Sound) Sound.onClick.AddListener(delegate { ToggleSound(); });
@@ -317,7 +318,7 @@ public class UiManager : MonoBehaviour
     if (GameRulesGP) GameRulesGP.onClick.AddListener(delegate { OpenPopup(InfoPopup_Object); });
 
     if (HistoryGP) HistoryGP.onClick.RemoveAllListeners();
-    if (HistoryGP) HistoryGP.onClick.AddListener(delegate { OpenPopup(HistoryPopup_Object); });
+    if (HistoryGP) HistoryGP.onClick.AddListener(delegate { OpenHistoryPopup(); });
 
     if (SoundGP) SoundGP.onClick.RemoveAllListeners();
     if (SoundGP) SoundGP.onClick.AddListener(delegate { ToggleSound(); });
@@ -962,6 +963,12 @@ public class UiManager : MonoBehaviour
   {
     isExit = true;
     StartCoroutine(socketManager.CloseSocket());
+  }
+
+  private void OpenHistoryPopup()
+  {
+    if (betHistoryManager != null) betHistoryManager.OpenPanel();
+    OpenPopup(HistoryPopup_Object);
   }
 
   internal void OpenPopup(GameObject Popup)
