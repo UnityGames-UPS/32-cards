@@ -927,7 +927,7 @@ public class UiManager : MonoBehaviour
 
   internal void OpenDisconnectPopup()
   {
-    if(isExit)
+    if (isExit)
       return;
 
     disconnectedPopupOpen = true;
@@ -936,7 +936,7 @@ public class UiManager : MonoBehaviour
 
   internal void OpenReconnectPopup()
   {
-    if(isExit)
+    if (isExit)
       return;
 
     reconnectPopupOpen = true;
@@ -999,7 +999,7 @@ public class UiManager : MonoBehaviour
       rect.localScale = Vector3.zero;
 
       // Scale up with bounce
-      rect.DOScale(Vector3.one, 0.5f)
+      rect.DOScale(Vector3.one, 0.35f)
           .SetEase(Ease.OutBack);
     }
   }
@@ -1024,7 +1024,7 @@ public class UiManager : MonoBehaviour
       rect.DOKill();
 
       // Scale down smoothly
-      rect.DOScale(Vector3.zero, 0.6f)
+      rect.DOScale(Vector3.zero, 0.45f)
           .SetEase(Ease.InBack)
           .OnComplete(() =>
           {

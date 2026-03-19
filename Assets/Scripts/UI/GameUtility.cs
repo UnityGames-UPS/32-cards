@@ -5,23 +5,25 @@ internal static class GameUtility
 {
   private static readonly Dictionary<double, string> _currencyCache = new Dictionary<double, string>();
   private static readonly Dictionary<double, string> _currencySkipKCache = new Dictionary<double, string>();
+  private static readonly Dictionary<double, string> _currencyK1000Cache = new Dictionary<double, string>();
   private static readonly StringBuilder _sb = new StringBuilder(16);
 
-  internal static string FormatCurrency(double amount, bool skipKFormat = false)
+  internal static string FormatCurrency(double amount, bool skipKFormat = false, bool kFrom1000 = false)
   {
-    var cache = skipKFormat ? _currencySkipKCache : _currencyCache;
+    var cache = skipKFormat ? _currencySkipKCache : (kFrom1000 ? _currencyK1000Cache : _currencyCache);
     if (cache.TryGetValue(amount, out string cached)) return cached;
 
     string result;
-    if (amount >= 10000 && !skipKFormat)
+    double kThreshold = kFrom1000 ? 1000 : 10000;
+    if (amount >= kThreshold && !skipKFormat)
     {
       _sb.Clear();
-      _sb.Append((amount / 1000).ToString("N2").TrimEnd('0').TrimEnd('.'));
+      _sb.Append((amount / 1000).ToString("F2").TrimEnd('0').TrimEnd('.'));
       _sb.Append("K");
       result = _sb.ToString();
     }
-    else if (amount < 1) result = amount.ToString("N2");
-    else if (amount % 1 != 0) result = amount.ToString("N2");
+    else if (amount < 1) result = amount.ToString("F2");
+    else if (amount % 1 != 0) result = amount.ToString("F2");
     else result = amount.ToString("F0");
 
     if (cache.Count < 300) cache[amount] = result;
