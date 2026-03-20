@@ -21,6 +21,8 @@ public class CardController : MonoBehaviour
     public GameObject TopDownCard;
   }
 
+  [SerializeField] private AudioManager audioController;
+
   [Header("Flip Settings")]
   [SerializeField] private float CardFlipDurationSeconds = 0.5f;
   [SerializeField] private float WaitForFlipSeconds = 0.5f;
@@ -71,7 +73,7 @@ public class CardController : MonoBehaviour
   internal void SpawnCard(int type, Card cardData, CardDealtScores scores)
   {
     InitializePlayerCollections();
-
+    audioController?.PlaySFX(SoundEffect.CardFlip);
     Sprite cardSprite = ResolveCardSprite(cardData);
     GameObject topDownCard = SpawnTopDownCard(type, cardSprite);
     GameObject prefab = null;
@@ -524,6 +526,8 @@ public class CardController : MonoBehaviour
     {
       yield return new WaitForSeconds(startDelay);
     }
+
+    audioController?.PlaySFX(SoundEffect.CardsReset);
 
     DisablePlayerCards(8);
     DisablePlayerCards(11);

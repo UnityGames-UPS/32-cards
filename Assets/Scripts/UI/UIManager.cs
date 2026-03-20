@@ -245,6 +245,8 @@ public class UiManager : MonoBehaviour
 
     if (jsFunctCalls != null)
       jsFunctCalls.RegisterFullscreenListener(gameObject.name);
+    if (jsFunctCalls != null)
+      jsFunctCalls.RegisterVisibilityListener(gameObject.name);
   }
 
   private void InitializePopupViews()
@@ -370,7 +372,7 @@ public class UiManager : MonoBehaviour
     bool nextValue = !GetDoNotShowAgain();
     SetDoNotShowAgain(nextValue);
     RefreshStartupDoNotShowAgainVisual();
-    if (audioController) audioController.PlayButtonAudio();
+    if (audioController) audioController.PlaySFX(SoundEffect.ButtonClick);
   }
 
   private bool GetDoNotShowAgain()
@@ -392,7 +394,7 @@ public class UiManager : MonoBehaviour
 
   IEnumerator TryEnterLevel(int level)
   {
-    if (audioController) audioController.PlayButtonAudio();
+    if (audioController) audioController.PlaySFX(SoundEffect.LobbyButton);
     string levelName = "";
     switch (level)
     {
@@ -480,6 +482,8 @@ public class UiManager : MonoBehaviour
   internal void OnRoundStart(RoundStartEvent roundData)
   {
     UpdateGamePageMinMaxTexts();
+
+    audioController?.PlaySFX(SoundEffect.RoundStart);
 
     if (roundData.roundId != null && !string.IsNullOrEmpty(roundData.roundId))
       GProundIDText.text = roundData.roundId;
@@ -667,6 +671,7 @@ public class UiManager : MonoBehaviour
 
   internal void OnRoundResult(int sideValue)
   {
+    audioController.PlaySFX(SoundEffect.OnRoundEnd);
     // If we joined mid-deal, cashout will arrive right after and handle the reset + page reveal
     if (pendingLevelEntry)
       return;
@@ -811,7 +816,7 @@ public class UiManager : MonoBehaviour
 
   IEnumerator GoHomeButton()
   {
-    if (audioController) audioController.PlayBetButtonAudio();
+    if (audioController) audioController.PlaySFX(SoundEffect.ButtonClick);
     RetractMenuGP();
 
     // Stop all dealer/card/chip state while gamePage is still active so
@@ -890,6 +895,7 @@ public class UiManager : MonoBehaviour
 
   private void ExpandMenu()
   {
+    audioController.PlaySFX(SoundEffect.ButtonClick);
     sidepanel.SetActive(true); // show panel immediately
     if (sidepanelCloseButton) sidepanelCloseButton.interactable = false;
     AnimateLobbyButtonsOpen();
@@ -909,6 +915,7 @@ public class UiManager : MonoBehaviour
 
   private void RetractMenu()
   {
+    audioController.PlaySFX(SoundEffect.ButtonClick);
     if (sidepanelCloseButton) sidepanelCloseButton.interactable = false;
     AnimateLobbyButtonsClose();
     if (MenuButton != null && lobbyMenuButtonOriginalParent != null)
@@ -961,6 +968,7 @@ public class UiManager : MonoBehaviour
 
   private void ClientExited()
   {
+    audioController?.PlaySFX(SoundEffect.ButtonClick);
     isExit = true;
     StartCoroutine(socketManager.CloseSocket());
   }
@@ -973,7 +981,7 @@ public class UiManager : MonoBehaviour
 
   internal void OpenPopup(GameObject Popup)
   {
-    if (audioController) audioController.PlayButtonAudio();
+    if (audioController) audioController.PlaySFX(SoundEffect.ButtonClick);
     if (mainPopupBGImage != null)
     {
       mainPopupBGImage.DOKill();
@@ -1006,7 +1014,7 @@ public class UiManager : MonoBehaviour
 
   internal void ClosePopup(GameObject Popup)
   {
-    if (audioController) audioController.PlayButtonAudio();
+    if (audioController) audioController.PlaySFX(SoundEffect.ButtonClick);
 
     if (mainPopupBGImage != null)
     {
@@ -1040,6 +1048,7 @@ public class UiManager : MonoBehaviour
 
   private void ToggleMusic()
   {
+    audioController?.PlaySFX(SoundEffect.ButtonClick);
     isMusic = !isMusic;
     Sprite musicSprite = isMusic ? MusicOnSprite : MusicOffSprite;
     if (Music != null && musicSprite != null)
@@ -1052,11 +1061,12 @@ public class UiManager : MonoBehaviour
       var img = MusicGP.GetComponent<Image>();
       if (img != null) img.sprite = musicSprite;
     }
-    audioController.ToggleMute(!isMusic, "bg");
+    if (audioController) audioController.ToggleMusicMute(!isMusic);
   }
 
   private void ToggleSound()
   {
+    audioController?.PlaySFX(SoundEffect.ButtonClick);
     isSound = !isSound;
     Sprite soundSprite = isSound ? SoundOnSprite : SoundOffSprite;
     if (Sound != null && soundSprite != null)
@@ -1070,14 +1080,12 @@ public class UiManager : MonoBehaviour
       if (img != null) img.sprite = soundSprite;
     }
     bool mute = !isSound;
-    if (audioController) audioController.ToggleMute(mute, "button");
-    if (audioController) audioController.ToggleMute(mute, "wl");
-    if (audioController) audioController.ToggleMute(mute, "win");
-    if (audioController) audioController.ToggleMute(mute, "bet");
+    if (audioController) audioController.ToggleSoundMute(mute);
   }
 
   private void ToggleExpandShrink()
   {
+    audioController?.PlaySFX(SoundEffect.ButtonClick);
     isExpanded = !isExpanded;
     ApplyExpandShrinkSprites();
     if (jsFunctCalls != null)
@@ -1087,6 +1095,17 @@ public class UiManager : MonoBehaviour
       else
         jsFunctCalls.RequestShrinkGame();
     }
+  }
+
+  // Called by the JS visibility/focus listener when the tab or window gains/loses focus
+  public void OnFocusChanged(string value)
+  {
+    bool focused = value == "1";
+    if (focused)
+      audioController?.ResumeAudio();
+    else
+      audioController?.PauseAllAudio();
+    socketManager?.HandleFocusChange(focused);
   }
 
   // Called by the JS fullscreen change listener when the user exits fullscreen externally (e.g. Escape key)
@@ -1153,7 +1172,7 @@ public class UiManager : MonoBehaviour
   {
     if (InfoPages_Objects == null || InfoPages_Objects.Count == 0) return;
     if (currentInfoPage <= 0) return;
-    if (audioController) audioController.PlayButtonAudio();
+    if (audioController) audioController.PlaySFX(SoundEffect.ButtonClick);
     currentInfoPage--;
     UpdateInfoUI();
   }
@@ -1162,7 +1181,7 @@ public class UiManager : MonoBehaviour
   {
     if (InfoPages_Objects == null || InfoPages_Objects.Count == 0) return;
     if (currentInfoPage >= InfoPages_Objects.Count - 1) return;
-    if (audioController) audioController.PlayButtonAudio();
+    if (audioController) audioController.PlaySFX(SoundEffect.ButtonClick);
     currentInfoPage++;
     UpdateInfoUI();
   }
@@ -1243,6 +1262,7 @@ public class UiManager : MonoBehaviour
 
   private void ExpandMenuGP()
   {
+    audioController.PlaySFX(SoundEffect.ButtonClick);
     sidepanelGP.SetActive(true); // show panel immediately
     if (sidepanelGPCloseButton) sidepanelGPCloseButton.interactable = false;
     AnimateGPButtonsOpen();
@@ -1262,6 +1282,7 @@ public class UiManager : MonoBehaviour
 
   private void RetractMenuGP()
   {
+    audioController.PlaySFX(SoundEffect.ButtonClick);
     if (sidepanelGPCloseButton) sidepanelGPCloseButton.interactable = false;
     AnimateGPButtonsClose();
     if (MenuButtonGP != null && gpMenuButtonOriginalParent != null)

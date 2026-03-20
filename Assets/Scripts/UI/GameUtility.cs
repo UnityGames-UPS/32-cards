@@ -22,6 +22,7 @@ internal static class GameUtility
       _sb.Append("K");
       result = _sb.ToString();
     }
+    else if (amount == 0) result = result = amount.ToString("F0");
     else if (amount < 1) result = amount.ToString("F2");
     else if (amount % 1 != 0) result = amount.ToString("F2");
     else result = amount.ToString("F0");

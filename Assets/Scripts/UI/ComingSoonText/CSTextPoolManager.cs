@@ -3,6 +3,7 @@ using UnityEngine;
 public class CSTextPoolManager : GenericObjectPool<CSTextPoolItem>
 {
   [Header("Text Animation")]
+  [SerializeField] private AudioManager audioController;
   [SerializeField] private Canvas rootCanvas;
   [SerializeField] private float startYOffset = 70f;
   [SerializeField] private float endYOffset = 50f;
@@ -11,6 +12,7 @@ public class CSTextPoolManager : GenericObjectPool<CSTextPoolItem>
 
   internal void PlayAtScreenPoint(Vector2 screenPoint)
   {
+    audioController?.PlaySFX(SoundEffect.ButtonClick);
     RectTransform parentRect = ParentTransform as RectTransform;
     if (parentRect == null) return;
 

@@ -10,6 +10,7 @@ public class BetOptionsManager : MonoBehaviour
 
   [Header("Bet Options Popup")]
   [SerializeField] private SocketIOManager socketManager;
+  [SerializeField] private AudioManager audioController;
   [SerializeField] private UiManager uiManager;
   [SerializeField] private RectTransform betOptionsPopupRoot;
   [SerializeField] private Button betOptionsOpenButton;
@@ -96,6 +97,7 @@ public class BetOptionsManager : MonoBehaviour
 
   private void OpenBetOptionsPopup()
   {
+    audioController?.PlaySFX(SoundEffect.ButtonClick);
     if (betOptionsPopupRoot == null)
       return;
 
@@ -122,6 +124,7 @@ public class BetOptionsManager : MonoBehaviour
 
   private void CloseBetOptionsPopup()
   {
+    audioController?.PlaySFX(SoundEffect.ButtonClick);
     if (betOptionsPopupRoot == null)
       return;
 
@@ -143,6 +146,7 @@ public class BetOptionsManager : MonoBehaviour
 
   private void OnConfirmButtonClicked()
   {
+    audioController?.PlaySFX(SoundEffect.ButtonClick);
     if (isConfirmInProgress)
       return;
 
@@ -175,6 +179,7 @@ public class BetOptionsManager : MonoBehaviour
 
   private void OnLevelButtonClicked(int levelIndex)
   {
+    audioController?.PlaySFX(SoundEffect.ButtonClick);
     selectedLevelIndex = Mathf.Clamp(levelIndex, 0, 3);
     RefreshSelectionVisuals();
     RefreshPlayerRangeTextsForSelectedLevel();

@@ -59,6 +59,8 @@ public class BetPanelManager : MonoBehaviour
     public string Username;
   }
 
+  [SerializeField] private AudioManager audioController;
+
   [Header("Chip Selector")]
   [SerializeField] private ChipButtonView mainChip;
   [SerializeField] private List<ChipButtonView> chipOptions;
@@ -634,6 +636,8 @@ public class BetPanelManager : MonoBehaviour
       roundCountdownRoutine = null;
     }
 
+    audioController.PlaySFX(SoundEffect.BetLocked);
+
     FadeTimer(false);
     FadeToAnnouncer(pinkAnnouncer, true);
 
@@ -851,6 +855,7 @@ public class BetPanelManager : MonoBehaviour
 
   private void ExpandChipOptions()
   {
+    audioController?.PlaySFX(SoundEffect.BetOption);
     if (mainChip == null || mainChip.button == null)
       return;
 
@@ -875,6 +880,8 @@ public class BetPanelManager : MonoBehaviour
 
   private void RetractChipOptions()
   {
+    audioController?.PlaySFX(SoundEffect.BetOption);
+   
     if (mainChip == null || mainChip.button == null)
       return;
 
@@ -965,7 +972,8 @@ public class BetPanelManager : MonoBehaviour
     if (spot == null || spot.chipParent == null || spot.chipSpawnArea == null)
       return;
 
-    RetractChipOptions();
+    if(areChipOptionsExpanded)
+      RetractChipOptions();
 
     string betOption = BetOptionNames[spotIndex];
     int amountIndex = GetChipAmountIndex();
@@ -1016,6 +1024,7 @@ public class BetPanelManager : MonoBehaviour
     Sequence seq = DOTween.Sequence();
     seq.Join(spawnedChip.ChipRect.DOAnchorPos(finalPos, chipSpawnDuration).SetEase(Ease.OutBack));
     seq.Join(spawnedChip.ChipCanvasGroup.DOFade(1f, chipSpawnDuration * 0.5f).SetEase(Ease.Linear));
+    audioController?.PlaySFX(SoundEffect.OnBet);
 
     chipsPerSpot[spotIndex].Add(spawnedChip);
     betUndoStack.Push(new BetUndoEntry { SpotIndex = spotIndex, ChipView = spawnedChip });
@@ -1159,6 +1168,7 @@ public class BetPanelManager : MonoBehaviour
     if (betUndoStack.Count == 0)
       return;
 
+    audioController?.PlaySFX(SoundEffect.OnCancelUndo);
     socketManager.EmitUndoBet((UndoBetResponse response) =>
     {
       if (response == null || !response.success)
@@ -1171,6 +1181,7 @@ public class BetPanelManager : MonoBehaviour
 
       uiManager.SetBalanceText(response.payload.balance);
       RemoveLastChipVisual();
+
 
       if (betUndoStack.Count == 0)
         CollapseBetActionButtons();
@@ -1213,6 +1224,7 @@ public class BetPanelManager : MonoBehaviour
 
   private void CancelAllBets()
   {
+    audioController.PlaySFX(SoundEffect.OnCancelUndo);
     socketManager.EmitCancelBet((CancelBetResponse response) =>
     {
       if (response == null || !response.success)
@@ -1225,6 +1237,8 @@ public class BetPanelManager : MonoBehaviour
 
       uiManager.SetBalanceText(response.payload.balance);
       CollapseBetActionButtons();
+
+
       AnimateCancelChips(() =>
       {
         if (playerPlacedBetThisRound)
@@ -1362,6 +1376,7 @@ public class BetPanelManager : MonoBehaviour
 
     // Fade overlays + fade out losing chips
     yield return StartCoroutine(FadeOverlaysAndLosingChips(winnerSpotIndex));
+    audioController.PlayPlayerWinSFX(currentWinner);
 
     yield return new WaitForSeconds(preWinningChipDelay);
 
@@ -1617,6 +1632,9 @@ public class BetPanelManager : MonoBehaviour
     clientChips.AddRange(chipsPerSpot[winnerSpotIndex]);
     clientChips.AddRange(winningClientChips);
 
+    if(clientChips.Count > 0)
+      audioController.PlaySFX(SoundEffect.ChipsWon);
+      
     foreach (var chip in clientChips)
     {
       if (chip == null || chip.ChipRect == null) continue;
@@ -1934,10 +1952,12 @@ public class BetPanelManager : MonoBehaviour
       }
       else if (value == 5)
       {
+        audioController.PlaySFX(SoundEffect.TimeIsRunningOut);
         PlaySynchronizedScale(yellowAnnouncer);
       }
       else if (value <= 4)
       {
+        audioController.PlaySFX(SoundEffect.CountDownTimer);
         PlayTimerScaleOnly();
       }
 
@@ -2233,7 +2253,7 @@ public class BetPanelManager : MonoBehaviour
 
     TotalStakeParent.DOKill();
     TotalStakeParent.DOAnchorPosY(totalStakeBaseY, totalStakeAnimDuration).SetEase(Ease.OutBack);
-
+    audioController?.PlaySFX(SoundEffect.NoMoreBets);
     yield return new WaitForSecondsRealtime(totalStakeHoldDuration);
 
     TotalStakeParent.DOKill();

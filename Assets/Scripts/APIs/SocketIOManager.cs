@@ -56,7 +56,7 @@ public class SocketIOManager : MonoBehaviour
     isBeingDestroyed = true;
   }
 
-  private void OnApplicationFocus(bool focus)
+  internal void HandleFocusChange(bool focus)
   {
     hasFocus = focus;
 
@@ -76,6 +76,10 @@ public class SocketIOManager : MonoBehaviour
       }
     }
   }
+
+#if !UNITY_WEBGL || UNITY_EDITOR
+  private void OnApplicationFocus(bool focus) => uiManager.OnFocusChanged(focus ? "1" : "0");
+#endif
 
   public void CloseGame()
   {

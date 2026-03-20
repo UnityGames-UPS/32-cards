@@ -3,112 +3,134 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 
+public enum SoundEffect
+{
+  ButtonClick,
+  LobbyButton,
+  BetOption,
+  OnBet,
+  BetLocked,
+  OnCancelUndo,
+  CardFlip,
+  CardsReset,
+  RoundStart,
+  RoundResult,
+  OnRoundEnd,
+  ChipsWon,
+  CountDownTimer,
+  TimeIsRunningOut,
+  NoMoreBets
+}
+
 public class AudioManager : MonoBehaviour
 {
-    [SerializeField] private AudioSource bg_adudio;
-    [SerializeField] internal AudioSource audioPlayer_wl;
-    [SerializeField] internal AudioSource audioPlayer_button;
-    [SerializeField] internal AudioSource audioBet_button;
-    [SerializeField] internal AudioSource audioWin;
+  [SerializeField] private AudioSource bgMusicSource;
+  [SerializeField] private AudioSource buttonClickSource;
+  [SerializeField] private AudioSource RoundResultSource;
+  [SerializeField] private AudioSource BetLockedSource;
+  [SerializeField] private AudioSource OnRoundEndSource; //When all the cards are revealed
+  [SerializeField] private AudioSource CardsResetSource;
+  [SerializeField] private AudioSource CardFlipSource;
+  [SerializeField] private AudioSource BetOptionSource;
+  [SerializeField] private AudioSource LobbyButtonSource;
+  [SerializeField] private AudioSource TimeIsRunningOutSource;
+  [SerializeField] private AudioSource OnBetSource;
+  [SerializeField] private AudioSource OnChipsWonSource;
+  [SerializeField] private AudioSource CountDownTimerSource;
+  [SerializeField] private AudioSource OnRoundStartSource;
+  [SerializeField] private AudioSource NoMoreBetsSource;
+  [SerializeField] private AudioSource OnCancelUndoSource;
+  [SerializeField] private AudioClip player8WinsClip;
+  [SerializeField] private AudioClip player9WinsClip;
+  [SerializeField] private AudioClip player10WinsClip; 
+  [SerializeField] private AudioClip player11WinsClip;
+  
 
+  private bool isSoundMuted = false;
+  private bool isMusicMuted = false;
 
-    [SerializeField] private AudioClip[] clips;
+  internal void PlayPlayerWinSFX(int playerIndex)
+  {
+    if (isSoundMuted) return;
 
-    private void Start()
+    AudioClip clipToPlay = playerIndex switch
     {
-        if (bg_adudio) bg_adudio.Play();
-        audioPlayer_button.clip = clips[0];
-        audioBet_button.clip = clips[3];
-        audioWin.clip = clips[4];
+      8 => player8WinsClip,
+      9 => player9WinsClip,
+      10 => player10WinsClip,
+      11 => player11WinsClip,
+      _ => null
+    };
 
-    }
+    RoundResultSource.clip = clipToPlay;
+    if (clipToPlay != null) RoundResultSource.Play();
+  }
 
+  internal void PlaySFX(SoundEffect sfx)
+  {
+    if (isSoundMuted) return;
 
-    internal void PlayWLAudio(string type)
+    AudioSource source = sfx switch
     {
-        audioPlayer_wl.loop = false;
-        int index = 0;
-        switch (type)
-        {
-            // case "bet":
-            //     index = 0;
-            //     audioPlayer_wl.loop = true;
-            //     break;
-            case "car":
-                index = 1;
-                break;
-            case "numberchange":
-                index = 2;
-                break;
-            case "bet":
-                index = 3;
-                break;
-            case "win":
-                index = 4;
-                break;
+      SoundEffect.ButtonClick => buttonClickSource,
+      SoundEffect.LobbyButton => LobbyButtonSource,
+      SoundEffect.BetOption => BetOptionSource,
+      SoundEffect.OnBet => OnBetSource,
+      SoundEffect.BetLocked => BetLockedSource,
+      SoundEffect.OnCancelUndo => OnCancelUndoSource,
+      SoundEffect.CardFlip => CardFlipSource,
+      SoundEffect.CardsReset => CardsResetSource,
+      SoundEffect.RoundStart => OnRoundStartSource,
+      SoundEffect.OnRoundEnd => OnRoundEndSource,
+      SoundEffect.ChipsWon => OnChipsWonSource,
+      SoundEffect.CountDownTimer => CountDownTimerSource,
+      SoundEffect.TimeIsRunningOut => TimeIsRunningOutSource,
+      SoundEffect.NoMoreBets => NoMoreBetsSource,
+      _ => null
+    };
 
-        }
-        StopWLAaudio();
-        audioPlayer_wl.clip = clips[index];
-        audioPlayer_wl.Play();
+    if (source != null) source.Play();
+  }
 
-    }
+  internal void PlayBgMusic()
+  {
+    if (bgMusicSource != null) bgMusicSource.Play();
+  }
 
+  internal void ToggleSoundMute(bool mute)
+  {
+    isSoundMuted = mute;
+    AudioSource[] sfxSources = {
+            buttonClickSource, RoundResultSource, BetLockedSource, OnRoundEndSource,
+            CardsResetSource, CardFlipSource, BetOptionSource, LobbyButtonSource,
+            TimeIsRunningOutSource, OnBetSource, OnChipsWonSource, CountDownTimerSource,
+            OnRoundStartSource, NoMoreBetsSource, OnCancelUndoSource
+        };
+    foreach (var src in sfxSources)
+      if (src != null) src.mute = mute;
+  }
 
-    internal void PlayButtonAudio()
-    {
-        audioPlayer_button.Play();
-    }
+  internal void ToggleMusicMute(bool mute)
+  {
+    isMusicMuted = mute;
+    if (bgMusicSource != null) bgMusicSource.mute = mute;
+  }
 
-    internal void PlayBetButtonAudio()
-    {
-        audioBet_button.Play();
-    }
+  internal void PauseAllAudio()
+  {
+    if (bgMusicSource != null) bgMusicSource.Pause();
+    AudioSource[] sfxSources = {
+        buttonClickSource, RoundResultSource, BetLockedSource, OnRoundEndSource,
+        CardsResetSource, CardFlipSource, BetOptionSource, LobbyButtonSource,
+        TimeIsRunningOutSource, OnBetSource, OnChipsWonSource, CountDownTimerSource,
+        OnRoundStartSource, NoMoreBetsSource, OnCancelUndoSource
+    };
+    foreach (var src in sfxSources)
+      if (src != null) src.Stop();
+  }
 
-    internal void PlayWinAudio()
-    {
-        audioWin.Play();
-    }
-
-
-
-    internal void StopWLAaudio()
-    {
-        audioPlayer_wl.Stop();
-        audioPlayer_wl.loop = false;
-    }
-
-
-    internal void StopBgAudio()
-    {
-        bg_adudio.Stop();
-    }
-
-    internal void ToggleMute(bool toggle, string type = "all")
-    {
-        switch (type)
-        {
-            case "bg":
-                bg_adudio.mute = toggle;
-                break;
-            case "button":
-                audioPlayer_button.mute = toggle;
-                break;
-            case "wl":
-                audioPlayer_wl.mute = toggle;
-                break;
-            case "win":
-                audioWin.mute = toggle;
-                break;
-            case "bet":
-                audioBet_button.mute = toggle;
-                break;
-            case "all":
-                audioPlayer_wl.mute = toggle;
-                bg_adudio.mute = toggle;
-                audioPlayer_button.mute = toggle;
-                break;
-        }
-    }
-
+  internal void ResumeAudio()
+  {
+    if (bgMusicSource != null && !isMusicMuted) bgMusicSource.UnPause();
+  }
 }

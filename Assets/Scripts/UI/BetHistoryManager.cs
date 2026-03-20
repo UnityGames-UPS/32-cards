@@ -6,6 +6,7 @@ using TMPro;
 public class BetHistoryManager : MonoBehaviour
 {
   [SerializeField] private SocketIOManager socketManager;
+  [SerializeField] private AudioManager audioController;
   [SerializeField] private List<BetHistoryItemView> historyItems;
   [SerializeField] private GameObject noBetHistoryObject;
   [SerializeField] private TMP_Text pageCountText;
@@ -23,25 +24,25 @@ public class BetHistoryManager : MonoBehaviour
     if (prevPageButton)
     {
       prevPageButton.onClick.RemoveAllListeners();
-      prevPageButton.onClick.AddListener(delegate { RequestPage(Mathf.Max(1, currentPage - 1)); });
+      prevPageButton.onClick.AddListener(delegate { audioController?.PlaySFX(SoundEffect.ButtonClick); RequestPage(Mathf.Max(1, currentPage - 1)); });
     }
 
     if (skipPrevButton)
     {
       skipPrevButton.onClick.RemoveAllListeners();
-      skipPrevButton.onClick.AddListener(delegate { RequestPage(Mathf.Max(1, currentPage - 5)); });
+      skipPrevButton.onClick.AddListener(delegate { audioController?.PlaySFX(SoundEffect.ButtonClick); RequestPage(Mathf.Max(1, currentPage - 5)); });
     }
 
     if (nextPageButton)
     {
       nextPageButton.onClick.RemoveAllListeners();
-      nextPageButton.onClick.AddListener(delegate { RequestPage(Mathf.Min(totalPages, currentPage + 1)); });
+      nextPageButton.onClick.AddListener(delegate { audioController?.PlaySFX(SoundEffect.ButtonClick); RequestPage(Mathf.Min(totalPages, currentPage + 1)); });
     }
 
     if (skipNextButton)
     {
       skipNextButton.onClick.RemoveAllListeners();
-      skipNextButton.onClick.AddListener(delegate { RequestPage(Mathf.Min(totalPages, currentPage + 5)); });
+      skipNextButton.onClick.AddListener(delegate { audioController?.PlaySFX(SoundEffect.ButtonClick); RequestPage(Mathf.Min(totalPages, currentPage + 5)); });
     }
   }
 
