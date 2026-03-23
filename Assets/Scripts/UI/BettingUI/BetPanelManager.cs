@@ -1456,7 +1456,7 @@ public class BetPanelManager : MonoBehaviour
     yield return StartCoroutine(CleanupWinningSpotChips(winnerSpotIndex));
 
     // Update balance from cashout payout after chips reach the undo target
-    if (pendingCashoutData?.payouts != null && socketManager?.initData != null)
+    if (pendingCashoutData?.payouts != null)
     {
       string username = socketManager.initData.player.username;
       foreach (var payout in pendingCashoutData.payouts)
@@ -1487,7 +1487,7 @@ public class BetPanelManager : MonoBehaviour
       }
       double net = winAmount - roundTotalBet;
       if (roundResultRoutine != null) StopCoroutine(roundResultRoutine);
-      roundResultRoutine = StartCoroutine(RunRoundResultAnimation(net));
+      roundResultRoutine = StartCoroutine(RunRoundNetResultTextAnimation(net));
     }
 
     yield return new WaitForSecondsRealtime(overlayStayDuration);
@@ -1617,54 +1617,91 @@ public class BetPanelManager : MonoBehaviour
     if (spot == null || spot.chipParent == null || spot.chipSpawnArea == null)
       yield break;
 
-    double payoutMultiplier = GetPayoutMultiplier(currentWinner);
-
-    if (currentBonusPlayer == currentWinner)
-      payoutMultiplier *= GetBonusMultiplier(currentWinner);
+    if (pendingCashoutData?.payouts == null)
+    {
+      Debug.LogWarning("[SpawnWinningChips] pendingCashoutData or payouts is null — skipping winning chip spawn.");
+      yield break;
+    }
 
     string currentLevel = uiManager != null ? uiManager.CurrentLevel : "";
     List<double> levelBets = GetLevelBets(currentLevel);
 
-    // Lerp spot total text from bet amount to total win amount (bet + bet * payout)
+    // Client chips
     double clientTotal = 0.0;
     foreach (var chip in chipsPerSpot[winnerSpotIndex])
     {
       if (chip != null) clientTotal += chip.ChipValue;
     }
-    if (clientTotal > 0.0)
-    {
-      float winTotal = (float)(clientTotal * (1.0 + payoutMultiplier));
-      AnimateSpotTotalToWin(winnerSpotIndex, (float)clientTotal, winTotal);
-    }
 
-    // Client winning chips — decompose total win into level-denomination chips
-    if (clientTotal > 0.0)
+    string clientUsername = socketManager?.initData?.player?.username;
+    if (string.IsNullOrEmpty(clientUsername))
+      Debug.LogWarning("[SpawnWinningChips] Client username is null — skipping client winning chips.");
+    else
     {
-      double clientWinTotal = clientTotal * (payoutMultiplier);
-      List<double> clientChipValues = DecomposeIntoChips(clientWinTotal, levelBets);
-      foreach (double chipValue in clientChipValues)
+      double clientPayoutWin = GetPayoutWin(clientUsername);
+      if (clientPayoutWin <= 0)
+        Debug.LogWarning($"[SpawnWinningChips] No payout.win found for client '{clientUsername}'.");
+      else
       {
-        Sprite sprite = GetSpriteForDenomination(chipValue, levelBets);
-        SpawnWinningChipOnSpot(winnerSpotIndex, chipValue, sprite, false, null);
-        yield return new WaitForSeconds(winningChipSpawnInterval);
+        // Text lerp: from bet total to full payout.win
+        if (clientTotal > 0.0)
+          AnimateSpotTotalToWin(winnerSpotIndex, (float)clientTotal, (float)clientPayoutWin);
+
+        // Winning chips = profit only (payout.win already includes bet returned)
+        double clientWinChipsAmount = clientPayoutWin - clientTotal;
+        if (clientWinChipsAmount > 0.0)
+        {
+          List<double> clientChipValues = DecomposeIntoChips(clientWinChipsAmount, levelBets);
+          foreach (double chipValue in clientChipValues)
+          {
+            Sprite sprite = GetSpriteForDenomination(chipValue, levelBets);
+            SpawnWinningChipOnSpot(winnerSpotIndex, chipValue, sprite, false, null);
+            yield return new WaitForSecondsRealtime(winningChipSpawnInterval);
+          }
+        }
       }
     }
 
-    // Opponent winning chips — decompose each opponent's total win
+    // Opponent chips
     for (int i = 0; i < opponentChipsPerSpot[winnerSpotIndex].Count; i++)
     {
       var entry = opponentChipsPerSpot[winnerSpotIndex][i];
       if (entry?.ChipView == null) continue;
 
+      if (string.IsNullOrEmpty(entry.Username))
+      {
+        Debug.LogWarning("[SpawnWinningChips] Opponent entry has null username — skipping.");
+        continue;
+      }
+
+      double opponentPayoutWin = GetPayoutWin(entry.Username);
+      if (opponentPayoutWin <= 0)
+      {
+        Debug.LogWarning($"[SpawnWinningChips] No payout.win found for opponent '{entry.Username}'.");
+        continue;
+      }
+
       double opponentBetTotal = entry.ChipView.ChipValue;
-      double opponentWinTotal = opponentBetTotal * (payoutMultiplier);
-      List<double> opponentChipValues = DecomposeIntoChips(opponentWinTotal, levelBets);
+      double opponentWinChipsAmount = opponentPayoutWin - opponentBetTotal;
+      if (opponentWinChipsAmount <= 0) continue;
+
+      List<double> opponentChipValues = DecomposeIntoChips(opponentWinChipsAmount, levelBets);
       foreach (double chipValue in opponentChipValues)
       {
         SpawnWinningChipOnSpot(winnerSpotIndex, chipValue, null, true, entry.Username);
-        yield return new WaitForSeconds(winningChipSpawnInterval);
+        yield return new WaitForSecondsRealtime(winningChipSpawnInterval);
       }
     }
+  }
+
+  private double GetPayoutWin(string username)
+  {
+    if (pendingCashoutData?.payouts == null || string.IsNullOrEmpty(username)) return 0;
+    foreach (var p in pendingCashoutData.payouts)
+    {
+      if (p.username == username) return p.win;
+    }
+    return 0;
   }
 
   private List<double> DecomposeIntoChips(double totalAmount, List<double> denominations)
@@ -1686,16 +1723,14 @@ public class BetPanelManager : MonoBehaviour
     {
       if (denom <= 0) continue;
       int count = (int)(remaining / denom);
-      for (int i = 0; i < count; i++)
-      {
-        result.Add(denom);
-        remaining -= denom;
-      }
+      for (int i = 0; i < count; i++) result.Add(denom);
+      remaining -= denom * count;
+      remaining = Math.Round(remaining, 8);
       if (remaining < epsilon) break;
     }
 
     if (remaining > epsilon)
-      result.Add(remaining);
+      result.Add(Math.Round(remaining, 2));
 
     return result;
   }
@@ -2690,7 +2725,7 @@ public class BetPanelManager : MonoBehaviour
 
   // ── Round Result Text Animation ─────────────────────────────────────
 
-  private IEnumerator RunRoundResultAnimation(double net)
+  private IEnumerator RunRoundNetResultTextAnimation(double net)
   {
     if (roundResultParent == null || roundResultCanvasGroup == null || roundResultText == null)
       yield break;

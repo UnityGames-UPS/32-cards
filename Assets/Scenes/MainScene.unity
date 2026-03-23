@@ -53225,7 +53225,7 @@ MonoBehaviour:
   dealerController: {fileID: 261641904}
   betPanelManager: {fileID: 1893526748}
   JSManager: {fileID: 1519490010}
-  testToken: c7eddfaec0134ec0adbf21d2b446d626
+  testToken: 4d6f3d1a8af34d75a47245bb6732badf
   initData:
     id: 
     gameData:
