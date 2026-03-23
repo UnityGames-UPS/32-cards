@@ -19,7 +19,8 @@ public enum SoundEffect
   ChipsWon,
   CountDownTimer,
   TimeIsRunningOut,
-  NoMoreBets
+  NoMoreBets,
+  Error
 }
 
 public class AudioManager : MonoBehaviour
@@ -40,6 +41,7 @@ public class AudioManager : MonoBehaviour
   [SerializeField] private AudioSource OnRoundStartSource;
   [SerializeField] private AudioSource NoMoreBetsSource;
   [SerializeField] private AudioSource OnCancelUndoSource;
+  [SerializeField] private AudioSource OnErrorSource;
   [SerializeField] private AudioClip player8WinsClip;
   [SerializeField] private AudioClip player9WinsClip;
   [SerializeField] private AudioClip player10WinsClip; 
@@ -86,6 +88,7 @@ public class AudioManager : MonoBehaviour
       SoundEffect.CountDownTimer => CountDownTimerSource,
       SoundEffect.TimeIsRunningOut => TimeIsRunningOutSource,
       SoundEffect.NoMoreBets => NoMoreBetsSource,
+      SoundEffect.Error => OnErrorSource,
       _ => null
     };
 

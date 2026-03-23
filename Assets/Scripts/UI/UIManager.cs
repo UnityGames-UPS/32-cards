@@ -662,7 +662,7 @@ public class UiManager : MonoBehaviour
       betPanelManager.SetupOpponentChipsImmediate(data.bets, socketManager?.initData?.player?.username ?? "");
     if (dealerController != null)
     {
-      float remaining = (float)(data.roundState.timeRemaining / 1000.0);
+      float remaining = (float)data.roundState.timeRemaining;
       dealerController.OnBettingStart(remaining);
     }
     gamePage.SetActive(true);

@@ -44,6 +44,10 @@ public class BetPanelManager : MonoBehaviour
     public ImageAnimation winningSpotAnimFg;
     public RectTransform combinedTotalRoot;
     public TMP_Text combinedTotalText;
+    public TMP_Text bonusMultText;
+    public GameObject bonusElectricEffect;
+    public ImageAnimation bonusBgAnim;
+    public Image borderGlow;
     [NonSerialized] public Vector2 totalBetBaseSize;
   }
 
@@ -152,6 +156,19 @@ public class BetPanelManager : MonoBehaviour
   [SerializeField] private float combinedTotalScaleDuration = 0.25f;
   [SerializeField] private float combinedTotalClearDelay = 0.3f;
 
+  [Header("Border Glow Pulse")]
+  [SerializeField] private float borderGlowFadeDuration = 1.5f;
+  [SerializeField] private float BorderGlowHoldDuration = 0.5f;
+
+  [Header("Bonus Multiplier")]
+  [SerializeField] private float bonusMultShowDelay = 0.5f;
+  [SerializeField] private float bonusMultScaleFactor = 1.25f;
+  [SerializeField] private float bonusMultScaleUpDuration = 0.2f;
+  [SerializeField] private float bonusMultScaleDownDuration = 0.2f;
+  [SerializeField] private float bonusMultFadeOutDuration = 0.3f;
+  [SerializeField] private float bonusWinnerScaleDelay = 0.3f;
+  [SerializeField] private float bonusMultHideDelay = 0.4f;
+
   [Header("Round Result Text")]
   [SerializeField] private RectTransform roundResultParent;
   [SerializeField] private CanvasGroup roundResultCanvasGroup;
@@ -205,10 +222,14 @@ public class BetPanelManager : MonoBehaviour
   private Vector3 announcerParentBaseScale = Vector3.one;
 
   private int currentWinner = -1;
+  private int currentBonusPlayer = -1;
+  private Coroutine bonusMultAnimRoutine;
   private CashoutEvent pendingCashoutData;
   private Coroutine cashoutAnimationRoutine;
   private readonly List<BetChipView> winningClientChips = new List<BetChipView>();
   private readonly List<OpponentChipEntry> winningOpponentChips = new List<OpponentChipEntry>();
+
+  private Sequence borderGlowSequence;
 
   private float totalStakeBaseY;
   private Coroutine totalStakeRoutine;
@@ -461,6 +482,7 @@ public class BetPanelManager : MonoBehaviour
   internal void ResetOnJoinIdle()
   {
     StopRoundRoutines();
+    StopBorderGlowLoop();
     StopCashoutAnimation();
     activeRoundId = null;
     hasReceivedFirstCardDealt = false;
@@ -597,10 +619,18 @@ public class BetPanelManager : MonoBehaviour
     hasReceivedFirstCardDealt = false;
     roundTotalBet = 0;
 
+    if (bonusMultAnimRoutine != null)
+    {
+      StopCoroutine(bonusMultAnimRoutine);
+      bonusMultAnimRoutine = null;
+    }
+    currentBonusPlayer = -1;
+
     StopCashoutAnimation();
     ResetOverlays();
     ClearAllChipVisuals();
     CollapseBetActionButtons();
+    StartBorderGlowLoop();
 
     bool shouldExpandRebet = playerPlacedBetThisRound;
     playerPlacedBetThisRound = false;
@@ -636,6 +666,8 @@ public class BetPanelManager : MonoBehaviour
       roundCountdownRoutine = null;
     }
 
+    StopBorderGlowLoop();
+
     audioController.PlaySFX(SoundEffect.BetLocked);
 
     FadeTimer(false);
@@ -647,6 +679,18 @@ public class BetPanelManager : MonoBehaviour
     CollapseRebetButton(true);
 
     AnimateBettingControlsY(bettingControlsBaseY + bettingControlsHideOffsetY, false);
+
+    currentBonusPlayer = bonusData.bonusPlayer;
+    int bSpot = bonusData.bonusPlayer - 8;
+    if (IsValidSpotIndex(bSpot))
+    {
+      var spot = betSpots[bSpot];
+      double mult = GetBonusMultiplier(bonusData.bonusPlayer);
+      if (spot.bonusMultText != null)
+        spot.bonusMultText.text = "x" + (mult % 1 == 0 ? ((long)mult).ToString() : mult.ToString("F1"));
+      if (bonusMultAnimRoutine != null) StopCoroutine(bonusMultAnimRoutine);
+      bonusMultAnimRoutine = StartCoroutine(ShowBonusMultAnim(bSpot));
+    }
 
     ShowTotalStake();
   }
@@ -1383,6 +1427,29 @@ public class BetPanelManager : MonoBehaviour
     // Spawn winning chips
     yield return StartCoroutine(SpawnWinningChips(winnerSpotIndex));
 
+    // Bonus winner: play bonus bg animation and pop text again
+    if (currentBonusPlayer == currentWinner && IsValidSpotIndex(winnerSpotIndex))
+    {
+      var bSpot = betSpots[winnerSpotIndex];
+      if (bSpot.bonusBgAnim != null)
+      {
+        yield return new WaitUntil(() =>
+          bSpot.winningSpotAnimBg == null ||
+          bSpot.winningSpotAnimBg.rendererDelegate.sprite == bSpot.winningSpotAnimBg.textureArray[^1]);
+
+        if (bSpot.winningSpotAnimBg != null)
+        {
+          bSpot.winningSpotAnimBg.StopAnimation();
+          bSpot.winningSpotAnimBg.gameObject.SetActive(false);
+        }
+
+        bSpot.bonusBgAnim.gameObject.SetActive(true);
+        bSpot.bonusBgAnim.StopAnimation();
+        bSpot.bonusBgAnim.StartAnimation();
+      }
+      StartCoroutine(BonusWinnerTextPop(bSpot));
+    }
+
     yield return new WaitForSeconds(winningChipHoldDuration);
 
     // Move all chips away from winning spot
@@ -1475,6 +1542,7 @@ public class BetPanelManager : MonoBehaviour
     // At 50% of overlay fade, start fading losing chips
     yield return new WaitForSeconds(overlayFadeDuration * 0.5f);
 
+    int bonusSpot = currentBonusPlayer - 8;
     for (int i = 0; i < betSpots.Count; i++)
     {
       if (i == winnerSpotIndex) continue;
@@ -1489,6 +1557,21 @@ public class BetPanelManager : MonoBehaviour
       {
         if (entry?.ChipView != null && entry.ChipView.ChipCanvasGroup != null)
           entry.ChipView.ChipCanvasGroup.DOFade(0f, losingChipsFadeOutDuration);
+      }
+
+      if (i == bonusSpot)
+      {
+        var bspot = betSpots[i];
+        if (bspot.bonusMultText != null && bspot.bonusMultText.gameObject.activeSelf)
+        {
+          DOTween.To(
+            () => bspot.bonusMultText.alpha,
+            x => bspot.bonusMultText.alpha = x,
+            0f, bonusMultFadeOutDuration
+          ).OnComplete(() => { if (bspot.bonusMultText != null) bspot.bonusMultText.gameObject.SetActive(false); });
+        }
+        if (bspot.bonusElectricEffect != null)
+          bspot.bonusElectricEffect.SetActive(false);
       }
     }
 
@@ -1536,39 +1619,109 @@ public class BetPanelManager : MonoBehaviour
 
     double payoutMultiplier = GetPayoutMultiplier(currentWinner);
 
+    if (currentBonusPlayer == currentWinner)
+      payoutMultiplier *= GetBonusMultiplier(currentWinner);
+
+    string currentLevel = uiManager != null ? uiManager.CurrentLevel : "";
+    List<double> levelBets = GetLevelBets(currentLevel);
+
     // Lerp spot total text from bet amount to total win amount (bet + bet * payout)
-    float clientTotal = 0f;
+    double clientTotal = 0.0;
     foreach (var chip in chipsPerSpot[winnerSpotIndex])
     {
       if (chip != null) clientTotal += chip.ChipValue;
     }
-    if (clientTotal > 0f)
+    if (clientTotal > 0.0)
     {
       float winTotal = (float)(clientTotal * (1.0 + payoutMultiplier));
-      AnimateSpotTotalToWin(winnerSpotIndex, clientTotal, winTotal);
+      AnimateSpotTotalToWin(winnerSpotIndex, (float)clientTotal, winTotal);
     }
 
-    // Client winning chips
-    for (int i = 0; i < chipsPerSpot[winnerSpotIndex].Count; i++)
+    // Client winning chips — decompose total win into level-denomination chips
+    if (clientTotal > 0.0)
     {
-      var originalChip = chipsPerSpot[winnerSpotIndex][i];
-      if (originalChip == null) continue;
-
-      double winAmount = originalChip.ChipValue * payoutMultiplier;
-      SpawnWinningChipOnSpot(winnerSpotIndex, winAmount, originalChip.ChipSprite, false, null);
-      yield return new WaitForSeconds(winningChipSpawnInterval);
+      double clientWinTotal = clientTotal * (payoutMultiplier);
+      List<double> clientChipValues = DecomposeIntoChips(clientWinTotal, levelBets);
+      foreach (double chipValue in clientChipValues)
+      {
+        Sprite sprite = GetSpriteForDenomination(chipValue, levelBets);
+        SpawnWinningChipOnSpot(winnerSpotIndex, chipValue, sprite, false, null);
+        yield return new WaitForSeconds(winningChipSpawnInterval);
+      }
     }
 
-    // Opponent winning chips
+    // Opponent winning chips — decompose each opponent's total win
     for (int i = 0; i < opponentChipsPerSpot[winnerSpotIndex].Count; i++)
     {
       var entry = opponentChipsPerSpot[winnerSpotIndex][i];
       if (entry?.ChipView == null) continue;
 
-      double winAmount = entry.ChipView.ChipValue * payoutMultiplier;
-      SpawnWinningChipOnSpot(winnerSpotIndex, winAmount, null, true, entry.Username);
-      yield return new WaitForSeconds(winningChipSpawnInterval);
+      double opponentBetTotal = entry.ChipView.ChipValue;
+      double opponentWinTotal = opponentBetTotal * (payoutMultiplier);
+      List<double> opponentChipValues = DecomposeIntoChips(opponentWinTotal, levelBets);
+      foreach (double chipValue in opponentChipValues)
+      {
+        SpawnWinningChipOnSpot(winnerSpotIndex, chipValue, null, true, entry.Username);
+        yield return new WaitForSeconds(winningChipSpawnInterval);
+      }
     }
+  }
+
+  private List<double> DecomposeIntoChips(double totalAmount, List<double> denominations)
+  {
+    var result = new List<double>();
+    if (denominations == null || denominations.Count == 0)
+    {
+      result.Add(totalAmount);
+      return result;
+    }
+
+    var sorted = new List<double>(denominations);
+    sorted.Sort((a, b) => b.CompareTo(a));
+
+    double remaining = totalAmount;
+    const double epsilon = 0.0001;
+
+    foreach (double denom in sorted)
+    {
+      if (denom <= 0) continue;
+      int count = (int)(remaining / denom);
+      for (int i = 0; i < count; i++)
+      {
+        result.Add(denom);
+        remaining -= denom;
+      }
+      if (remaining < epsilon) break;
+    }
+
+    if (remaining > epsilon)
+      result.Add(remaining);
+
+    return result;
+  }
+
+  private Sprite GetSpriteForDenomination(double denomination, List<double> orderedBets)
+  {
+    string currentLevel = uiManager != null ? uiManager.CurrentLevel : "";
+    LevelChipSprites levelConfig = levelChipSpriteConfigs?.Find(c => c.levelName == currentLevel);
+    if (levelConfig == null) return mainChip?.chipImage?.sprite;
+
+    if (orderedBets != null)
+    {
+      for (int i = 0; i < orderedBets.Count; i++)
+      {
+        if (Math.Abs(orderedBets[i] - denomination) < 0.0001)
+        {
+          if (i == 0) return levelConfig.mainChipSprite;
+          if (levelConfig.chipOptionSprites != null && i - 1 < levelConfig.chipOptionSprites.Count)
+            return levelConfig.chipOptionSprites[i - 1];
+          break;
+        }
+      }
+    }
+
+    // Remainder chip or no denomination match — fall back to main chip sprite
+    return levelConfig.mainChipSprite;
   }
 
   private void SpawnWinningChipOnSpot(int spotIndex, double amount, Sprite chipSprite, bool isOpponent, string username)
@@ -1743,7 +1896,25 @@ public class BetPanelManager : MonoBehaviour
         spot.winningSpotAnimFg.StopAnimation();
         spot.winningSpotAnimFg.gameObject.SetActive(false);
       }
+
+      if (spot.bonusBgAnim != null)
+      {
+        spot.bonusBgAnim.StopAnimation();
+        spot.bonusBgAnim.gameObject.SetActive(false);
+      }
+
+      if (spot.bonusMultText != null)
+      {
+        spot.bonusMultText.DOKill();
+        spot.bonusMultText.alpha = 1f;
+        spot.bonusMultText.transform.localScale = Vector3.one;
+        spot.bonusMultText.gameObject.SetActive(false);
+      }
+      if (spot.bonusElectricEffect != null)
+        spot.bonusElectricEffect.SetActive(false);
     }
+
+    currentBonusPlayer = -1;
   }
 
   private void AnimateSpotTotalToWin(int spotIndex, float fromValue, float toValue)
@@ -1757,6 +1928,74 @@ public class BetPanelManager : MonoBehaviour
       current = x;
       spot.totalBetText.text = GameUtility.FormatCurrency(x);
     }, toValue, winTotalLerpDuration).SetEase(Ease.OutQuad);
+  }
+
+  private IEnumerator ShowBonusMultAnim(int spotIndex)
+  {
+    yield return new WaitForSeconds(bonusMultShowDelay);
+    var spot = betSpots[spotIndex];
+    if (spot == null) yield break;
+
+    if (spot.bonusMultText != null)
+    {
+      spot.bonusMultText.gameObject.SetActive(true);
+      spot.bonusMultText.transform.localScale = Vector3.one;
+    }
+    if (spot.bonusElectricEffect != null)
+      spot.bonusElectricEffect.SetActive(true);
+
+    if (spot.bonusMultText != null)
+    {
+      spot.bonusMultText.transform
+        .DOScale(Vector3.one * bonusMultScaleFactor, bonusMultScaleUpDuration)
+        .SetEase(Ease.OutBack)
+        .OnComplete(() =>
+        {
+          if (spot.bonusMultText != null)
+            spot.bonusMultText.transform
+              .DOScale(Vector3.one, bonusMultScaleDownDuration)
+              .SetEase(Ease.InQuad);
+        });
+    }
+  }
+
+  private IEnumerator BonusWinnerTextPop(BetSpotView spot)
+  {
+    yield return new WaitForSeconds(bonusWinnerScaleDelay);
+
+    if (spot?.bonusMultText == null) yield break;
+
+    spot.bonusMultText.transform.DOKill();
+    spot.bonusMultText.transform.localScale = Vector3.one;
+    spot.bonusMultText.transform
+      .DOScale(Vector3.one * bonusMultScaleFactor, bonusMultScaleUpDuration)
+      .SetEase(Ease.OutBack)
+      .OnComplete(() =>
+      {
+        if (spot?.bonusMultText != null)
+          spot.bonusMultText.transform
+            .DOScale(Vector3.one, bonusMultScaleDownDuration)
+            .SetEase(Ease.InQuad);
+      });
+
+    yield return new WaitForSeconds(bonusMultScaleUpDuration + bonusMultScaleDownDuration + bonusMultHideDelay);
+
+    if (spot.bonusMultText != null) spot.bonusMultText.gameObject.SetActive(false);
+    if (spot.bonusElectricEffect != null) spot.bonusElectricEffect.SetActive(false);
+  }
+
+  private double GetBonusMultiplier(int playerNumber)
+  {
+    var m = socketManager?.initData?.gameData?.bonusMultipliers;
+    if (m == null) return 1;
+    switch (playerNumber)
+    {
+      case 8:  return m.player_8;
+      case 9:  return m.player_9;
+      case 10: return m.player_10;
+      case 11: return m.player_11;
+      default: return 1;
+    }
   }
 
   private double GetPayoutMultiplier(int playerNumber)
@@ -1830,6 +2069,7 @@ public class BetPanelManager : MonoBehaviour
     errorPopupCanvasGroup.alpha = 0f;
     errorPopupRoot.localPosition = errorPopupInitLocalPos;
 
+    audioController.PlaySFX(SoundEffect.Error);
     errorPopupSequence = DOTween.Sequence();
 
     // Slide in to center (x = 0) + fade in
@@ -1935,7 +2175,7 @@ public class BetPanelManager : MonoBehaviour
     FadeTimer(true);
     FadeToAnnouncer(switchedToYellow ? yellowAnnouncer : lightGreenAnnouncer, true);
 
-    for (int value = startValue; value >= 0; value--)
+    for (int value = startValue; value >= 1; value--)
     {
       if (value == 5 && !switchedToYellow)
       {
@@ -1989,7 +2229,7 @@ public class BetPanelManager : MonoBehaviour
     FadeTimer(true);
     FadeToAnnouncer(darkGreenAnnouncer, true);
 
-    for (int value = startValue; value >= 0; value--)
+    for (int value = startValue; value >= 1; value--)
     {
       SetTimerValue(value, finalCountdownTimerColor);
       yield return new WaitForSecondsRealtime(1f);
@@ -2003,6 +2243,66 @@ public class BetPanelManager : MonoBehaviour
     long timeRemainingMs = roundData.bettingEndTime - roundData.serverTime;
     int startValue = Mathf.CeilToInt(timeRemainingMs / 1000f) - 1;
     return Mathf.Clamp(startValue, 1, 14);
+  }
+
+  private void StartBorderGlowLoop()
+  {
+    StopBorderGlowLoop();
+
+    if (betSpots == null) return;
+
+    foreach (var spot in betSpots)
+    {
+      if (spot?.borderGlow == null) continue;
+      spot.borderGlow.DOKill();
+      var c = spot.borderGlow.color;
+      c.a = 0f;
+      spot.borderGlow.color = c;
+    }
+
+    bool firstAppended = false;
+    borderGlowSequence = DOTween.Sequence();
+
+    foreach (var spot in betSpots)
+    {
+      if (spot?.borderGlow == null) continue;
+      var fadeIn = spot.borderGlow.DOFade(1f, borderGlowFadeDuration);
+      if (!firstAppended) { borderGlowSequence.Append(fadeIn); firstAppended = true; }
+      else borderGlowSequence.Join(fadeIn);
+    }
+
+    borderGlowSequence.AppendInterval(BorderGlowHoldDuration);
+
+    bool firstFadeOut = false;
+    foreach (var spot in betSpots)
+    {
+      if (spot?.borderGlow == null) continue;
+      var fadeOut = spot.borderGlow.DOFade(0f, borderGlowFadeDuration);
+      if (!firstFadeOut) { borderGlowSequence.Append(fadeOut); firstFadeOut = true; }
+      else borderGlowSequence.Join(fadeOut);
+    }
+
+    borderGlowSequence.AppendInterval(BorderGlowHoldDuration);
+    borderGlowSequence.SetLoops(-1, LoopType.Restart);
+  }
+
+  private void StopBorderGlowLoop()
+  {
+    if (borderGlowSequence != null)
+    {
+      borderGlowSequence.Kill();
+      borderGlowSequence = null;
+    }
+
+    if (betSpots == null) return;
+    foreach (var spot in betSpots)
+    {
+      if (spot?.borderGlow == null) continue;
+      spot.borderGlow.DOKill();
+      var c = spot.borderGlow.color;
+      c.a = 0f;
+      spot.borderGlow.color = c;
+    }
   }
 
   private void StopRoundRoutines()
