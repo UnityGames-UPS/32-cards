@@ -47,6 +47,7 @@ public class BetPanelManager : MonoBehaviour
     public TMP_Text bonusMultText;
     public GameObject bonusElectricEffect;
     public ImageAnimation bonusBgAnim;
+    public ImageAnimation bonusLightningAnim;
     public Image borderGlow;
     [NonSerialized] public Vector2 totalBetBaseSize;
   }
@@ -224,6 +225,7 @@ public class BetPanelManager : MonoBehaviour
   private int currentWinner = -1;
   private int currentBonusPlayer = -1;
   private Coroutine bonusMultAnimRoutine;
+  private Coroutine bonusLightningAnimRoutine;
   private CashoutEvent pendingCashoutData;
   private Coroutine cashoutAnimationRoutine;
   private readonly List<BetChipView> winningClientChips = new List<BetChipView>();
@@ -269,8 +271,12 @@ public class BetPanelManager : MonoBehaviour
 
     if (betSpots != null)
       foreach (var spot in betSpots)
+      {
         if (spot?.combinedTotalRoot != null)
           spot.combinedTotalRoot.localScale = Vector3.zero;
+        if (spot?.bonusLightningAnim != null)
+          spot.bonusLightningAnim.gameObject.SetActive(false);
+      }
   }
 
   private void Start()
@@ -691,6 +697,13 @@ public class BetPanelManager : MonoBehaviour
       if (bonusMultAnimRoutine != null) StopCoroutine(bonusMultAnimRoutine);
       bonusMultAnimRoutine = StartCoroutine(ShowBonusMultAnim(bSpot));
     }
+
+    if (bonusLightningAnimRoutine != null)
+    {
+      StopCoroutine(bonusLightningAnimRoutine);
+      bonusLightningAnimRoutine = null;
+    }
+    bonusLightningAnimRoutine = StartCoroutine(PlayLightningAnimStaggered());
 
     ShowTotalStake();
   }
@@ -1489,8 +1502,9 @@ public class BetPanelManager : MonoBehaviour
       if (roundResultRoutine != null) StopCoroutine(roundResultRoutine);
       roundResultRoutine = StartCoroutine(RunRoundNetResultTextAnimation(net));
     }
-
+    Debug.Log("Before wait");
     yield return new WaitForSecondsRealtime(overlayStayDuration);
+    Debug.Log("After wait");
     ResetOverlays();
     currentWinner = -1;
     pendingCashoutData = null;
@@ -1902,6 +1916,12 @@ public class BetPanelManager : MonoBehaviour
 
   private void ResetOverlays()
   {
+    if (bonusLightningAnimRoutine != null)
+    {
+      StopCoroutine(bonusLightningAnimRoutine);
+      bonusLightningAnimRoutine = null;
+    }
+
     for (int i = 0; i < betSpots.Count; i++)
     {
       var spot = betSpots[i];
@@ -1938,6 +1958,12 @@ public class BetPanelManager : MonoBehaviour
         spot.bonusBgAnim.gameObject.SetActive(false);
       }
 
+      if (spot.bonusLightningAnim != null)
+      {
+        spot.bonusLightningAnim.StopAnimation();
+        spot.bonusLightningAnim.gameObject.SetActive(false);
+      }
+
       if (spot.bonusMultText != null)
       {
         spot.bonusMultText.DOKill();
@@ -1963,6 +1989,21 @@ public class BetPanelManager : MonoBehaviour
       current = x;
       spot.totalBetText.text = GameUtility.FormatCurrency(x);
     }, toValue, winTotalLerpDuration).SetEase(Ease.OutQuad);
+  }
+
+  private IEnumerator PlayLightningAnimStaggered()
+  {
+    for (int i = 0; i < betSpots.Count; i++)
+    {
+      if (i > 0)
+        yield return new WaitForSecondsRealtime(0.5f);
+      var spot = betSpots[i];
+      if (spot?.bonusLightningAnim == null) continue;
+      spot.bonusLightningAnim.gameObject.SetActive(true);
+      spot.bonusLightningAnim.StopAnimation();
+      spot.bonusLightningAnim.StartAnimation();
+    }
+    bonusLightningAnimRoutine = null;
   }
 
   private IEnumerator ShowBonusMultAnim(int spotIndex)

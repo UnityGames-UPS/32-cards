@@ -42,6 +42,7 @@ public class CardController : MonoBehaviour
   [SerializeField] private GameObject Card11_Object;
   [Header("Top Down Cards")]
   [SerializeField] private GameObject TopDownCardPrefab;
+  [SerializeField] private float TopDownCardYSpacing = 50f;
   [SerializeField] private Transform TopDownCard1_Transform;
   [SerializeField] private Transform TopDownCard2_Transform;
   [SerializeField] private Transform TopDownCard3_Transform;
@@ -186,7 +187,8 @@ public class CardController : MonoBehaviour
     if (parent == null) return null;
 
     GameObject cardref = GameObject.Instantiate(TopDownCardPrefab, parent, false);
-    cardref.transform.localPosition = Vector3.zero;
+    int existingCount = spawnedCardsByPlayer.TryGetValue(spotIndex, out var existingList) ? existingList.Count : 0;
+    cardref.transform.localPosition = new Vector3(0f, existingCount * TopDownCardYSpacing, 0f);
     cardref.transform.localRotation = Quaternion.identity;
     cardref.transform.localScale = Vector3.one;
     cardref.transform.localEulerAngles = Vector3.zero; // face-up final state
@@ -277,7 +279,8 @@ public class CardController : MonoBehaviour
     if (parent == null) return null;
 
     GameObject cardref = GameObject.Instantiate(TopDownCardPrefab, parent, false);
-    cardref.transform.localPosition = Vector3.zero;
+    int existingCount = spawnedCardsByPlayer.TryGetValue(spotIndex, out var existingList) ? existingList.Count : 0;
+    cardref.transform.localPosition = new Vector3(0f, existingCount * TopDownCardYSpacing, 0f);
     cardref.transform.localRotation = Quaternion.identity;
     cardref.transform.localScale = Vector3.one;
     cardref.transform.localEulerAngles = new Vector3(0f, 0f, 180f);
