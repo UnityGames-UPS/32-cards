@@ -95,6 +95,16 @@ public class LeaderboardController : MonoBehaviour
     return null;
   }
 
+  internal string GetRank1RichestUsername()
+  {
+    return currentRichest.TryGetValue(0, out var entry) ? entry.username : null;
+  }
+
+  internal string GetRank1WinnerUsername()
+  {
+    return currentWinners.TryGetValue(0, out var entry) ? entry.username : null;
+  }
+
   private void OnDestroy() => StopAllAnimations();
 
   private void Start()

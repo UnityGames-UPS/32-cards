@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,6 +10,7 @@ public class BetChipView : MonoBehaviour
   [SerializeField] private CanvasGroup chipCanvasGroup;
   [SerializeField] private Image chipImage;
   [SerializeField] private TMP_Text chipValueText;
+  [SerializeField] private ImageAnimation rippleAnimation;
 
   internal RectTransform ChipRect => chipRect;
   internal CanvasGroup ChipCanvasGroup => chipCanvasGroup;
@@ -37,5 +39,21 @@ public class BetChipView : MonoBehaviour
   {
     if (chipValueText != null)
       chipValueText.text = valueText;
+  }
+
+  internal void ShowRipple(List<Sprite> rippleSprites)
+  {
+    if (rippleAnimation == null || rippleSprites == null || rippleSprites.Count == 0) return;
+    rippleAnimation.textureArray = rippleSprites;
+    rippleAnimation.doLoopAnimation = true;
+    rippleAnimation.gameObject.SetActive(true);
+    rippleAnimation.StartAnimation();
+  }
+
+  internal void HideRipple()
+  {
+    if (rippleAnimation == null) return;
+    rippleAnimation.StopAnimation();
+    rippleAnimation.gameObject.SetActive(false);
   }
 }

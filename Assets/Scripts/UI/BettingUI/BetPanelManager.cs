@@ -125,6 +125,10 @@ public class BetPanelManager : MonoBehaviour
   [SerializeField] private float opponentChipScaleUpDuration = 0.3f;
   [SerializeField] private LeaderboardController leaderboardController;
 
+  [Header("Chip Ripple Effects")]
+  [SerializeField] private List<Sprite> goldenRippleSprites;
+  [SerializeField] private List<Sprite> blueRippleSprites;
+
   [Header("Level Chip Sprites")]
   [SerializeField] private List<LevelChipSprites> levelChipSpriteConfigs;
 
@@ -841,6 +845,9 @@ public class BetPanelManager : MonoBehaviour
     spawnedChip.ChipRect.localRotation = Quaternion.identity;
     spawnedChip.SetChipValueText(GameUtility.FormatCurrency(amount));
 
+    var rippleSprites = GetRippleSpritesForUser(username);
+    if (rippleSprites != null) spawnedChip.ShowRipple(rippleSprites);
+
     Vector2 finalPos = GetRandomAnchoredPosition(spawnedChip.ChipRect, spot.chipSpawnArea);
     spawnedChip.ChipRect.anchoredPosition = finalPos;
 
@@ -866,6 +873,9 @@ public class BetPanelManager : MonoBehaviour
     spawnedChip.ChipRect.localScale = Vector3.one * opponentChipMoveScale;
     spawnedChip.ChipRect.localRotation = Quaternion.identity;
     spawnedChip.SetChipValueText(GameUtility.FormatCurrency(amount));
+
+    var rippleSprites = GetRippleSpritesForUser(username);
+    if (rippleSprites != null) spawnedChip.ShowRipple(rippleSprites);
 
     Vector2 finalPos = GetRandomAnchoredPosition(spawnedChip.ChipRect, spot.chipSpawnArea);
     spawnedChip.ChipRect.SetParent(spot.chipParent);
@@ -1074,6 +1084,10 @@ public class BetPanelManager : MonoBehaviour
     string chipValueText = GameUtility.FormatCurrency(amount);
     Sprite chipSprite = mainChip != null && mainChip.chipImage != null ? mainChip.chipImage.sprite : null;
     spawnedChip.SetChipVisuals(chipSprite, chipValueText);
+
+    string localUsername = socketManager != null && socketManager.initData != null ? socketManager.initData.player.username : null;
+    var rippleSprites = GetRippleSpritesForUser(localUsername);
+    if (rippleSprites != null) spawnedChip.ShowRipple(rippleSprites);
 
     Vector2 finalPos = GetRandomAnchoredPosition(spawnedChip.ChipRect, spot.chipSpawnArea);
     spawnedChip.ChipRect.anchoredPosition = finalPos + new Vector2(0f, chipSpawnYOffset);
@@ -1446,12 +1460,12 @@ public class BetPanelManager : MonoBehaviour
       var bSpot = betSpots[winnerSpotIndex];
       if (bSpot.bonusBgAnim != null)
       {
-        yield return new WaitUntil(() =>
-          bSpot.winningSpotAnimBg == null ||
-          bSpot.winningSpotAnimBg.rendererDelegate.sprite == bSpot.winningSpotAnimBg.textureArray[^1]);
-
-        if (bSpot.winningSpotAnimBg != null)
+        if (bSpot.winningSpotAnimBg != null &&
+            bSpot.winningSpotAnimBg.currentAnimationState == ImageAnimation.ImageState.PLAYING)
         {
+          bool bgAnimDone = false;
+          bSpot.winningSpotAnimBg.SetOnCompleteCallback(() => bgAnimDone = true);
+          yield return new WaitUntil(() => bgAnimDone);
           bSpot.winningSpotAnimBg.StopAnimation();
           bSpot.winningSpotAnimBg.gameObject.SetActive(false);
         }
@@ -1796,6 +1810,10 @@ public class BetPanelManager : MonoBehaviour
     else
       spawnedChip.SetChipVisuals(chipSprite, GameUtility.FormatCurrency(amount));
 
+    string rippleUsername = isOpponent ? username : (socketManager != null && socketManager.initData != null ? socketManager.initData.player.username : null);
+    var rippleSprites = GetRippleSpritesForUser(rippleUsername);
+    if (rippleSprites != null) spawnedChip.ShowRipple(rippleSprites);
+
     // Get final anchored position by temporarily parenting to chipParent
     Vector2 finalAnchoredPos = GetRandomAnchoredPosition(spawnedChip.ChipRect, spot.chipSpawnArea);
     spawnedChip.ChipRect.SetParent(spot.chipParent);
@@ -1895,7 +1913,7 @@ public class BetPanelManager : MonoBehaviour
       entry.ChipView.ChipRect.DOKill();
       var chipView = entry.ChipView;
       entry.ChipView.ChipRect.DOMove(targetPos, chipReturnDuration)
-        .SetEase(Ease.InQuad)
+        .SetEase(Ease.InBack)
         .OnComplete(() => { if (chipView != null) Destroy(chipView.gameObject); });
     }
 
@@ -2214,6 +2232,16 @@ public class BetPanelManager : MonoBehaviour
   private bool IsValidSpotIndex(int spotIndex)
   {
     return spotIndex >= 0 && spotIndex < betSpots.Count;
+  }
+
+  private List<Sprite> GetRippleSpritesForUser(string username)
+  {
+    if (leaderboardController == null || string.IsNullOrEmpty(username)) return null;
+    string richest = leaderboardController.GetRank1RichestUsername();
+    if (richest == username) return goldenRippleSprites;
+    string winner = leaderboardController.GetRank1WinnerUsername();
+    if (winner == username) return blueRippleSprites;
+    return null;
   }
 
   private void CacheChipSprites()

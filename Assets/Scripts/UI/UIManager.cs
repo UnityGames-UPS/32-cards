@@ -741,10 +741,10 @@ public class UiManager : MonoBehaviour
       GPminBetText.text = minFormatted;
 
     if (GPseparateMinBetText != null)
-      GPseparateMinBetText.text = minFormatted + "\nMin";
+      GPseparateMinBetText.text = minFormatted;
 
     if (GPseparateMaxBetText != null)
-      GPseparateMaxBetText.text = maxFormatted + "\nMax";
+      GPseparateMaxBetText.text = maxFormatted;
   }
 
   private void UpdateBetChipTextsForCurrentLevel()
