@@ -71,6 +71,7 @@ public class UiManager : MonoBehaviour
   [Space(10)]
   [Header("GamePage")]
   [SerializeField] private GameObject gamePage;
+  [SerializeField] private ImageAnimation roundAnimation;
 
   [SerializeField] private TMP_Text GPUsernameText;
   [SerializeField] private TMP_Text GPUsernameText2;
@@ -481,6 +482,11 @@ public class UiManager : MonoBehaviour
 
   internal void OnRoundStart(RoundStartEvent roundData)
   {
+    if (roundAnimation != null) {
+      roundAnimation.gameObject.SetActive(true);
+      roundAnimation.StartAnimation();
+    }
+
     UpdateGamePageMinMaxTexts();
 
     audioController?.PlaySFX(SoundEffect.RoundStart);
@@ -659,7 +665,11 @@ public class UiManager : MonoBehaviour
     // Joined during betting phase — sync countdown and show immediately
     if (betPanelManager != null) betPanelManager.OnJoinDuringBetting(data.roundState);
     if (betPanelManager != null && data.bets != null && data.bets.Count > 0)
-      betPanelManager.SetupOpponentChipsImmediate(data.bets, socketManager?.initData?.player?.username ?? "");
+    {
+      string localUsername = socketManager?.initData?.player?.username ?? "";
+      betPanelManager.SetupOpponentChipsImmediate(data.bets, localUsername);
+      betPanelManager.SetupLocalChipsImmediate(data.bets, localUsername);
+    }
     if (dealerController != null)
     {
       float remaining = (float)data.roundState.timeRemaining;

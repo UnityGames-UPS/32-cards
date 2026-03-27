@@ -1,10 +1,19 @@
 fileFormatVersion: 2
-guid: e7f57f2376c594b10b8b231791387e72
+guid: e75ddfb8f657d417a927148d8f55806e
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 5363075811084415368
-    second: 32_Cards_Frame_11_0
+      213: 8391947906840888406
+    second: 29_FPS_40_0
+  - first:
+      213: 7227881962766116721
+    second: 29_FPS_40_1
+  - first:
+      213: 7188695918035966574
+    second: 29_FPS_40_2
+  - first:
+      213: 6981113437403588450
+    second: 29_FPS_40_3
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -46,7 +55,7 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 2
+  spriteMode: 1
   spriteExtrude: 1
   spriteMeshType: 1
   alignment: 0
@@ -113,13 +122,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: 32_Cards_Frame_11_0
+      name: 29_FPS_40_0
       rect:
         serializedVersion: 2
-        x: 28
-        y: 24
-        width: 380
-        height: 98
+        x: 0
+        y: 1155
+        width: 810
+        height: 285
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +137,74 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 8813d2f09097d6a40800000000000000
-      internalID: 5363075811084415368
+      spriteID: 65485d8a820367470800000000000000
+      internalID: 8391947906840888406
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 29_FPS_40_1
+      rect:
+        serializedVersion: 2
+        x: 87
+        y: 640
+        width: 296
+        height: 229
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 177a025a9589e4460800000000000000
+      internalID: 7227881962766116721
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 29_FPS_40_2
+      rect:
+        serializedVersion: 2
+        x: 401
+        y: 682
+        width: 409
+        height: 207
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e6a95d0a9d063c360800000000000000
+      internalID: 7188695918035966574
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 29_FPS_40_3
+      rect:
+        serializedVersion: 2
+        x: 23
+        y: 0
+        width: 787
+        height: 431
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 267a52d0fa5e1e060800000000000000
+      internalID: 6981113437403588450
       vertices: []
       indices: 
       edges: []
@@ -148,7 +223,10 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      32_Cards_Frame_11_0: 5363075811084415368
+      29_FPS_40_0: 8391947906840888406
+      29_FPS_40_1: 7227881962766116721
+      29_FPS_40_2: 7188695918035966574
+      29_FPS_40_3: 6981113437403588450
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

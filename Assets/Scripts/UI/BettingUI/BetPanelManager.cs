@@ -855,6 +855,66 @@ public class BetPanelManager : MonoBehaviour
     UpdateCombinedTotal(spotIndex, true);
   }
 
+  internal void SetupLocalChipsImmediate(List<BetPlacedEvent> bets, string localUsername)
+  {
+    if (bets == null || bets.Count == 0) return;
+
+    bool anySpawned = false;
+    foreach (var bet in bets)
+    {
+      if (bet == null || bet.amount <= 0) continue;
+      if (bet.username != localUsername) continue;
+
+      int spotIndex = BetOptionToSpotIndex(bet.betOption);
+      if (spotIndex < 0 || !IsValidSpotIndex(spotIndex)) continue;
+
+      SpawnLocalChipImmediate(spotIndex, bet.amount);
+      anySpawned = true;
+    }
+
+    if (anySpawned)
+    {
+      playerPlacedBetThisRound = true;
+      CollapseRebetButton(true);
+      ExpandBetActionButtonsImmediate();
+    }
+  }
+
+  private void SpawnLocalChipImmediate(int spotIndex, double amount)
+  {
+    if (!IsValidSpotIndex(spotIndex) || betChipPrefab == null)
+      return;
+
+    var spot = betSpots[spotIndex];
+    if (spot == null || spot.chipParent == null || spot.chipSpawnArea == null)
+      return;
+
+    BetChipView spawnedChip = Instantiate(betChipPrefab, spot.chipParent);
+    if (spawnedChip == null || spawnedChip.ChipRect == null || spawnedChip.ChipCanvasGroup == null)
+      return;
+
+    spawnedChip.ChipCanvasGroup.alpha = 1f;
+    spawnedChip.ChipRect.localScale = Vector3.one;
+    spawnedChip.ChipRect.localRotation = Quaternion.identity;
+
+    string chipValueText = GameUtility.FormatCurrency(amount);
+    Sprite chipSprite = mainChip != null && mainChip.chipImage != null ? mainChip.chipImage.sprite : null;
+    spawnedChip.SetChipVisuals(chipSprite, chipValueText);
+
+    string localUsername = socketManager != null && socketManager.initData != null ? socketManager.initData.player.username : null;
+    var rippleSprites = GetRippleSpritesForUser(localUsername);
+    if (rippleSprites != null) spawnedChip.ShowRipple(rippleSprites);
+
+    Vector2 finalPos = GetRandomAnchoredPosition(spawnedChip.ChipRect, spot.chipSpawnArea);
+    spawnedChip.ChipRect.anchoredPosition = finalPos;
+
+    chipsPerSpot[spotIndex].Add(spawnedChip);
+    betUndoStack.Push(new BetUndoEntry { SpotIndex = spotIndex, ChipView = spawnedChip });
+
+    UpdateSpotTotal(spotIndex);
+    UpdateCombinedTotal(spotIndex);
+  }
+
   private void SpawnOpponentChipOnSpot(int spotIndex, double amount, string username)
   {
     if (!IsValidSpotIndex(spotIndex) || opponentChipPrefab == null)
@@ -2226,6 +2286,41 @@ public class BetPanelManager : MonoBehaviour
         doubleBetButton.gameObject.SetActive(true);
       if (!Mathf.Approximately(doubleBetButton.transform.localPosition.x, doubleButtonExpandedX))
         doubleBetButton.transform.DOLocalMoveX(doubleButtonExpandedX, betActionsAnimDuration).SetEase(Ease.OutBack);
+    }
+  }
+
+  private void ExpandBetActionButtonsImmediate()
+  {
+    areBetActionsExpanded = true;
+
+    if (betActionsPanel != null)
+    {
+      betActionsPanel.DOKill();
+      betActionsPanel.sizeDelta = new Vector2(betActionsExpandedWidth, betActionsPanel.rect.height);
+    }
+
+    if (undoBetButton != null)
+    {
+      undoBetButton.transform.DOKill();
+      undoBetButton.gameObject.SetActive(true);
+      Vector3 lp = undoBetButton.transform.localPosition;
+      undoBetButton.transform.localPosition = new Vector3(undoButtonExpandedX, lp.y, lp.z);
+    }
+
+    if (cancelBetButton != null)
+    {
+      cancelBetButton.transform.DOKill();
+      cancelBetButton.gameObject.SetActive(true);
+      Vector3 lp = cancelBetButton.transform.localPosition;
+      cancelBetButton.transform.localPosition = new Vector3(cancelButtonExpandedX, lp.y, lp.z);
+    }
+
+    if (doubleBetButton != null)
+    {
+      doubleBetButton.transform.DOKill();
+      doubleBetButton.gameObject.SetActive(true);
+      Vector3 lp = doubleBetButton.transform.localPosition;
+      doubleBetButton.transform.localPosition = new Vector3(doubleButtonExpandedX, lp.y, lp.z);
     }
   }
 

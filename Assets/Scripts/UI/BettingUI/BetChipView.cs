@@ -12,6 +12,12 @@ public class BetChipView : MonoBehaviour
   [SerializeField] private TMP_Text chipValueText;
   [SerializeField] private ImageAnimation rippleAnimation;
 
+  private void Awake()
+  {
+    if (rippleAnimation != null)
+      rippleAnimation.gameObject.SetActive(false);
+  }
+
   internal RectTransform ChipRect => chipRect;
   internal CanvasGroup ChipCanvasGroup => chipCanvasGroup;
   internal Sprite ChipSprite => chipImage != null ? chipImage.sprite : null;
