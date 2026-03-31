@@ -54079,7 +54079,7 @@ MonoBehaviour:
   dealerController: {fileID: 261641904}
   betPanelManager: {fileID: 1893526748}
   JSManager: {fileID: 1519490010}
-  testToken: 5fd92edb40c24d4f9dbc5fdab2d78e0b
+  testToken: 4004963712af483c867b69880e80ea97
   initData:
     id: 
     gameData:
@@ -54659,14 +54659,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.59607846}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -5583603169610629838, guid: f7a2e511236b141d7b0079a78046a801, type: 3}
+  m_Sprite: {fileID: 8404313828699308441, guid: e6bdec82adb464e75ab452a613d73e96, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -60458,7 +60458,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Time left for betting before the round ends.
+  m_text: Time left for betting before the round ends
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 5f4b7dcd5b91c42ecbe1a92468b587b3, type: 2}
   m_sharedMaterial: {fileID: 8428848702391514146, guid: 5f4b7dcd5b91c42ecbe1a92468b587b3, type: 2}

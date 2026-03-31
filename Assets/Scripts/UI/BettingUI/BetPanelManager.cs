@@ -215,6 +215,7 @@ public class BetPanelManager : MonoBehaviour
 
   private float bettingControlsBaseY;
   private bool playerPlacedBetThisRound;
+  private bool hasPreviousBetData;
   private bool isRebetExpanded;
 
   private bool areChipOptionsExpanded;
@@ -499,6 +500,7 @@ public class BetPanelManager : MonoBehaviour
     currentWinner = -1;
     pendingCashoutData = null;
     playerPlacedBetThisRound = false;
+    hasPreviousBetData = false;
     ClearAllChipVisuals();
     HideAllAnnouncers();
     SetTimerVisible(false, false);
@@ -523,6 +525,7 @@ public class BetPanelManager : MonoBehaviour
     currentWinner = -1;
     pendingCashoutData = null;
     playerPlacedBetThisRound = false;
+    hasPreviousBetData = false;
     ClearAllChipVisuals();
     HideAllAnnouncers();
     SetTimerVisible(false, false);
@@ -579,6 +582,7 @@ public class BetPanelManager : MonoBehaviour
     currentWinner = -1;
     pendingCashoutData = null;
     playerPlacedBetThisRound = false;
+    hasPreviousBetData = false;
     ClearAllChipVisuals();
     HideAllAnnouncers();
     SetTimerVisible(false, false);
@@ -642,7 +646,7 @@ public class BetPanelManager : MonoBehaviour
     CollapseBetActionButtons();
     StartBorderGlowLoop();
 
-    bool shouldExpandRebet = playerPlacedBetThisRound;
+    bool shouldExpandRebet = hasPreviousBetData;
     playerPlacedBetThisRound = false;
     AnimateBettingControlsY(bettingControlsBaseY, false);
     if (shouldExpandRebet)
@@ -683,7 +687,9 @@ public class BetPanelManager : MonoBehaviour
     FadeTimer(false);
     FadeToAnnouncer(pinkAnnouncer, true);
 
-    playerPlacedBetThisRound = HasAnyClientChips();
+    bool hasChips = HasAnyClientChips();
+    playerPlacedBetThisRound = hasChips;
+    if (hasChips) hasPreviousBetData = true;
     roundTotalBet = GetTotalClientBet();
 
     CollapseRebetButton(true);
@@ -875,6 +881,7 @@ public class BetPanelManager : MonoBehaviour
     if (anySpawned)
     {
       playerPlacedBetThisRound = true;
+      hasPreviousBetData = true;
       CollapseRebetButton(true);
       ExpandBetActionButtonsImmediate();
     }
@@ -1315,7 +1322,11 @@ public class BetPanelManager : MonoBehaviour
 
 
       if (betUndoStack.Count == 0)
+      {
         CollapseBetActionButtons();
+        if (hasPreviousBetData)
+          DOVirtual.DelayedCall(betActionsAnimDuration, ExpandRebetButton);
+      }
     });
   }
 
@@ -1372,7 +1383,7 @@ public class BetPanelManager : MonoBehaviour
 
       AnimateCancelChips(() =>
       {
-        if (playerPlacedBetThisRound)
+        if (hasPreviousBetData)
           ExpandRebetButton();
       });
     });
@@ -2717,6 +2728,7 @@ public class BetPanelManager : MonoBehaviour
   internal void HideBettingControlsImmediate()
   {
     playerPlacedBetThisRound = false;
+    hasPreviousBetData = false;
     CollapseRebetButton(true);
     CollapseBetActionButtons();
     AnimateBettingControlsY(bettingControlsBaseY + bettingControlsHideOffsetY, true);
