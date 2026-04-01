@@ -50,6 +50,7 @@ public class UiManager : MonoBehaviour
   [SerializeField] private TMP_Text[] LevelButtonsMinBetText;
   [SerializeField] private TMP_Text[] LevelButtonsMaxBetText;
   [SerializeField] private TMP_Text[] LevelButtonsPeopleText;
+  [SerializeField] private TMP_Text[] LevelButtonsPeopleStaticText;
   [SerializeField] private Image[] LevelButtonsPlayerCountBg;
   [SerializeField] private Sprite LevelPlayerCountGreenBgSprite;
   [SerializeField] private Sprite LevelPlayerCountRedBgSprite;
@@ -117,6 +118,8 @@ public class UiManager : MonoBehaviour
   private double currentBalance;
   private bool pendingLevelEntry = false;
   private int pendingCardsDealt = 0;
+  private bool pendingCashoutReveal = false;
+  private Coroutine cashoutRevealRoutine;
 
   internal bool IsPendingLevelEntry => pendingLevelEntry;
   internal int PendingCardsDealt => pendingCardsDealt;
@@ -482,7 +485,16 @@ public class UiManager : MonoBehaviour
 
   internal void OnRoundStart(RoundStartEvent roundData)
   {
-    if (roundAnimation != null) {
+    if (pendingCashoutReveal)
+    {
+      pendingCashoutReveal = false;
+      if (cashoutRevealRoutine != null) { StopCoroutine(cashoutRevealRoutine); cashoutRevealRoutine = null; }
+      gamePage.SetActive(true);
+      loadingPage.SetActive(false);
+    }
+
+    if (roundAnimation != null)
+    {
       roundAnimation.gameObject.SetActive(true);
       roundAnimation.StartAnimation();
     }
@@ -548,9 +560,16 @@ public class UiManager : MonoBehaviour
 
   internal void SetLobbyPlayerCounts(Lobby lobby)
   {
+    LevelButtonsPeopleStaticText[0].text = lobby.casual > 1 ? "Players" : "Player";
     LevelButtonsPeopleText[0].text = lobby.casual.ToString();
+
+    LevelButtonsPeopleStaticText[1].text = lobby.novice > 1 ? "Players" : "Player";
     LevelButtonsPeopleText[1].text = lobby.novice.ToString();
+    
+    LevelButtonsPeopleStaticText[2].text = lobby.expert > 1 ? "Players" : "Player";
     LevelButtonsPeopleText[2].text = lobby.expert.ToString();
+    
+    LevelButtonsPeopleStaticText[3].text = lobby.high_roller > 1 ? "Players" : "Player";
     LevelButtonsPeopleText[3].text = lobby.high_roller.ToString();
     UpdateLevelButtonHotState(lobby);
   }
@@ -602,6 +621,8 @@ public class UiManager : MonoBehaviour
   internal void OnEnterLevelWithData(JoinLevelResponsePayload data)
   {
     pendingLevelEntry = false;
+    if (cashoutRevealRoutine != null) { StopCoroutine(cashoutRevealRoutine); cashoutRevealRoutine = null; }
+    pendingCashoutReveal = false;
 
     // Always stop any in-progress dealer/card/chip animations before processing
     // the new level state — covers all switching paths including mid-deal joins.
@@ -653,12 +674,12 @@ public class UiManager : MonoBehaviour
       return;
     }
 
-    // Joined during cashout interval — show game page and sync countdown
+    // Joined during cashout interval — keep loading page, reveal when countdown starts
     if (data.roundState.phase == "cashout")
     {
-      if (betPanelManager != null) betPanelManager.OnJoinDuringCashout(data.roundState.timeRemaining);
-      gamePage.SetActive(true);
-      loadingPage.SetActive(false);
+      pendingCashoutReveal = true;
+      if (cashoutRevealRoutine != null) StopCoroutine(cashoutRevealRoutine);
+      cashoutRevealRoutine = StartCoroutine(WaitAndRevealForCashout(data.roundState.timeRemaining));
       return;
     }
 
@@ -709,6 +730,23 @@ public class UiManager : MonoBehaviour
 
     if (betPanelManager != null)
       betPanelManager.OnCashout();
+  }
+
+  private IEnumerator WaitAndRevealForCashout(int timeRemainingSeconds)
+  {
+    int waitSeconds = Mathf.Max(0, timeRemainingSeconds - 5);
+    if (waitSeconds > 0)
+      yield return new WaitForSecondsRealtime(waitSeconds);
+
+    int countdownMs = Mathf.Min(timeRemainingSeconds, 5) * 1000;
+    if (betPanelManager != null)
+      betPanelManager.OnJoinDuringCashout(countdownMs);
+
+    pendingCashoutReveal = false;
+    gamePage.SetActive(true);
+    loadingPage.SetActive(false);
+
+    cashoutRevealRoutine = null;
   }
 
   private void UpdateGamePageMinMaxTexts()
