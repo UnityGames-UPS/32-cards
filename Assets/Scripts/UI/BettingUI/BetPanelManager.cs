@@ -718,6 +718,22 @@ public class BetPanelManager : MonoBehaviour
     ShowTotalStake();
   }
 
+  internal void ShowBonusImmediate(int bonusPlayer, double multiplier)
+  {
+    currentBonusPlayer = bonusPlayer;
+    int bSpot = bonusPlayer - 8;
+    if (!IsValidSpotIndex(bSpot)) return;
+    var spot = betSpots[bSpot];
+    if (spot.bonusMultText != null)
+    {
+      spot.bonusMultText.text = "x" + (multiplier % 1 == 0 ? ((long)multiplier).ToString() : multiplier.ToString("F1"));
+      spot.bonusMultText.transform.localScale = Vector3.one;
+      spot.bonusMultText.gameObject.SetActive(true);
+    }
+    if (spot.bonusElectricEffect != null)
+      spot.bonusElectricEffect.SetActive(true);
+  }
+
   internal void OnCardDealt(CardDealtEvent cardDealtData)
   {
     if (cardDealtData == null || hasReceivedFirstCardDealt)

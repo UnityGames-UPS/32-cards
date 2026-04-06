@@ -961,6 +961,14 @@ public class JoinLevelResponsePayload
   public List<BetPlacedEvent> bets;
   public Leaderboards leaderboards;
   public RoundState roundState;
+  public BonusInfo bonus;
+}
+
+[Serializable]
+public class BonusInfo
+{
+  public int player;
+  public double multiplier;
 }
 
 [Serializable]

@@ -671,6 +671,8 @@ public class UiManager : MonoBehaviour
         betPanelManager.SetupOpponentChipsImmediate(data.bets, socketManager?.initData?.player?.username ?? "");
       pendingLevelEntry = true;
       pendingCardsDealt = data.roundState.cardsDealt;
+      if (data.bonus != null && betPanelManager != null)
+        betPanelManager.ShowBonusImmediate(data.bonus.player, data.bonus.multiplier);
       return;
     }
 

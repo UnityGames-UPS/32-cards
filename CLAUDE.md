@@ -58,6 +58,12 @@ Full payload schemas are in `ML-32C_UNITY_INTEGRATION.md`.
 - `DealerController` defines frame ranges per player (e.g., Player 8: frames 0–29, Player 11: frames 151–212) and uses a coroutine queue (`ProcessPendingDeals`) to prevent race conditions
 - DoTween is used for UI transitions, chip animations, and menu slides
 
+## Scope of Exploration
+
+Only explore and read files under `Assets/Scripts/`. Never open, read, or explore prefabs (`.prefab`), scenes (`.unity`), images, sprites, or any other Unity assets unless the user explicitly asks. All implementation work is code-only — assume the user handles editor wiring.
+
+Additional docs are in `md/` at the project root.
+
 ## Coding Style
 
 - C# with 4-space indentation; braces on same line as declaration
