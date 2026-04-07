@@ -63,6 +63,7 @@ Shader "UI/ProceduralBottomShadow"
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            #pragma target 3.0
             #pragma multi_compile __ UNITY_UI_CLIP_RECT
             #pragma multi_compile __ UNITY_UI_ALPHACLIP
 
@@ -168,4 +169,6 @@ Shader "UI/ProceduralBottomShadow"
             ENDCG
         }
     }
+
+    FallBack "UI/Default"
 }

@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:discussions.unity.com)",
+      "WebFetch(domain:forum.unity.com)",
+      "WebFetch(domain:issuetracker.unity3d.com)"
+    ]
+  }
+}
