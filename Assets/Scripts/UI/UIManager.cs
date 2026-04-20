@@ -1151,6 +1151,7 @@ public class UiManager : MonoBehaviour
   public void OnFocusChanged(string value)
   {
     bool focused = value == "1";
+    Debug.Log("UNITY FOCUS CHANGED: " + value + " (focused: " + focused + ")");
     if (focused)
       audioController?.ResumeAudio();
     else
